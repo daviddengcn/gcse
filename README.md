@@ -1,4 +1,4 @@
-gcse
+GCSE
 ====
 
 Go Code Search Engine
