@@ -92,6 +92,8 @@ func search(q string) (*SearchResult, villa.StrSet, error) {
 			return nil
 		})
 		
+	log.Printf("Got %d hits for query %q", len(hits), q)
+		
 	villa.SortF(len(hits), func(i, j int) bool {
 		// true if doc i is before doc j
 		ssi, ssj := hits[i].Score, hits[j].Score
