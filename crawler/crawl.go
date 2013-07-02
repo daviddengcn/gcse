@@ -49,6 +49,7 @@ func schedulePackage(pkg string, sTime time.Time) error {
 }
 
 func appendPackage(pkg string) bool {
+	pkg = strings.TrimSpace(pkg)
 	if !doc.IsValidRemotePath(pkg) {
 		// log.Printf("  [appendPackage] Not a valid remote path: %s", pkg)
 		return false
@@ -91,6 +92,7 @@ func processImports() error {
 			}
 			log.Printf("Importing %d packages ...", len(pkgs))
 			for _, pkg := range pkgs {
+				pkg = strings.TrimSpace(pkg)
 				appendPackage(pkg)
 			}
 		}
