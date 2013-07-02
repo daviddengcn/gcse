@@ -1,0 +1,61 @@
+{{template "header.html" (printf "%s - Search" .Q)}}
+<div>
+    <form>
+        <label for="q">GCSE</label>
+        <input class="query-box" id="q" type="search" name="q" value="{{.Q}}">
+        <button>search</button>
+    </form>
+</div>
+<div class="content">
+    <div>
+        Total {{.Results.TotalResults}} projects{{if .Results.Folded}} ({{.Results.Folded}} folded){{end}}
+        related to "{{.Q}}", {{.SearchTime}}
+    </div>
+    <ol class="schres">
+        {{range .Results.Docs}}
+            <li>
+                <div class="title">
+                    <div class="num">{{.Index}}.</div><a target="_blank" href="/view?id={{.Package}}">{{if .MarkedName}}{{.MarkedName}}{{else}}({{.MarkedPackage}}){{end}}</a>
+                    - {{len .Imported}} refs
+                    - {{.StarCount}} stars
+                </div>
+                <div class="summary">{{.Summary}}</div>
+                {{if .Subs }}
+                <div>sub:
+                    {{range .Subs}}
+                    <span>
+                        <a target="_blank" title="{{.Info}}" href="view?id={{.Package}}">{{.MarkedName}}({{.SubPath}})</a>
+                    </span>
+                    {{end}}
+                </div>
+                {{end}}
+                <div class="info">
+                    <a target="_blank" href="{{.ProjectURL}}">{{.MarkedPackage}}</a>
+                    - <a target="_blank" href="http://godoc.org/{{.Package}}">GoDoc</a>
+                    - {{printf "%.2f" .Score}} ({{printf "%.2f" .MatchScore}}, {{printf "%.2f" .StaticScore}})
+                </div>
+            </li>
+        {{end}}
+    </ol>
+</div>
+<div class="pages">{{$q := .Q}}
+    <span class="prevpage">{{with .PrevPage}}<a href="?q={{$q}}&p={{.}}"> « </a>{{end}}</span>
+    {{range .BeforePages}}
+    <a  class="page" href="?q={{$q}}&p={{.}}">{{.}}</a>
+    {{end}}
+    <span class="page">{{.CurrentPage}}</span>
+    {{range .AfterPages}}
+    <a  class="page" href="?q={{$q}}&p={{.}}">{{.}}</a>
+    {{end}}
+    <span class="prevpage">{{with .NextPage}}<a href="?q={{$q}}&p={{.}}"> » </a>{{end}}</span>
+</div>
+{{if .BottomQ}}
+<div>
+    <form>
+        <label for="q">GCSE</label>
+        <input class="query-box" id="q" type="search" name="q" value="{{.Q}}">
+        <button>search</button>
+    </form>
+</div>
+{{end}}
+{{template "footer.html"}}

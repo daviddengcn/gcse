@@ -1,0 +1,140 @@
+package main
+
+import (
+	"github.com/daviddengcn/gcse"
+	"github.com/daviddengcn/go-index"
+	"github.com/daviddengcn/go-villa"
+	"log"
+	"time"
+	"errors"
+)
+
+func needIndex() bool {
+	dones, err := gcse.IndexSegments.ListDones()
+	if err != nil {
+		log.Printf("ListDones failed: %v", err)
+		return false
+	}
+	
+	if len(dones) == 0 {
+		log.Printf("To generate first index...")
+		return true
+	}
+	
+	maxDone, err := gcse.IndexSegments.FindMaxDone()
+	if err != nil {
+		log.Printf("FindMaxDone failed: %v", err)
+		return false
+	}
+	
+	fn := maxDone.Join(gcse.IndexFn)
+	fi, err := fn.Stat()
+	if err != nil {
+		log.Printf("fn.Stat failed: %v", err)
+		return true
+	}
+	_ = fi.ModTime()
+	
+	return true
+}
+
+func clearOutdatedIndex() error {
+	segm, err := gcse.IndexSegments.FindMaxDone()
+	if err != nil {
+		return err
+	}
+	all, err := gcse.IndexSegments.ListAll()
+	if err != nil {
+		return err
+	}
+	
+	for _, s := range all {
+		if s == segm {
+			continue
+		}
+		
+		err := s.Remove()
+		if err != nil {
+			return err
+		}
+		log.Printf("Segment %v deleted", s)
+	}
+	
+	return nil
+}
+
+var errNotDocInfo = errors.New("Value is not DocInfo")
+
+func doIndex() {
+	segm, err := gcse.IndexSegments.GenMaxSegment()
+	if err != nil {
+		log.Printf("GenMaxSegment failed: %v", err)
+		return
+	}
+	log.Printf("Indexing to %v ...", segm)
+	
+	ts := &index.TokenSetSearcher{}
+	
+	if err := docDB.Iterate(func(key string, val interface{}) error {
+		var hitInfo gcse.HitInfo
+		
+		var ok bool
+		hitInfo.DocInfo, ok = val.(gcse.DocInfo)
+		if !ok {
+			return errNotDocInfo
+		}
+		
+		hitInfo.Imports = importsDB.TokensOfId(hitInfo.Package)
+		hitInfo.Imported = importsDB.IdsOfToken(hitInfo.Package)
+		
+		var tokens villa.StrSet
+		tokens = gcse.AppendTokens(tokens, hitInfo.Name)
+		tokens = gcse.AppendTokens(tokens, hitInfo.Package)
+		tokens = gcse.AppendTokens(tokens, hitInfo.Description)
+		tokens = gcse.AppendTokens(tokens, hitInfo.ReadmeData)
+		tokens = gcse.AppendTokens(tokens, hitInfo.Author)
+		
+		ts.AddDoc(map[string]villa.StrSet{
+			"text": tokens,
+			"pkg": villa.NewStrSet(hitInfo.Package),
+		}, hitInfo)
+		return nil
+	}); err != nil {
+		log.Printf("Iterate failed: %v", err)
+		return
+	}
+	
+	f, err := segm.Join(gcse.IndexFn).Create()
+	if err != nil {
+		log.Printf("Create index file failed: %v", err)
+		return
+	}
+	defer f.Close()
+	if err := ts.Save(f); err != nil {
+		log.Printf("ts.Save failed: %v", err)
+		return
+	}
+	
+	if err := segm.Done(); err != nil {
+		log.Printf("segm.Done failed: %v", err)
+		return
+	}
+	
+	log.Printf("Indexing success: %s", segm)
+}
+	
+func indexLooop(gap time.Duration) {
+	for {
+		if err := gcse.IndexSegments.ClearUndones(); err != nil {
+			log.Printf("ClearUndones failed: %v", err)
+		}
+		if needIndex() {
+			if err := clearOutdatedIndex(); err != nil {
+				log.Printf("clearOutdatedIndex failed: %v", err)
+			}
+			doIndex()
+		}
+		
+		time.Sleep(gap)
+	}
+}

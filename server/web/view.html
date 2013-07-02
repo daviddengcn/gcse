@@ -1,0 +1,32 @@
+{{template "header.html" (printf "%s - Package" .Name)}}
+<h2>Package {{.Name}} - {{.StarCount}} stars</h2>
+<div class="code">
+    import "{{.Package}}"
+</div>
+{{if .Description}}
+<div class="desc">
+    {{.DescHTML}}
+</div>
+{{end}}{{if .ShowReadme}}<pre class="readme">({{.ReadmeFn}})
+{{.ReadmeData}}
+</pre>{{end}}
+<div>Imported by {{len .Imported}} package(s):</div>
+    <ol>
+        {{range .Imported}}
+            <li><a target="_blank" href="view?id={{.}}">{{.}}</a></li>
+        {{end}}
+    </ol>
+<div>
+<div>Imports {{len .Imports}} package(s):</div>
+    <ol>
+        {{range .Imports}}
+            <li><a target="_blank" href="view?id={{.}}">{{.}}</a></li>
+        {{end}}
+    </ol>
+<div>
+    <a target="_blank" href="http://godoc.org/{{.Package}}">GoDoc</a>
+    | <a target="_blank" href="{{.ProjectURL}}">Project</a>
+    | Last Crawled: {{.LastUpdated.Format "2006-01-02 15:04:05"}}
+    | {{printf "%.2f" .StaticScore}}
+</div>    
+{{template "footer.html"}}

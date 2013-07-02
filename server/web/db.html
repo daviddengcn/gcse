@@ -1,0 +1,16 @@
+{{template "header.html" "Databases"}}
+<h2>Databases</h2>
+<table>
+    <thead>
+        <th>Name</th><th>Count</th>
+    </thead>
+    <tbody>
+{{range .}}
+        <tr>
+            <td>{{.Name}}</td>
+            <td>{{.Count}}</td>
+        </tr>
+{{end}}
+    </tbody>
+</table>
+{{template "footer.html"}}
