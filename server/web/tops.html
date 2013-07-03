@@ -6,12 +6,14 @@
         <div class="pkg">{{.Name}}</div>
         <div class="info">{{.Info}}</div>
     </div>
+    <ol>
     {{range .Items}}
-        <div class="line">
+        <li class="line">
             <div class="pkg"><span>{{if .Package}}<a target="_blank" href="/view?id={{.Package}}">{{.Name}}</a>{{else}}<a target="_blank" href="{{.Link}}">{{.Name}}</a>{{end}}<span></div>
             <div class="info">{{.Info}}</div>
-        </div>
+        </li>
     {{end}}
+    </ol>
 </div>
 {{end}}
 <div class="clearboth"></div>

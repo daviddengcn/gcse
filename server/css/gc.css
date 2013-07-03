@@ -166,30 +166,47 @@ div.toplist div.listname {
     border-bottom: 1px solid gray;
 }
 
-div.toplist div.line {
-    height: 20px;
+div.toplist ol {
+    margin: 0px;
+    padding: 0px;
+    padding-left: 25px;
+}
+
+div.toplist li.line {
+    height: 25px;
+    vertical-align: bottom;
 }
 
 div.toplist div.pkg {
-    float: left;
-    width: 170px;
+    display: inline-block;
+    
+    width: 150px;
     height: 20px;
     overflow: hidden;
     text-overflow: ellipsis;
+    vertical-align: bottom;
+}
+
+div.toplist div.listname div.pkg {
+    width: 175px;
 }
 
 div.toplist div.pkg span {
     display: inline-block;
     width: 400px;
+    height: 20px;
 }
 
 div.toplist div.info {
+    //float: none;
+    display: inline-block;
     width: 60px;
-    height: 20px;
+    height: 18px;
     text-align: right;
     overflow: hidden;
     text-overflow: ellipsis;
     font-size: 90%;
+    vertical-align: bottom;
 }
 
 .clearboth {

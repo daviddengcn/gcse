@@ -60,7 +60,11 @@ func main() {
 }
 
 func pageRoot(w http.ResponseWriter, r *http.Request) {
-	err := templates.ExecuteTemplate(w, "index.html", nil)
+	docCount := 0
+	if indexDB != nil {
+		docCount = indexDB.DocCount()
+	}
+	err := templates.ExecuteTemplate(w, "index.html", docCount)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

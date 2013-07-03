@@ -1,9 +1,14 @@
 {{template "header.html"}}
-<h1><img class="logo" src="/images/logo-32.png"> Go Code Search Engine</h1>
+<h1><img class="logo" src="/images/logo-32.png">Go Code Search Engine</h1>
 <div>
     <form action="search">
         <input class="query-box" type="search" name="q" value="">
         <button>search</button>
     </form>
 </div>
+{{if .}}
+<div>
+    Totally <a href="/search">{{.}}</a> packages indexed.
+</div>
+{{end}}
 {{template "footer.html"}}
