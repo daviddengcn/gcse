@@ -103,8 +103,8 @@ func processImports() error {
 			log.Printf("Importing %d packages ...", len(pkgs))
 			for _, pkg := range pkgs {
 				pkg = strings.TrimSpace(pkg)
-				// appendPackage(pkg)
-				touchPackage(pkg)
+				appendPackage(pkg)
+				//touchPackage(pkg)
 			}
 		}
 
