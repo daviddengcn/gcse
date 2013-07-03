@@ -142,16 +142,7 @@ func deletePackage(pkg string) {
 	docDB.Delete(pkg)
 }
 
-func schedulePerson(site, username string, sTime time.Time) error {
-	id := gcc.IdOfPerson(site, username)
-	/*
-		err, _ := ddb.Get(id, &ent)
-		if err != nil {
-			log.Printf("  [scheduledPerson] crawler-person.Get(%s) failed: %v", id,
-				err)
-		}
-	*/
-
+func schedulePerson(id string, sTime time.Time) error {
 	var ent CrawlingEntry
 	ent.ScheduleTime = sTime
 
@@ -172,7 +163,7 @@ func appendPerson(site, username string) bool {
 		return false
 	}
 
-	return schedulePerson(site, username, time.Now()) == nil
+	return schedulePerson(id, time.Now()) == nil
 }
 
 func pushPackage(p *gcc.Package) (succ bool) {
@@ -230,9 +221,7 @@ func pushPerson(p *gcc.Person) (hasNewPkg bool) {
 		}
 	}
 
-	site, username := gcc.ParsePersonId(p.Id)
-
-	schedulePerson(site, username, time.Now().Add(time.Duration(
+	schedulePerson(p.Id, time.Now().Add(time.Duration(
 		float64(DefaultPersonAge)*(1+(rand.Float64()-0.5)*0.2))))
 
 	return
@@ -245,7 +234,7 @@ func CrawlEnetires() {
 		didSomething := false
 		var wg sync.WaitGroup
 
-		pkgs := listCrawlEntries(cPackageDB, -1)
+		pkgs := listCrawlEntries(cPackageDB, 200)
 		if len(pkgs) > 0 {
 			didSomething = true
 
@@ -269,6 +258,9 @@ func CrawlEnetires() {
 								log.Printf("Remove wrong package %s", pkg)
 							} else {
 								failCount ++
+								
+								schedulePackage(pkg, time.Now().Add(
+									12 * time.Hour))
 							}
 							continue
 						} else {
@@ -310,6 +302,8 @@ func CrawlEnetires() {
 						if err != nil {
 							failCount ++
 							log.Printf("Crawling person %s failed: %v", id, err)
+								
+							schedulePerson(id, time.Now().Add(12 * time.Hour))
 							continue
 						}
 
