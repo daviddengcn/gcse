@@ -4,15 +4,18 @@ import (
 	"fmt"
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/go-villa"
+	"strings"
 )
 
 type StatItem struct {
 	Name    string
 	Package string
+	Link    string // no package, specify a link
 	Info    string
 }
 type StatList struct {
 	Name  string
+	Info  string
 	Items []StatItem
 }
 
@@ -69,10 +72,7 @@ func statTops() []StatList {
 			len(b.(gcse.HitInfo).Imported))
 	}, N)
 
-	topStars := NewTopN(func(a, b interface{}) int {
-		return villa.IntValueCompare(a.(gcse.HitInfo).StarCount,
-			b.(gcse.HitInfo).StarCount)
-	}, N)
+	sites := make(map[string]int)
 
 	indexDB.Search(nil, func(docID int32, data interface{}) error {
 		hit := data.(gcse.HitInfo)
@@ -81,13 +81,19 @@ func statTops() []StatList {
 
 		topStaticScores.Append(hit)
 		topImported.Append(hit)
-		topStars.Append(hit)
+		
+		parts := strings.Split(hit.Package, "/")
+		if len(parts) > 0 {
+			site := strings.ToLower(parts[0])
+			sites[site] = sites[site] + 1
+		}
 
 		return nil
 	})
 
 	tlStaticScore := StatList{
 		Name:  "Hot",
+		Info:  "refs stars",
 		Items: make([]StatItem, 0, topStaticScores.Len()),
 	}
 	for _, item := range topStaticScores.PopAll() {
@@ -95,12 +101,13 @@ func statTops() []StatList {
 		tlStaticScore.Items = append(tlStaticScore.Items, StatItem{
 			Name:    hit.Name,
 			Package: hit.Package,
-			Info:    fmt.Sprintf("%d refs, %d stars", len(hit.Imported), hit.StarCount),
+			Info:    fmt.Sprintf("%d %d", len(hit.Imported), hit.StarCount),
 		})
 	}
 
 	tlImported := StatList{
 		Name:  "Most Imported",
+		Info:  "refs",
 		Items: make([]StatItem, 0, topImported.Len()),
 	}
 	for _, item := range topImported.PopAll() {
@@ -108,24 +115,32 @@ func statTops() []StatList {
 		tlImported.Items = append(tlImported.Items, StatItem{
 			Name:    hit.Name,
 			Package: hit.Package,
-			Info:    fmt.Sprintf("%d refs", len(hit.Imported)),
+			Info:    fmt.Sprintf("%d", len(hit.Imported)),
 		})
 	}
 
-	tlStars := StatList{
-		Name:  "Most Stars",
-		Items: make([]StatItem, 0, topImported.Len()),
+	topSites := NewTopN(func(a, b interface{}) int {
+		return villa.IntValueCompare(sites[a.(string)], sites[b.(string)])
+	}, N)
+	for site := range sites {
+		topSites.Append(site)
 	}
-	for _, item := range topStars.PopAll() {
-		hit := item.(gcse.HitInfo)
-		tlStars.Items = append(tlStars.Items, StatItem{
-			Name:    hit.Name,
-			Package: hit.Package,
-			Info:    fmt.Sprintf("%d stars", hit.StarCount),
+	tlSites := StatList {
+		Name: "Sites",
+		Info:  "packages",
+		Items: make([]StatItem, 0, topSites.Len()),
+	}
+	for _, st := range topSites.PopAll() {
+		site := st.(string)
+		cnt := sites[site]
+		tlSites.Items = append(tlSites.Items, StatItem {
+			Name: site,
+			Link: "http://" + site,
+			Info: fmt.Sprintf("%d", cnt),
 		})
 	}
 
 	return []StatList{
-		tlStaticScore, tlImported, tlStars,
+		tlStaticScore, tlImported, tlSites,
 	}
 }

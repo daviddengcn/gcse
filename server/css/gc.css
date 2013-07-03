@@ -155,27 +155,41 @@ pre.readme {
 
 div.toplist {
     float: left;
-    width: 251px;
+    width: 240px;
     background: #ddd;
     padding: 5px;
     margin-right: 5px;
+    margin-bottom: 5px;
 }
 
 div.toplist div.listname {
     border-bottom: 1px solid gray;
 }
 
+div.toplist div.line {
+    height: 20px;
+}
+
 div.toplist div.pkg {
     float: left;
-    width: 120px;
+    width: 170px;
+    height: 20px;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
+div.toplist div.pkg span {
+    display: inline-block;
+    width: 400px;
+}
+
 div.toplist div.info {
-    width: 110px;
+    width: 60px;
+    height: 20px;
+    text-align: right;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-size: 90%;
 }
 
 .clearboth {

@@ -2,10 +2,13 @@
 <div>
 {{range .}}
 <div class="toplist">
-    <div class="listname">{{.Name}}</div>
+    <div class="listname">
+        <div class="pkg">{{.Name}}</div>
+        <div class="info">{{.Info}}</div>
+    </div>
     {{range .Items}}
         <div class="line">
-            <div class="pkg"><a target="_blank" href="/view?id={{.Name}}">{{.Name}}</a></div>
+            <div class="pkg"><span>{{if .Package}}<a target="_blank" href="/view?id={{.Package}}">{{.Name}}</a>{{else}}<a target="_blank" href="{{.Link}}">{{.Name}}</a>{{end}}<span></div>
             <div class="info">{{.Info}}</div>
         </div>
     {{end}}
