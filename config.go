@@ -15,7 +15,7 @@ var (
 
 	ImportPath     villa.Path
 	ImportSegments Segments
-	
+
 	IndexPath     villa.Path
 	IndexSegments Segments
 )
@@ -30,7 +30,7 @@ func init() {
 	ImportPath = DataRoot.Join("imports")
 	ImportPath.MkdirAll(0755)
 	ImportSegments = segments(ImportPath)
-	
+
 	IndexPath = DataRoot.Join("index")
 	IndexPath.MkdirAll(0755)
 	IndexSegments = segments(IndexPath)

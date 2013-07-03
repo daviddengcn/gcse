@@ -1,18 +1,18 @@
 package main
 
 import (
-	"time"
+	"github.com/daviddengcn/gcse"
+	"github.com/daviddengcn/go-index"
+	"github.com/daviddengcn/go-villa"
 	"log"
 	"strings"
-	"github.com/daviddengcn/gcse"
-	"github.com/daviddengcn/go-villa"
-	"github.com/daviddengcn/go-index"
+	"time"
 )
 
 type Hit struct {
 	gcse.HitInfo
-	MatchScore   float64
-	Score        float64
+	MatchScore float64
+	Score      float64
 }
 
 type SearchResult struct {
@@ -32,34 +32,34 @@ func loadIndex() error {
 	if err != nil {
 		return err
 	}
-	
+
 	if indexSegment != nil && !gcse.SegmentLess(indexSegment, segm) {
 		// no new index
 		return nil
 	}
-	
+
 	db := &index.TokenSetSearcher{}
 	f, err := segm.Join(gcse.IndexFn).Open()
 	if err != nil {
 		return err
 	}
 	defer f.Close()
-	
+
 	if err := db.Load(f); err != nil {
 		return err
 	}
-	
+
 	indexSegment = segm
 	log.Printf("Load index from %v", segm)
-	
+
 	indexDB = db
 	return nil
 }
 
 func loadIndexLoop() {
 	for {
-		time.Sleep(30*time.Second)
-		
+		time.Sleep(30 * time.Second)
+
 		if err := loadIndex(); err != nil {
 			log.Printf("loadIndex failed: %v", err)
 		}
@@ -69,31 +69,31 @@ func loadIndexLoop() {
 func search(q string) (*SearchResult, villa.StrSet, error) {
 	tokens := gcse.AppendTokens(nil, q)
 	log.Printf("tokens for query %s: %v", q, tokens)
-	
+
 	if indexDB == nil {
-		return &SearchResult {}, tokens, nil
+		return &SearchResult{}, tokens, nil
 	}
-	
+
 	var hits []*Hit
-	
+
 	indexDB.Search(map[string]villa.StrSet{"text": tokens},
 		func(docID int32, data interface{}) error {
 			hitInfo, _ := data.(gcse.HitInfo)
-			hit := &Hit {
+			hit := &Hit{
 				HitInfo: hitInfo,
 			}
 			hit.StaticScore = gcse.CalcStaticScore(&hitInfo)
-			
+
 			hit.MatchScore = gcse.CalcMatchScore(&hitInfo, tokens)
-			
-			hit.Score = hit.StaticScore*hit.MatchScore
-			
+
+			hit.Score = hit.StaticScore * hit.MatchScore
+
 			hits = append(hits, hit)
 			return nil
 		})
-		
+
 	log.Printf("Got %d hits for query %q", len(hits), q)
-		
+
 	villa.SortF(len(hits), func(i, j int) bool {
 		// true if doc i is before doc j
 		ssi, ssj := hits[i].Score, hits[j].Score
@@ -125,8 +125,8 @@ func search(q string) (*SearchResult, villa.StrSet, error) {
 		// Swap
 		hits[i], hits[j] = hits[j], hits[i]
 	})
-	
-	return &SearchResult {
+
+	return &SearchResult{
 		TotalResults: len(hits),
 		Hits:         hits,
 	}, tokens, nil

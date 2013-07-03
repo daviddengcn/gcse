@@ -2,8 +2,8 @@ package gcse
 
 import (
 	"fmt"
-	"strconv"
 	"github.com/daviddengcn/go-villa"
+	"strconv"
 )
 
 type Segment interface {
@@ -59,8 +59,6 @@ func (s segment) Remove() error {
 	return villa.Path(s).RemoveAll()
 }
 
-
-
 type Segments interface {
 	ListAll() ([]Segment, error)
 	// all done
@@ -110,14 +108,14 @@ func (s segments) ListDones() ([]Segment, error) {
 			dones = append(dones, s)
 		}
 	}
-	
+
 	return dones, nil
 }
 
 func SegmentLess(a, b Segment) bool {
 	numA, errA := strconv.Atoi(a.Name())
 	numB, errB := strconv.Atoi(b.Name())
-	
+
 	if errA != nil {
 		if errB != nil {
 			// both non-numbers
@@ -126,8 +124,8 @@ func SegmentLess(a, b Segment) bool {
 		// non < number
 		return true
 	}
-	
-	if errB !=  nil {
+
+	if errB != nil {
 		// number > non
 		return false
 	}
@@ -146,7 +144,7 @@ func (s segments) FindMaxDone() (Segment, error) {
 			maxS = s
 		}
 	}
-	
+
 	return maxS, nil
 }
 
@@ -155,7 +153,7 @@ func (s segments) GenNewSegment() (Segment, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var nset villa.StrSet
 	for _, s := range curSs {
 		nset.Put(s.Name())
@@ -186,17 +184,17 @@ func (s segments) GenMaxSegment() (Segment, error) {
 			maxS = s
 		}
 	}
-	
+
 	if maxS == nil {
 		return newSegment(villa.Path(s).Join("0")), nil
 	}
-	
+
 	num, err := strconv.Atoi(maxS.Name())
 	if err != nil {
 		return newSegment(villa.Path(s).Join("0")), nil
 	}
-	
-	return  newSegment(villa.Path(s).Join(strconv.Itoa(num + 1))), nil
+
+	return newSegment(villa.Path(s).Join(strconv.Itoa(num + 1))), nil
 }
 
 func (s segments) ClearUndones() error {
@@ -211,6 +209,6 @@ func (s segments) ClearUndones() error {
 			}
 		}
 	}
-	
+
 	return nil
 }

@@ -19,7 +19,7 @@ func ReadImports(watcher *fsnotify.Watcher) {
 			if err := processImports(); err != nil {
 				log.Printf("scanImports failed: %v", err)
 			}
-			
+
 			all, _ := gcse.ImportSegments.ListAll()
 			if len(all) == 0 {
 				break
@@ -27,7 +27,7 @@ func ReadImports(watcher *fsnotify.Watcher) {
 
 			time.Sleep(5 * time.Second)
 		}
-		
+
 		select {
 		case <-watcher.Event:
 		//log.Println("Wather.Event: %v", ev)
@@ -40,8 +40,8 @@ func ReadImports(watcher *fsnotify.Watcher) {
 const (
 	fnDocDB     = "docdb"
 	fnCrawlerDB = "crawler"
-	
-	kindDocDB = "docdb"
+
+	kindDocDB   = "docdb"
 	kindImports = "imports"
 )
 
@@ -81,19 +81,19 @@ func syncLoop(gap time.Duration) {
 func main() {
 	docDB = gcse.NewMemDB(DocDBPath, kindDocDB)
 	importsDB = gcse.NewTokenIndexer(DocDBPath, kindImports)
-	
+
 	cPackageDB = gcse.NewMemDB(CrawlerDBPath, kindPackage)
 	cPersonDB = gcse.NewMemDB(CrawlerDBPath, kindPerson)
-	
+
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Fatal(err)
 	}
-	
+
 	go ReadImports(watcher)
 	go CrawlEnetires()
-	go syncLoop(10*time.Minute)
-	go indexLooop(1*time.Minute)
+	go syncLoop(10 * time.Minute)
+	go indexLooop(1 * time.Minute)
 
 	select {}
 }

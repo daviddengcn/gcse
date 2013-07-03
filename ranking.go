@@ -1,10 +1,10 @@
 package gcse
 
 import (
-	"math"
-	"strings"
 	"github.com/daviddengcn/go-code-crawl"
 	"github.com/daviddengcn/go-villa"
+	"math"
+	"strings"
 )
 
 func scoreOfPkgByProject(n int, sameProj bool) float64 {
@@ -12,7 +12,7 @@ func scoreOfPkgByProject(n int, sameProj bool) float64 {
 	if sameProj {
 		vl *= 0.1
 	}
-	
+
 	return vl
 }
 
@@ -21,7 +21,7 @@ func scoreOfPkgByAuthor(n int, sameAuthor bool) float64 {
 	if sameAuthor {
 		vl *= 0.5
 	}
-	
+
 	return vl
 }
 
@@ -29,10 +29,9 @@ func minFloat(a, b float64) float64 {
 	if a < b {
 		return a
 	}
-	
+
 	return b
 }
-
 
 func CalcStaticScore(doc *HitInfo) float64 {
 	s := float64(1)
@@ -58,7 +57,7 @@ func CalcStaticScore(doc *HitInfo) float64 {
 
 	for _, imp := range doc.Imported {
 		impProject := gcc.ProjectOfPackage(imp)
-		
+
 		vl := scoreOfPkgByProject(projectCount[impProject], impProject == project)
 
 		impAuthor := gcc.AuthorOfPackage(imp)
@@ -82,7 +81,7 @@ func CalcStaticScore(doc *HitInfo) float64 {
 			s += 0.4
 		}
 	}
-	
+
 	if doc.Name != "" && doc.Name != "main" {
 		s += 0.1
 	}
@@ -100,20 +99,19 @@ func matchToken(token string, text string, tokens villa.StrSet) bool {
 	if strings.Index(text, token) >= 0 {
 		return true
 	}
-	
+
 	if tokens.In(token) {
 		return true
 	}
-	
+
 	for tk := range tokens {
 		if strings.HasPrefix(tk, token) || strings.HasSuffix(tk, token) {
 			return true
 		}
 	}
-	
+
 	return false
 }
-
 
 func CalcMatchScore(doc *HitInfo, tokens villa.StrSet) float64 {
 	if len(tokens) == 0 {

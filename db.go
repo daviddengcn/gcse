@@ -2,12 +2,12 @@ package gcse
 
 import (
 	"encoding/gob"
-	"sync"
+	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/go-villa"
 	"log"
 	"os"
 	"reflect"
-	"github.com/daviddengcn/go-index"
+	"sync"
 )
 
 type MemDB struct {
@@ -15,7 +15,7 @@ type MemDB struct {
 	fn villa.Path
 	sync.RWMutex
 	syncMutex sync.Mutex
-	modified bool
+	modified  bool
 }
 
 func NewMemDB(root villa.Path, kind string) *MemDB {
@@ -27,14 +27,14 @@ func NewMemDB(root villa.Path, kind string) *MemDB {
 		if err := root.MkdirAll(0755); err != nil {
 			log.Printf("MkdirAll failed: %v", err)
 		}
-		
+
 		mdb.fn = root.Join(kind + ".gob")
-		
+
 		if err := mdb.Load(); err != nil {
 			log.Printf("Load MemDB %s failed: %v", kind, err)
 		}
 	}
-	
+
 	return mdb
 }
 
@@ -48,7 +48,7 @@ func (mdb *MemDB) Load() error {
 	}
 	mdb.Lock()
 	defer mdb.Unlock()
-	
+
 	f, err := mdb.fn.Open()
 	if err == os.ErrNotExist {
 		return nil
@@ -58,12 +58,12 @@ func (mdb *MemDB) Load() error {
 		return err
 	}
 	defer f.Close()
-	
+
 	dec := gob.NewDecoder(f)
 	if err := dec.Decode(&mdb.db); err != nil {
 		return err
 	}
-	
+
 	mdb.modified = false
 	return nil
 }
@@ -72,28 +72,28 @@ func (mdb *MemDB) Sync() error {
 	if mdb.fn == "" {
 		return nil
 	}
-	
+
 	mdb.RLock()
 	defer mdb.RUnlock()
-	
+
 	if !mdb.modified {
 		return nil
 	}
-	
+
 	mdb.syncMutex.Lock()
 	defer mdb.syncMutex.Unlock()
-	
+
 	f, err := mdb.fn.Create()
 	if err != nil {
 		return err
 	}
 	defer f.Close()
-	
+
 	enc := gob.NewEncoder(f)
 	if err := enc.Encode(mdb.db); err != nil {
 		return err
 	}
-	
+
 	mdb.modified = false
 	return nil
 }
@@ -101,13 +101,13 @@ func (mdb *MemDB) Sync() error {
 func (mdb *MemDB) Export(fn villa.Path) error {
 	mdb.RLock()
 	defer mdb.RUnlock()
-	
+
 	f, err := fn.Create()
 	if err != nil {
 		return err
 	}
 	defer f.Close()
-	
+
 	enc := gob.NewEncoder(f)
 	return enc.Encode(mdb.db)
 }
@@ -115,7 +115,7 @@ func (mdb *MemDB) Export(fn villa.Path) error {
 func (mdb *MemDB) Get(key string, data interface{}) bool {
 	mdb.RLock()
 	defer mdb.RUnlock()
-	
+
 	vl, ok := mdb.db[key]
 	if !ok {
 		return false
@@ -127,7 +127,7 @@ func (mdb *MemDB) Get(key string, data interface{}) bool {
 func (mdb *MemDB) Put(key string, data interface{}) {
 	mdb.Lock()
 	defer mdb.Unlock()
-	
+
 	mdb.db[key] = data
 	mdb.modified = true
 }
@@ -135,7 +135,7 @@ func (mdb *MemDB) Put(key string, data interface{}) {
 func (mdb *MemDB) Delete(key string) {
 	mdb.Lock()
 	defer mdb.Unlock()
-	
+
 	delete(mdb.db, key)
 	mdb.modified = true
 }
@@ -143,13 +143,13 @@ func (mdb *MemDB) Delete(key string) {
 func (mdb *MemDB) Iterate(output func(key string, val interface{}) error) error {
 	mdb.RLock()
 	defer mdb.RUnlock()
-	
+
 	for k, v := range mdb.db {
 		if err := output(k, v); err != nil {
 			return err
 		}
 	}
-	
+
 	return nil
 }
 
@@ -158,14 +158,14 @@ type TokenIndexer struct {
 	fn villa.Path
 	sync.RWMutex
 	syncMutex sync.Mutex
-	modified bool
+	modified  bool
 }
 
 func NewTokenIndexer(root villa.Path, kind string) *TokenIndexer {
 	if err := root.MkdirAll(0755); err != nil {
 		log.Printf("MkdirAll failed: %v", err)
 	}
-	
+
 	ti := &TokenIndexer{
 		fn: root.Join(kind + ".gob"),
 	}
@@ -179,7 +179,7 @@ func NewTokenIndexer(root villa.Path, kind string) *TokenIndexer {
 func (ti *TokenIndexer) Load() error {
 	ti.Lock()
 	defer ti.Unlock()
-	
+
 	f, err := ti.fn.Open()
 	if err == os.ErrNotExist {
 		return nil
@@ -189,11 +189,11 @@ func (ti *TokenIndexer) Load() error {
 		return err
 	}
 	defer f.Close()
-	
-	if err := ti.TokenIndexer.Load(f); err !=  nil {
+
+	if err := ti.TokenIndexer.Load(f); err != nil {
 		return err
 	}
-	
+
 	ti.modified = false
 	return nil
 }
@@ -201,24 +201,24 @@ func (ti *TokenIndexer) Load() error {
 func (ti *TokenIndexer) Sync() error {
 	ti.RLock()
 	defer ti.RUnlock()
-	
+
 	ti.syncMutex.Lock()
 	defer ti.syncMutex.Unlock()
-	
+
 	if !ti.modified {
 		return nil
 	}
-	
+
 	f, err := ti.fn.Create()
 	if err != nil {
 		return err
 	}
 	defer f.Close()
-	
+
 	if err := ti.TokenIndexer.Save(f); err != nil {
 		return err
 	}
-	
+
 	ti.modified = false
 	return nil
 }
@@ -226,20 +226,20 @@ func (ti *TokenIndexer) Sync() error {
 func (ti *TokenIndexer) Export(fn villa.Path) error {
 	ti.RLock()
 	defer ti.RUnlock()
-	
+
 	f, err := fn.Create()
 	if err != nil {
 		return err
 	}
 	defer f.Close()
-	
+
 	return ti.TokenIndexer.Save(f)
 }
-	
+
 func (ti *TokenIndexer) Put(id string, tokens villa.StrSet) {
 	ti.Lock()
 	defer ti.Unlock()
-	
+
 	ti.TokenIndexer.Put(id, tokens)
 	ti.modified = true
 }
@@ -247,13 +247,13 @@ func (ti *TokenIndexer) Put(id string, tokens villa.StrSet) {
 func (ti *TokenIndexer) IdsOfToken(token string) []string {
 	ti.RLock()
 	defer ti.RUnlock()
-	
+
 	return ti.TokenIndexer.IdsOfToken(token)
 }
 
 func (ti *TokenIndexer) TokensOfId(id string) []string {
 	ti.RLock()
 	defer ti.RUnlock()
-	
+
 	return ti.TokenIndexer.TokensOfId(id)
 }

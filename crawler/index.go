@@ -1,12 +1,12 @@
 package main
 
 import (
+	"errors"
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/go-villa"
 	"log"
 	"time"
-	"errors"
 )
 
 func needIndex() bool {
@@ -15,18 +15,18 @@ func needIndex() bool {
 		log.Printf("ListDones failed: %v", err)
 		return false
 	}
-	
+
 	if len(dones) == 0 {
 		log.Printf("To generate first index...")
 		return true
 	}
-	
+
 	maxDone, err := gcse.IndexSegments.FindMaxDone()
 	if err != nil {
 		log.Printf("FindMaxDone failed: %v", err)
 		return false
 	}
-	
+
 	fn := maxDone.Join(gcse.IndexFn)
 	fi, err := fn.Stat()
 	if err != nil {
@@ -34,7 +34,7 @@ func needIndex() bool {
 		return true
 	}
 	_ = fi.ModTime()
-	
+
 	return true
 }
 
@@ -47,19 +47,19 @@ func clearOutdatedIndex() error {
 	if err != nil {
 		return err
 	}
-	
+
 	for _, s := range all {
 		if s == segm {
 			continue
 		}
-		
+
 		err := s.Remove()
 		if err != nil {
 			return err
 		}
 		log.Printf("Segment %v deleted", s)
 	}
-	
+
 	return nil
 }
 
@@ -72,38 +72,38 @@ func doIndex() {
 		return
 	}
 	log.Printf("Indexing to %v ...", segm)
-	
+
 	ts := &index.TokenSetSearcher{}
-	
+
 	if err := docDB.Iterate(func(key string, val interface{}) error {
 		var hitInfo gcse.HitInfo
-		
+
 		var ok bool
 		hitInfo.DocInfo, ok = val.(gcse.DocInfo)
 		if !ok {
 			return errNotDocInfo
 		}
-		
+
 		hitInfo.Imports = importsDB.TokensOfId(hitInfo.Package)
 		hitInfo.Imported = importsDB.IdsOfToken(hitInfo.Package)
-		
+
 		var tokens villa.StrSet
 		tokens = gcse.AppendTokens(tokens, hitInfo.Name)
 		tokens = gcse.AppendTokens(tokens, hitInfo.Package)
 		tokens = gcse.AppendTokens(tokens, hitInfo.Description)
 		tokens = gcse.AppendTokens(tokens, hitInfo.ReadmeData)
 		tokens = gcse.AppendTokens(tokens, hitInfo.Author)
-		
+
 		ts.AddDoc(map[string]villa.StrSet{
 			"text": tokens,
-			"pkg": villa.NewStrSet(hitInfo.Package),
+			"pkg":  villa.NewStrSet(hitInfo.Package),
 		}, hitInfo)
 		return nil
 	}); err != nil {
 		log.Printf("Iterate failed: %v", err)
 		return
 	}
-	
+
 	f, err := segm.Join(gcse.IndexFn).Create()
 	if err != nil {
 		log.Printf("Create index file failed: %v", err)
@@ -114,15 +114,15 @@ func doIndex() {
 		log.Printf("ts.Save failed: %v", err)
 		return
 	}
-	
+
 	if err := segm.Done(); err != nil {
 		log.Printf("segm.Done failed: %v", err)
 		return
 	}
-	
+
 	log.Printf("Indexing success: %s", segm)
 }
-	
+
 func indexLooop(gap time.Duration) {
 	for {
 		if err := gcse.IndexSegments.ClearUndones(); err != nil {
@@ -134,7 +134,7 @@ func indexLooop(gap time.Duration) {
 			}
 			doIndex()
 		}
-		
+
 		time.Sleep(gap)
 	}
 }

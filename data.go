@@ -2,27 +2,27 @@ package gcse
 
 import (
 	"encoding/gob"
-	"time"
+	"github.com/agonopol/go-stem/stemmer"
 	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/go-villa"
-	"github.com/agonopol/go-stem/stemmer"
 	"regexp"
 	"strings"
+	"time"
 	"unicode"
 )
 
 type DocInfo struct {
-	Name         string
-	Package      string
-	Author       string
-	LastUpdated  time.Time
-	StarCount    int
-	Synopsis     string
-	Description  string
-	Imports      []string
-	ProjectURL   string
-	ReadmeFn     string
-	ReadmeData   string
+	Name        string
+	Package     string
+	Author      string
+	LastUpdated time.Time
+	StarCount   int
+	Synopsis    string
+	Description string
+	Imports     []string
+	ProjectURL  string
+	ReadmeFn    string
+	ReadmeData  string
 }
 
 type HitInfo struct {
@@ -47,7 +47,7 @@ func isTermSep(r rune) bool {
 	return unicode.IsSpace(r) || unicode.IsPunct(r) || unicode.IsSymbol(r)
 }
 
-var stemBlackList = map[string]string {
+var stemBlackList = map[string]string{
 	"ide":      "ide",
 	"generics": "generic",
 	"generic":  "generic",
@@ -66,8 +66,6 @@ func NormWord(word string) string {
 var stopWords = villa.NewStrSet([]string{
 	"the", "on", "in", "as",
 }...)
-
-
 
 func CheckRuneType(last, current rune) index.RuneType {
 	if isTermSep(current) {
@@ -125,7 +123,7 @@ func CheckCamel(last, current rune) index.RuneType {
 
 func AppendTokens(tokens villa.StrSet, text string) villa.StrSet {
 	text = filterURLs(text)
-	
+
 	lastToken := ""
 	index.Tokenize(CheckRuneType, villa.NewPByteSlice([]byte(text)), func(token []byte) error {
 		tokenStr := string(token)

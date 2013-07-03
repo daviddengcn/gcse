@@ -91,11 +91,29 @@ div.pages {
 
 header {
     border-bottom: 1px solid gray;
+    margin-top: 5px;
     margin-bottom: 10px;
+    height: 25px;
 }
 
 header a, footer a {
     text-decoration: none;
+}
+
+div.hdsch {
+    float: right;
+    margin-top: -2px;
+}
+
+div.hdsch input[type="search"] {
+    background: #ddd;
+    width: 80px;
+    transition: width 0.1s ease-in;
+}
+
+div.hdsch input[type="search"]:focus {
+    background: white;
+    width: 300px;
 }
 
 footer {
@@ -133,4 +151,33 @@ div.desc pre {
 
 pre.readme {
     font-size: 13px;
+}
+
+div.toplist {
+    float: left;
+    width: 251px;
+    background: #ddd;
+    padding: 5px;
+    margin-right: 5px;
+}
+
+div.toplist div.listname {
+    border-bottom: 1px solid gray;
+}
+
+div.toplist div.pkg {
+    float: left;
+    width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+div.toplist div.info {
+    width: 110px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.clearboth {
+    clear: both;
 }

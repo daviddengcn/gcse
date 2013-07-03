@@ -2,26 +2,26 @@ package main
 
 import (
 	"encoding/gob"
+	"errors"
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/gddo/doc"
 	"github.com/daviddengcn/go-code-crawl"
-	"time"
 	"log"
-	"errors"
-	"sync"
-	"strings"
 	"math/rand"
+	"strings"
+	"sync"
+	"time"
 )
 
 var (
 	cPackageDB *gcse.MemDB
-	cPersonDB *gcse.MemDB
+	cPersonDB  *gcse.MemDB
 )
 
 const (
 	DefaultPackageAge = 10 * 24 * time.Hour
 	DefaultPersonAge  = 10 * 24 * time.Hour
-	
+
 	kindPackage = "package"
 	kindPerson  = "person"
 )
@@ -32,7 +32,7 @@ type CrawlingEntry struct {
 
 func init() {
 	gob.Register(CrawlingEntry{})
-	
+
 	doc.SetGithubCredentials("94446b37edb575accd8b",
 		"15f55815f0515a3f6ad057aaffa9ea83dceb220b")
 	doc.SetUserAgent("Go-Code-Search-Agent")
@@ -40,7 +40,7 @@ func init() {
 
 func schedulePackage(pkg string, sTime time.Time) error {
 	var ent CrawlingEntry
-	
+
 	ent.ScheduleTime = sTime
 	cPackageDB.Put(pkg, ent)
 
@@ -54,7 +54,7 @@ func appendPackage(pkg string) bool {
 		// log.Printf("  [appendPackage] Not a valid remote path: %s", pkg)
 		return false
 	}
-	
+
 	var ent CrawlingEntry
 	exists := cPackageDB.Get(pkg, &ent)
 	if exists {
@@ -96,11 +96,11 @@ func processImports() error {
 				appendPackage(pkg)
 			}
 		}
-		
+
 		if err := cPackageDB.Sync(); err != nil {
 			log.Printf("crawlerDB.Sync failed: %v", err)
 		}
-		
+
 		if err := s.Remove(); err != nil {
 			log.Printf("s.Remove failed: %v", err)
 		}
@@ -121,19 +121,19 @@ func listCrawlEntries(db *gcse.MemDB, l int) (ids []string) {
 		if !ok {
 			return nil
 		}
-		
+
 		if ent.ScheduleTime.After(now) {
 			return nil
 		}
-		
+
 		ids = append(ids, id)
-		
+
 		if l > 0 && len(ids) >= l {
 			return errStop
 		}
 		return nil
 	})
-	
+
 	return ids
 }
 
@@ -177,7 +177,7 @@ func appendPerson(site, username string) bool {
 
 func pushPackage(p *gcc.Package) (succ bool) {
 	// copy Package as a DocInfo
-	d := gcse.DocInfo {
+	d := gcse.DocInfo{
 		Name:        p.Name,
 		Package:     p.ImportPath,
 		Synopsis:    p.Synopsis,
@@ -196,19 +196,19 @@ func pushPackage(p *gcc.Package) (succ bool) {
 			d.Imports = append(d.Imports, imp)
 		}
 	}
-	
+
 	if err := processDocument(&d); err != nil {
 		log.Printf("processDocument %s failed: %v", d.Package, err)
 		return false
 	}
 
-	// append new authors	
+	// append new authors
 	if strings.HasPrefix(d.Package, "github.com/") {
 		appendPerson("github.com", d.Author)
 	} else if strings.HasPrefix(d.Package, "bitbucket.org/") {
 		appendPerson("bitbucket.org", d.Author)
 	}
-	
+
 	for _, imp := range d.Imports {
 		appendPackage(imp)
 	}
@@ -218,8 +218,8 @@ func pushPackage(p *gcc.Package) (succ bool) {
 	}
 
 	schedulePackage(d.Package, time.Now().Add(time.Duration(
-		float64(DefaultPackageAge) * (1 + (rand.Float64() - 0.5) * 0.2))))
-	
+		float64(DefaultPackageAge)*(1+(rand.Float64()-0.5)*0.2))))
+
 	return true
 }
 
@@ -233,30 +233,31 @@ func pushPerson(p *gcc.Person) (hasNewPkg bool) {
 	site, username := gcc.ParsePersonId(p.Id)
 
 	schedulePerson(site, username, time.Now().Add(time.Duration(
-		float64(DefaultPersonAge) * (1 + (rand.Float64() - 0.5) * 0.2))))
+		float64(DefaultPersonAge)*(1+(rand.Float64()-0.5)*0.2))))
 
 	return
 }
 
 func CrawlEnetires() {
 	httpClient := gcc.GenHttpClient("")
-	
+
 	for {
 		didSomething := false
 		var wg sync.WaitGroup
-		
+
 		pkgs := listCrawlEntries(cPackageDB, -1)
 		if len(pkgs) > 0 {
 			didSomething = true
-			
+
 			groups := gcc.GroupPackages(pkgs)
 			log.Printf("Crawling %d groups, %d packages: %v", len(groups),
 				len(pkgs), groups)
-			
+
 			wg.Add(len(groups))
-			
+
 			for _, pkgs := range groups {
 				go func(pkgs []string) {
+					failCount := 0
 					for _, pkg := range pkgs {
 						p, err := gcc.CrawlPackage(httpClient, pkg)
 						if err != nil {
@@ -266,36 +267,48 @@ func CrawlEnetires() {
 								// a wrong path
 								deletePackage(pkg)
 								log.Printf("Remove wrong package %s", pkg)
+							} else {
+								failCount ++
 							}
 							continue
+						} else {
+							failCount = 0
 						}
 
 						log.Printf("Crawled package %s success!", pkg)
 
 						pushPackage(p)
 						log.Printf("Package %s saved!", pkg)
+						
+						if failCount >= 10 {
+							log.Printf("Last ten crawling failed, sleep for a while...")
+							time.Sleep(2 * time.Minute)
+							failCount = 0
+						}
 					}
 
 					wg.Done()
 				}(pkgs)
 			}
 		}
-		
+
 		persons := listCrawlEntries(cPersonDB, -1)
 		if len(persons) > 0 {
 			didSomething = true
-			
+
 			groups := gcc.GroupPersons(persons)
-			log.Printf("persons: %v, %d groups, %d persons", groups, 
+			log.Printf("persons: %v, %d groups, %d persons", groups,
 				len(groups), len(persons))
 
 			wg.Add(len(groups))
 
 			for _, ids := range groups {
 				go func(ids []string) {
+					failCount := 0
 					for _, id := range ids {
 						p, err := gcc.CrawlPerson(httpClient, id)
 						if err != nil {
+							failCount ++
 							log.Printf("Crawling person %s failed: %v", id, err)
 							continue
 						}
@@ -303,6 +316,12 @@ func CrawlEnetires() {
 						log.Printf("Crawled person %s success!", id)
 						pushPerson(p)
 						log.Printf("Push person %s success", id)
+						
+						if failCount >= 10 {
+							log.Printf("Last ten crawling failed, sleep for a while...")
+							time.Sleep(2 * time.Minute)
+							failCount = 0
+						}
 					}
 
 					wg.Done()
@@ -310,12 +329,12 @@ func CrawlEnetires() {
 			}
 		}
 		wg.Wait()
-		
+
 		syncDatabases()
-		
+
 		if !didSomething {
 			log.Printf("Nothing to crawl sleep for a while...")
-			time.Sleep(60 * time.Second)
+			time.Sleep(2 * time.Minute)
 		}
 	}
 }

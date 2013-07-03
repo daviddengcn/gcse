@@ -1,0 +1,15 @@
+{{template "header.html" "Top"}}
+<div>
+{{range .}}
+<div class="toplist">
+    <div class="listname">{{.Name}}</div>
+    {{range .Items}}
+        <div class="line">
+            <div class="pkg"><a target="_blank" href="/view?id={{.Name}}">{{.Name}}</a></div>
+            <div class="info">{{.Info}}</div>
+        </div>
+    {{end}}
+</div>
+{{end}}
+<div class="clearboth"></div>
+{{template "footer.html"}}
