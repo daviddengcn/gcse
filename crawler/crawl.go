@@ -70,6 +70,16 @@ func appendPackage(pkg string) bool {
 	return schedulePackage(pkg, time.Now()) == nil
 }
 
+func touchPackage(pkg string) bool {
+	pkg = strings.TrimSpace(pkg)
+	if !doc.IsValidRemotePath(pkg) {
+		// log.Printf("  [appendPackage] Not a valid remote path: %s", pkg)
+		return false
+	}
+
+	return schedulePackage(pkg, time.Now()) == nil
+}
+
 func processImports() error {
 	segments, err := gcse.ImportSegments.ListDones()
 	if err != nil {
@@ -93,7 +103,8 @@ func processImports() error {
 			log.Printf("Importing %d packages ...", len(pkgs))
 			for _, pkg := range pkgs {
 				pkg = strings.TrimSpace(pkg)
-				appendPackage(pkg)
+				// appendPackage(pkg)
+				touchPackage(pkg)
 			}
 		}
 
