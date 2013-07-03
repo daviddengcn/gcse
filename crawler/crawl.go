@@ -255,8 +255,8 @@ func CrawlEnetires() {
 
 			wg.Add(len(groups))
 
-			for _, pkgs := range groups {
-				go func(pkgs []string) {
+			for host, pkgs := range groups {
+				go func(host string, pkgs []string) {
 					failCount := 0
 					for _, pkg := range pkgs {
 						p, err := gcc.CrawlPackage(httpClient, pkg)
@@ -284,14 +284,15 @@ func CrawlEnetires() {
 						log.Printf("Package %s saved!", pkg)
 						
 						if failCount >= 10 {
-							log.Printf("Last ten crawling failed, sleep for a while...")
+							log.Printf("Last ten crawling %s packages failed, sleep for a while...",
+								host)
 							time.Sleep(2 * time.Minute)
 							failCount = 0
 						}
 					}
 
 					wg.Done()
-				}(pkgs)
+				}(host, pkgs)
 			}
 		}
 
@@ -305,8 +306,8 @@ func CrawlEnetires() {
 
 			wg.Add(len(groups))
 
-			for _, ids := range groups {
-				go func(ids []string) {
+			for host, ids := range groups {
+				go func(host string, ids []string) {
 					failCount := 0
 					for _, id := range ids {
 						p, err := gcc.CrawlPerson(httpClient, id)
@@ -323,14 +324,15 @@ func CrawlEnetires() {
 						log.Printf("Push person %s success", id)
 						
 						if failCount >= 10 {
-							log.Printf("Last ten crawling failed, sleep for a while...")
+							log.Printf("Last ten crawling %s persons failed, sleep for a while...",
+								host)
 							time.Sleep(2 * time.Minute)
 							failCount = 0
 						}
 					}
 
 					wg.Done()
-				}(ids)
+				}(host, ids)
 			}
 		}
 		wg.Wait()
