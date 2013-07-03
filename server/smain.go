@@ -274,6 +274,7 @@ func pageSearch(w http.ResponseWriter, r *http.Request) {
 		NextPage    int
 		AfterPages  []int
 		BottomQ     bool
+		TotalPages  int
 	}{
 		Q:           q,
 		Results:     showResults,
@@ -284,6 +285,7 @@ func pageSearch(w http.ResponseWriter, r *http.Request) {
 		NextPage:    nextPage,
 		AfterPages:  afterPages,
 		BottomQ:     len(results.Hits) >= 5,
+		TotalPages:  totalPages,
 	}
 	log.Printf("Search results ready")
 	err = templates.ExecuteTemplate(w, "search.html", data)

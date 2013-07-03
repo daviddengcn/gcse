@@ -8,7 +8,11 @@
 </div>
 <div class="content">
     <div>
-        Total {{.Results.TotalResults}} projects{{if .Results.Folded}} ({{.Results.Folded}} folded){{end}}
+        {{if .Results.TotalResults}}
+            Total {{.Results.TotalResults}} packages{{if .Results.Folded}} ({{.Results.Folded}} folded){{end}}
+        {{else}}
+            No packages
+        {{end}}
         related to "{{.Q}}", {{.SearchTime}}
     </div>
     <ol class="schres">
@@ -38,6 +42,7 @@
         {{end}}
     </ol>
 </div>
+{{if .TotalPages}}
 <div class="pages">{{$q := .Q}}
     <span class="prevpage">{{with .PrevPage}}<a href="?q={{$q}}&p={{.}}"> « </a>{{end}}</span>
     {{range .BeforePages}}
@@ -49,6 +54,7 @@
     {{end}}
     <span class="prevpage">{{with .NextPage}}<a href="?q={{$q}}&p={{.}}"> » </a>{{end}}</span>
 </div>
+{{end}}
 {{if .BottomQ}}
 <div>
     <form>
