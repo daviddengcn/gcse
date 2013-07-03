@@ -2,10 +2,12 @@ package main
 
 import (
 	"encoding/gob"
+	"encoding/json"
 	"errors"
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/gddo/doc"
 	"github.com/daviddengcn/go-code-crawl"
+	"net/http"
 	"log"
 	"math/rand"
 	"strings"
@@ -238,6 +240,48 @@ func pushPerson(p *gcc.Person) (hasNewPkg bool) {
 	return
 }
 
+const (
+	godocApiUrl = "http://api.godoc.org/packages"
+	godocCrawlGap = 4 * time.Hour
+)
+var (
+	godocLastCrawled time.Time
+)
+
+func processGodoc(httpClient *http.Client) bool {
+	if time.Now().Before(godocLastCrawled.Add(godocCrawlGap)) {
+		return false
+	}
+	
+	resp, err := httpClient.Get(godocApiUrl)
+	if err != nil {
+		log.Printf("Get %s failed: %v", godocApiUrl, err)
+		return false
+	}
+	if resp.StatusCode != 200 {
+		log.Printf("StatusCode: %d", resp.StatusCode)
+		return false
+	}
+	defer resp.Body.Close()
+	
+	godocLastCrawled = time.Now()
+
+	var results map[string][]map[string]string
+	dec := json.NewDecoder(resp.Body)
+	err = dec.Decode(&results)
+	if err != nil {
+		log.Printf("Parse results failed: %v", err)
+		return false
+	}
+
+	for _, res := range results["results"] {
+		pkg := res["path"]
+		appendPackage(pkg)
+	}
+	
+	return true
+}
+
 func CrawlEnetires() {
 	httpClient := gcc.GenHttpClient("")
 
@@ -338,6 +382,10 @@ func CrawlEnetires() {
 		wg.Wait()
 
 		syncDatabases()
+		
+		if processGodoc(httpClient) {
+			didSomething = true
+		}
 
 		if !didSomething {
 			log.Printf("Nothing to crawl sleep for a while...")
