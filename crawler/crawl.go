@@ -66,7 +66,7 @@ func appendPackage(pkg string) bool {
 		exists := docDB.Get(pkg, &di)
 		if exists {
 			// already scheduled
-			log.Printf("  [appendPackage] Package %s was scheduled to %v", pkg, ent.ScheduleTime)
+			//log.Printf("  [appendPackage] Package %s was scheduled to %v", pkg, ent.ScheduleTime)
 			return false
 		}
 	}

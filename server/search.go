@@ -32,9 +32,10 @@ var (
 
 func loadIndex() error {
 	segm, err := gcse.IndexSegments.FindMaxDone()
-	if err != nil {
+	if segm == nil || err != nil {
 		return err
 	}
+	
 
 	if indexSegment != nil && !gcse.SegmentLess(indexSegment, segm) {
 		// no new index
