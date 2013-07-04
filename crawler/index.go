@@ -66,6 +66,7 @@ func clearOutdatedIndex() error {
 var errNotDocInfo = errors.New("Value is not DocInfo")
 
 func doIndex() {
+	dumpMemStats()
 	segm, err := gcse.IndexSegments.GenMaxSegment()
 	if err != nil {
 		log.Printf("GenMaxSegment failed: %v", err)
@@ -121,6 +122,7 @@ func doIndex() {
 	}
 
 	log.Printf("Indexing success: %s", segm)
+	dumpMemStats()
 }
 
 func indexLooop(gap time.Duration) {
