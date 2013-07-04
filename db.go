@@ -4,11 +4,11 @@ import (
 	"encoding/gob"
 	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/go-villa"
+	"io"
 	"log"
 	"os"
 	"reflect"
 	"sync"
-	"io"
 )
 
 type MemDB struct {
@@ -69,7 +69,6 @@ func (mdb *MemDB) Load() error {
 	return nil
 }
 
-
 func safeSave(fn villa.Path, doSave func(w io.Writer) error) error {
 	tmpFn := fn + ".new"
 	if err := func() error {
@@ -78,22 +77,21 @@ func safeSave(fn villa.Path, doSave func(w io.Writer) error) error {
 			return err
 		}
 		defer f.Close()
-	
+
 		return doSave(f)
 	}(); err != nil {
 		return err
 	}
-	
+
 	if err := fn.Remove(); err != nil {
 		return err
 	}
 	if err := tmpFn.Rename(fn); err != nil {
 		return err
 	}
-	
+
 	return nil
 }
-
 
 func (mdb *MemDB) Sync() error {
 	if mdb.fn == "" {
@@ -110,7 +108,7 @@ func (mdb *MemDB) Sync() error {
 
 	mdb.syncMutex.Lock()
 	defer mdb.syncMutex.Unlock()
-	
+
 	if err := safeSave(mdb.fn, func(w io.Writer) error {
 		enc := gob.NewEncoder(w)
 		return enc.Encode(mdb.db)

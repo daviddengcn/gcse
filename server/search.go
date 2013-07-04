@@ -93,10 +93,8 @@ func search(q string) (*SearchResult, villa.StrSet, error) {
 			hit := &Hit{
 				HitInfo: hitInfo,
 			}
-			hit.StaticScore = gcse.CalcStaticScore(&hitInfo)
-
+			
 			hit.MatchScore = gcse.CalcMatchScore(&hitInfo, tokens)
-
 			hit.Score = hit.StaticScore * hit.MatchScore
 
 			hits = append(hits, hit)

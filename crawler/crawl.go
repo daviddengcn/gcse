@@ -6,7 +6,6 @@ import (
 	"errors"
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/gddo/doc"
-	"github.com/daviddengcn/go-code-crawl"
 	"net/http"
 	"log"
 	"math/rand"
@@ -30,6 +29,7 @@ const (
 
 type CrawlingEntry struct {
 	ScheduleTime time.Time
+	Etag         string
 }
 
 func init() {
@@ -40,10 +40,12 @@ func init() {
 	doc.SetUserAgent("Go-Code-Search-Agent")
 }
 
-func schedulePackage(pkg string, sTime time.Time) error {
-	var ent CrawlingEntry
+func schedulePackage(pkg string, sTime time.Time, etag string) error {
+	ent := CrawlingEntry {
+		ScheduleTime: sTime,
+		Etag:         etag,
+	}
 
-	ent.ScheduleTime = sTime
 	cPackageDB.Put(pkg, ent)
 
 	log.Printf("Schedule package %s to %v", pkg, sTime)
@@ -69,7 +71,8 @@ func appendPackage(pkg string) bool {
 		}
 	}
 
-	return schedulePackage(pkg, time.Now()) == nil
+	// if the package doesn't exist in docDB, Etag is discarded
+	return schedulePackage(pkg, time.Now(), "") == nil
 }
 
 func touchPackage(pkg string) bool {
@@ -79,9 +82,11 @@ func touchPackage(pkg string) bool {
 		return false
 	}
 
-	return schedulePackage(pkg, time.Now()) == nil
+	// set Etag to "" to force updating
+	return schedulePackage(pkg, time.Now(), "") == nil
 }
 
+// processing sumitted packages (from go-search.org/add path)
 func processImports() error {
 	segments, err := gcse.ImportSegments.ListDones()
 	if err != nil {
@@ -124,12 +129,17 @@ func processImports() error {
 
 var errStop = errors.New("Stop")
 
+type EntryInfo struct {
+	ID   string
+	Etag string
+}
+
 func listCrawlEntriesByHost(db *gcse.MemDB, hostFromID func(id string) string,
-	maxHosts, numPerHost int) (groups map[string][]string) {
+	maxHosts, numPerHost int) (groups map[string][]EntryInfo) {
 	now := time.Now()
-	groups = make(map[string][]string)
+	groups = make(map[string][]EntryInfo)
 	fullGroups := 0
-	db.Iterate(func(pkg string, val interface{}) error {
+	db.Iterate(func(id string, val interface{}) error {
 		ent, ok := val.(CrawlingEntry)
 		if !ok {
 			return nil
@@ -139,26 +149,29 @@ func listCrawlEntriesByHost(db *gcse.MemDB, hostFromID func(id string) string,
 			return nil
 		}
 
-		host := hostFromID(pkg)
-		pkgs := groups[host]
+		host := hostFromID(id)
+		entryInfos := groups[host]
 		if maxHosts > 0 {
 			// check host limit
-			if len(pkgs) == 0 && len(groups) == maxHosts {
+			if len(entryInfos) == 0 && len(groups) == maxHosts {
 				// no quota for new group
 				return nil
 			}
 		}
 		if numPerHost > 0 {
 			// check per host limit
-			if len(pkgs) == numPerHost - 1 {
+			if len(entryInfos) == numPerHost - 1 {
 				// this group is about to be full, count it
 				fullGroups ++
-			} else if len(pkgs) == numPerHost {
+			} else if len(entryInfos) == numPerHost {
 				// no quota for this group
 				return nil
 			}
 		}
-		groups[host] = append(pkgs, pkg)
+		groups[host] = append(entryInfos, EntryInfo{
+			ID:   id,
+			Etag: ent.Etag,
+		})
 		
 		if fullGroups == maxHosts {
 			return errStop
@@ -169,13 +182,13 @@ func listCrawlEntriesByHost(db *gcse.MemDB, hostFromID func(id string) string,
 	return groups
 }
 
-func listPackagesByHost(maxHosts, numPerHost int) (groups map[string][]string) {
-	return listCrawlEntriesByHost(cPackageDB, gcc.HostOfPackage, maxHosts, numPerHost)
+func listPackagesByHost(maxHosts, numPerHost int) (groups map[string][]EntryInfo) {
+	return listCrawlEntriesByHost(cPackageDB, gcse.HostOfPackage, maxHosts, numPerHost)
 }
 
-func listPersonsByHost(maxHosts, numPerHost int) (groups map[string][]string) {
+func listPersonsByHost(maxHosts, numPerHost int) (groups map[string][]EntryInfo) {
 	return listCrawlEntriesByHost(cPersonDB, func(id string) string {
-		site, _ := gcc.ParsePersonId(id)
+		site, _ := gcse.ParsePersonId(id)
 		return site
 	}, maxHosts, numPerHost)
 }
@@ -196,7 +209,7 @@ func schedulePerson(id string, sTime time.Time) error {
 }
 
 func appendPerson(site, username string) bool {
-	id := gcc.IdOfPerson(site, username)
+	id := gcse.IdOfPerson(site, username)
 
 	var ent CrawlingEntry
 	exists := cPersonDB.Get(id, &ent)
@@ -209,15 +222,22 @@ func appendPerson(site, username string) bool {
 	return schedulePerson(id, time.Now()) == nil
 }
 
-func pushPackage(p *gcc.Package) (succ bool) {
+func schedulePackageNextCrawl(pkg string, etag string) {
+	schedulePackage(pkg, time.Now().Add(time.Duration(
+		float64(DefaultPackageAge)*(1+(rand.Float64()-0.5)*0.2))), etag)
+
+}
+
+// push crawled Package to docDB as DocInfo
+func pushPackage(p *gcse.Package) (succ bool) {
 	// copy Package as a DocInfo
 	d := gcse.DocInfo{
+		Package:     p.Package,
 		Name:        p.Name,
-		Package:     p.ImportPath,
 		Synopsis:    p.Synopsis,
 		Description: p.Doc,
 		LastUpdated: time.Now(),
-		Author:      gcc.AuthorOfPackage(p.ImportPath),
+		Author:      gcse.AuthorOfPackage(p.Package),
 		ProjectURL:  p.ProjectURL,
 		StarCount:   p.StarCount,
 		ReadmeFn:    p.ReadmeFn,
@@ -250,14 +270,13 @@ func pushPackage(p *gcc.Package) (succ bool) {
 	for _, ref := range p.References {
 		appendPackage(ref)
 	}
-
-	schedulePackage(d.Package, time.Now().Add(time.Duration(
-		float64(DefaultPackageAge)*(1+(rand.Float64()-0.5)*0.2))))
+	
+	schedulePackageNextCrawl(d.Package, p.Etag)
 
 	return true
 }
 
-func pushPerson(p *gcc.Person) (hasNewPkg bool) {
+func pushPerson(p *gcse.Person) (hasNewPkg bool) {
 	for _, pkg := range p.Packages {
 		if appendPackage(pkg) {
 			hasNewPkg = true
@@ -313,7 +332,7 @@ func processGodoc(httpClient *http.Client) bool {
 }
 
 func CrawlEnetires() {
-	httpClient := gcc.GenHttpClient("")
+	httpClient := gcse.GenHttpClient("")
 
 	for {
 		didSomething := false
@@ -327,23 +346,27 @@ func CrawlEnetires() {
 
 			wg.Add(len(pkgGroups))
 
-			for host, pkgs := range pkgGroups {
-				go func(host string, pkgs []string) {
+			for host, ents := range pkgGroups {
+				go func(host string, ents []EntryInfo) {
 					failCount := 0
-					for _, pkg := range pkgs {
-						p, err := gcc.CrawlPackage(httpClient, pkg)
+					for _, ent := range ents {
+						p, err := gcse.CrawlPackage(httpClient, ent.ID, ent.Etag)
+						if err == gcse.ErrPackageNotModifed {
+							log.Printf("Package %s unchanged!", ent.ID)
+							schedulePackageNextCrawl(ent.ID, ent.Etag)
+						}
 						if err != nil {
-							log.Printf("Crawling pkg %s failed: %v", pkg, err)
+							log.Printf("Crawling pkg %s failed: %v", ent.ID, err)
 
-							if gcc.IsBadPackage(err) {
+							if gcse.IsBadPackage(err) {
 								// a wrong path
-								deletePackage(pkg)
-								log.Printf("Remove wrong package %s", pkg)
+								deletePackage(ent.ID)
+								log.Printf("Remove wrong package %s", ent.ID)
 							} else {
 								failCount ++
 								
-								schedulePackage(pkg, time.Now().Add(
-									12 * time.Hour))
+								schedulePackage(ent.ID, time.Now().Add(
+									12 * time.Hour), ent.Etag)
 									
 								if failCount >= 10 {
 									log.Printf("Last ten crawling %s packages failed, sleep for a while...",
@@ -357,14 +380,14 @@ func CrawlEnetires() {
 							failCount = 0
 						}
 
-						log.Printf("Crawled package %s success!", pkg)
+						log.Printf("Crawled package %s success!", ent.ID)
 
 						pushPackage(p)
-						log.Printf("Package %s saved!", pkg)
+						log.Printf("Package %s saved!", ent.ID)
 					}
 
 					wg.Done()
-				}(host, pkgs)
+				}(host, ents)
 			}
 		}
 
@@ -376,16 +399,16 @@ func CrawlEnetires() {
 
 			wg.Add(len(personGroups))
 
-			for host, ids := range personGroups {
-				go func(host string, ids []string) {
+			for host, ents := range personGroups {
+				go func(host string, ents []EntryInfo) {
 					failCount := 0
-					for _, id := range ids {
-						p, err := gcc.CrawlPerson(httpClient, id)
+					for _, ent := range ents {
+						p, err := gcse.CrawlPerson(httpClient, ent.ID)
 						if err != nil {
 							failCount ++
-							log.Printf("Crawling person %s failed: %v", id, err)
+							log.Printf("Crawling person %s failed: %v", ent.ID, err)
 								
-							schedulePerson(id, time.Now().Add(12 * time.Hour))
+							schedulePerson(ent.ID, time.Now().Add(12 * time.Hour))
 							
 							if failCount >= 10 {
 								log.Printf("Last ten crawling %s persons failed, sleep for a while...",
@@ -396,13 +419,13 @@ func CrawlEnetires() {
 							continue
 						}
 
-						log.Printf("Crawled person %s success!", id)
+						log.Printf("Crawled person %s success!", ent.ID)
 						pushPerson(p)
-						log.Printf("Push person %s success", id)
+						log.Printf("Push person %s success", ent.ID)
 					}
 
 					wg.Done()
-				}(host, ids)
+				}(host, ents)
 			}
 		}
 		wg.Wait()

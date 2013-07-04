@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"github.com/daviddengcn/gcse"
-	"github.com/daviddengcn/go-code-crawl"
 	"github.com/daviddengcn/go-villa"
 	"strings"
 )
@@ -78,12 +77,11 @@ func statTops() []StatList {
 	indexDB.Search(nil, func(docID int32, data interface{}) error {
 		hit := data.(gcse.HitInfo)
 		hit.Name = packageShowName(hit.Name, hit.Package)
-		hit.StaticScore = gcse.CalcStaticScore(&hit)
 
 		topStaticScores.Append(hit)
 		topImported.Append(hit)
 		
-		host := strings.ToLower(gcc.HostOfPackage(hit.Package))
+		host := strings.ToLower(gcse.HostOfPackage(hit.Package))
 		if host != "" {
 			sites[host] = sites[host] + 1
 		}

@@ -87,11 +87,9 @@ func doIndex() {
 		if !ok {
 			return errNotDocInfo
 		}
+		hitInfo.Imported = importsDB.IdsOfToken(hitInfo.Package)
 		
 		hitInfo.StaticScore = gcse.CalcStaticScore(&hitInfo)
-
-		hitInfo.Imports = importsDB.TokensOfId(hitInfo.Package)
-		hitInfo.Imported = importsDB.IdsOfToken(hitInfo.Package)
 
 		var tokens villa.StrSet
 		tokens = gcse.AppendTokens(tokens, hitInfo.Name)

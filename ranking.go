@@ -1,7 +1,6 @@
 package gcse
 
 import (
-	"github.com/daviddengcn/go-code-crawl"
 	"github.com/daviddengcn/go-villa"
 	"math"
 	"strings"
@@ -38,29 +37,29 @@ func CalcStaticScore(doc *HitInfo) float64 {
 
 	author := doc.Author
 	if author == "" {
-		author = gcc.AuthorOfPackage(doc.Package)
+		author = AuthorOfPackage(doc.Package)
 	}
 
-	project := gcc.ProjectOfPackage(doc.Package)
+	project := ProjectOfPackage(doc.Package)
 
 	authorCount := make(map[string]int)
 	projectCount := make(map[string]int)
 	for _, imp := range doc.Imported {
-		impProject := gcc.ProjectOfPackage(imp)
+		impProject := ProjectOfPackage(imp)
 		projectCount[impProject] = projectCount[impProject] + 1
 
-		impAuthor := gcc.AuthorOfPackage(imp)
+		impAuthor := AuthorOfPackage(imp)
 		if impAuthor != "" {
 			authorCount[impAuthor] = authorCount[impAuthor] + 1
 		}
 	}
 
 	for _, imp := range doc.Imported {
-		impProject := gcc.ProjectOfPackage(imp)
+		impProject := ProjectOfPackage(imp)
 
 		vl := scoreOfPkgByProject(projectCount[impProject], impProject == project)
 
-		impAuthor := gcc.AuthorOfPackage(imp)
+		impAuthor := AuthorOfPackage(imp)
 		if impAuthor != "" {
 			vl = minFloat(vl, scoreOfPkgByAuthor(authorCount[impAuthor], impAuthor == author))
 		}

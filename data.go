@@ -11,6 +11,7 @@ import (
 	"unicode"
 )
 
+// DocInfo is the information stored in backend docDB
 type DocInfo struct {
 	Name        string
 	Package     string
@@ -19,17 +20,18 @@ type DocInfo struct {
 	StarCount   int
 	Synopsis    string
 	Description string
-	Imports     []string
 	ProjectURL  string
 	ReadmeFn    string
 	ReadmeData  string
+	Imports     []string
 }
 
+// HitInfo is the information provided to frontend
 type HitInfo struct {
 	DocInfo
+	Imported []string
+	
 	StaticScore float64
-	Imports     []string
-	Imported    []string
 }
 
 func init() {

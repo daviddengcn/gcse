@@ -5,8 +5,6 @@ package main
 
 import (
 	"github.com/daviddengcn/gcse"
-	//	"fmt"
-	"github.com/daviddengcn/go-code-crawl"
 	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/go-villa"
 	godoc "go/doc"
@@ -159,7 +157,7 @@ func packageShowName(name, pkg string) string {
 		return name
 	}
 
-	prj := gcc.ProjectOfPackage(pkg)
+	prj := gcse.ProjectOfPackage(pkg)
 
 	if prj == "main" {
 		return "main - " + prj
