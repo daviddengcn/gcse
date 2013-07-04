@@ -115,6 +115,8 @@ func doIndex() {
 		log.Printf("ts.Save failed: %v", err)
 		return
 	}
+	
+	ts = nil
 
 	if err := segm.Done(); err != nil {
 		log.Printf("segm.Done failed: %v", err)
