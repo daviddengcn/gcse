@@ -39,9 +39,9 @@ func init() {
 type LogHandler struct{}
 
 func (hdl LogHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	log.Printf("[B] %s %v %s", r.Method, r.RequestURI, r.RemoteAddr)
+	log.Printf("[B] %s %v %s %v", r.Method, r.RequestURI, r.RemoteAddr, r.Header.Get("X-Forwarded-For"))
 	http.DefaultServeMux.ServeHTTP(w, r)
-	log.Printf("[E] %s %v %s", r.Method, r.RequestURI, r.RemoteAddr)
+	log.Printf("[E] %s %v %s %v", r.Method, r.RequestURI, r.RemoteAddr, r.Header.Get("X-Forwarded-For"))
 }
 
 func main() {
