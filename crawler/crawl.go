@@ -124,12 +124,12 @@ func processImports() error {
 
 var errStop = errors.New("Stop")
 
-func listCrawlEntries(db *gcse.MemDB, l int) (ids []string) {
+func listCrawlEntriesByHost(db *gcse.MemDB, hostFromID func(id string) string,
+	maxHosts, numPerHost int) (groups map[string][]string) {
 	now := time.Now()
-	if l > 0 {
-		ids = make([]string, 0, l)
-	}
-	db.Iterate(func(id string, val interface{}) error {
+	groups = make(map[string][]string)
+	fullGroups := 0
+	db.Iterate(func(pkg string, val interface{}) error {
 		ent, ok := val.(CrawlingEntry)
 		if !ok {
 			return nil
@@ -139,15 +139,45 @@ func listCrawlEntries(db *gcse.MemDB, l int) (ids []string) {
 			return nil
 		}
 
-		ids = append(ids, id)
-
-		if l > 0 && len(ids) >= l {
+		host := hostFromID(pkg)
+		pkgs := groups[host]
+		if maxHosts > 0 {
+			// check host limit
+			if len(pkgs) == 0 && len(groups) == maxHosts {
+				// no quota for new group
+				return nil
+			}
+		}
+		if numPerHost > 0 {
+			// check per host limit
+			if len(pkgs) == numPerHost - 1 {
+				// this group is about to be full, count it
+				fullGroups ++
+			} else if len(pkgs) == numPerHost {
+				// no quota for this group
+				return nil
+			}
+		}
+		groups[host] = append(pkgs, pkg)
+		
+		if fullGroups == maxHosts {
 			return errStop
 		}
 		return nil
 	})
 
-	return ids
+	return groups
+}
+
+func listPackagesByHost(maxHosts, numPerHost int) (groups map[string][]string) {
+	return listCrawlEntriesByHost(cPackageDB, gcc.HostOfPackage, maxHosts, numPerHost)
+}
+
+func listPersonsByHost(maxHosts, numPerHost int) (groups map[string][]string) {
+	return listCrawlEntriesByHost(cPersonDB, func(id string) string {
+		site, _ := gcc.ParsePersonId(id)
+		return site
+	}, maxHosts, numPerHost)
 }
 
 func deletePackage(pkg string) {
@@ -289,17 +319,15 @@ func CrawlEnetires() {
 		didSomething := false
 		var wg sync.WaitGroup
 
-		pkgs := listCrawlEntries(cPackageDB, 200)
-		if len(pkgs) > 0 {
+		pkgGroups := listPackagesByHost(5, 50)
+		if len(pkgGroups) > 0 {
 			didSomething = true
 
-			groups := gcc.GroupPackages(pkgs)
-			log.Printf("Crawling %d groups, %d packages: %v", len(groups),
-				len(pkgs), groups)
+			log.Printf("Crawling packages of %d groups", len(pkgGroups))
 
-			wg.Add(len(groups))
+			wg.Add(len(pkgGroups))
 
-			for host, pkgs := range groups {
+			for host, pkgs := range pkgGroups {
 				go func(host string, pkgs []string) {
 					failCount := 0
 					for _, pkg := range pkgs {
@@ -340,17 +368,15 @@ func CrawlEnetires() {
 			}
 		}
 
-		persons := listCrawlEntries(cPersonDB, -1)
-		if len(persons) > 0 {
+		personGroups := listPersonsByHost(5, 100)
+		if len(personGroups) > 0 {
 			didSomething = true
 
-			groups := gcc.GroupPersons(persons)
-			log.Printf("persons: %v, %d groups, %d persons", groups,
-				len(groups), len(persons))
+			log.Printf("Crawling persons of %d groups", len(personGroups))
 
-			wg.Add(len(groups))
+			wg.Add(len(personGroups))
 
-			for host, ids := range groups {
+			for host, ids := range personGroups {
 				go func(host string, ids []string) {
 					failCount := 0
 					for _, id := range ids {
