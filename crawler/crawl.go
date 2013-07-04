@@ -348,7 +348,7 @@ func CrawlEnetires() {
 								if failCount >= 10 {
 									log.Printf("Last ten crawling %s packages failed, sleep for a while...",
 										host)
-									time.Sleep(2 * time.Minute)
+									time.Sleep(10 * time.Minute)
 									failCount = 0
 								}
 							}
@@ -390,7 +390,7 @@ func CrawlEnetires() {
 							if failCount >= 10 {
 								log.Printf("Last ten crawling %s persons failed, sleep for a while...",
 									host)
-								time.Sleep(2 * time.Minute)
+								time.Sleep(10 * time.Minute)
 								failCount = 0
 							}
 							continue

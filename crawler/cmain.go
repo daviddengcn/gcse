@@ -72,6 +72,7 @@ func syncDatabases() {
 	if err := cPersonDB.Sync(); err != nil {
 		log.Printf("cPersonDB.Sync failed: %v", err)
 	}
+	runtime.GC()
 	dumpMemStats()
 }
 
