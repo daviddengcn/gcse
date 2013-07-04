@@ -344,6 +344,13 @@ func CrawlEnetires() {
 								
 								schedulePackage(pkg, time.Now().Add(
 									12 * time.Hour))
+									
+								if failCount >= 10 {
+									log.Printf("Last ten crawling %s packages failed, sleep for a while...",
+										host)
+									time.Sleep(2 * time.Minute)
+									failCount = 0
+								}
 							}
 							continue
 						} else {
@@ -354,13 +361,6 @@ func CrawlEnetires() {
 
 						pushPackage(p)
 						log.Printf("Package %s saved!", pkg)
-						
-						if failCount >= 10 {
-							log.Printf("Last ten crawling %s packages failed, sleep for a while...",
-								host)
-							time.Sleep(2 * time.Minute)
-							failCount = 0
-						}
 					}
 
 					wg.Done()
@@ -386,19 +386,19 @@ func CrawlEnetires() {
 							log.Printf("Crawling person %s failed: %v", id, err)
 								
 							schedulePerson(id, time.Now().Add(12 * time.Hour))
+							
+							if failCount >= 10 {
+								log.Printf("Last ten crawling %s persons failed, sleep for a while...",
+									host)
+								time.Sleep(2 * time.Minute)
+								failCount = 0
+							}
 							continue
 						}
 
 						log.Printf("Crawled person %s success!", id)
 						pushPerson(p)
 						log.Printf("Push person %s success", id)
-						
-						if failCount >= 10 {
-							log.Printf("Last ten crawling %s persons failed, sleep for a while...",
-								host)
-							time.Sleep(2 * time.Minute)
-							failCount = 0
-						}
 					}
 
 					wg.Done()
