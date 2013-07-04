@@ -53,7 +53,7 @@ func loadIndex() error {
 	}
 
 	indexSegment = segm
-	log.Printf("Load index from %v", segm)
+	log.Printf("Load index from %v (%d packages)", segm, db.DocCount())
 
 	indexDB = db
 	updateTime := time.Now()
