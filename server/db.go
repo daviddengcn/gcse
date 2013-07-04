@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/daviddengcn/gcse"
+	"github.com/daviddengcn/go-code-crawl"
 	"github.com/daviddengcn/go-villa"
 	"strings"
 )
@@ -82,10 +83,9 @@ func statTops() []StatList {
 		topStaticScores.Append(hit)
 		topImported.Append(hit)
 		
-		parts := strings.Split(hit.Package, "/")
-		if len(parts) > 0 {
-			site := strings.ToLower(parts[0])
-			sites[site] = sites[site] + 1
+		host := strings.ToLower(gcc.HostOfPackage(hit.Package))
+		if host != "" {
+			sites[host] = sites[host] + 1
 		}
 
 		return nil

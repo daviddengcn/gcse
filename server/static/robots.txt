@@ -1,6 +1,3 @@
 User-agent: *
-Disallow: /search?*
-Disallow: /crawl?*
-Disallow: /update?*
-Disallow: /add?*
-Disallow: /crawler
+Disallow: /search
+Disallow: /add

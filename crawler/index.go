@@ -7,6 +7,7 @@ import (
 	"github.com/daviddengcn/go-villa"
 	"log"
 	"time"
+	"runtime"
 )
 
 func needIndex() bool {
@@ -73,6 +74,8 @@ func doIndex() {
 		return
 	}
 	log.Printf("Indexing to %v ...", segm)
+	runtime.GC()
+	dumpMemStats()
 
 	ts := &index.TokenSetSearcher{}
 
@@ -84,6 +87,8 @@ func doIndex() {
 		if !ok {
 			return errNotDocInfo
 		}
+		
+		hitInfo.StaticScore = gcse.CalcStaticScore(&hitInfo)
 
 		hitInfo.Imports = importsDB.TokensOfId(hitInfo.Package)
 		hitInfo.Imported = importsDB.IdsOfToken(hitInfo.Package)
@@ -136,6 +141,7 @@ func indexLooop(gap time.Duration) {
 			if err := clearOutdatedIndex(); err != nil {
 				log.Printf("clearOutdatedIndex failed: %v", err)
 			}
+			syncDatabases()
 			doIndex()
 		}
 

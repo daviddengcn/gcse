@@ -8,13 +8,14 @@ import (
 	"os"
 	"reflect"
 	"sync"
+	"io"
 )
 
 type MemDB struct {
 	db map[string]interface{}
 	fn villa.Path
 	sync.RWMutex
-	syncMutex sync.Mutex
+	syncMutex sync.Mutex // if lock both mutexes, lock RWMutex first
 	modified  bool
 }
 
@@ -68,8 +69,35 @@ func (mdb *MemDB) Load() error {
 	return nil
 }
 
+
+func safeSave(fn villa.Path, doSave func(w io.Writer) error) error {
+	tmpFn := fn + ".new"
+	if err := func() error {
+		f, err := tmpFn.Create()
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+	
+		return doSave(f)
+	}(); err != nil {
+		return err
+	}
+	
+	if err := fn.Remove(); err != nil {
+		return err
+	}
+	if err := tmpFn.Rename(fn); err != nil {
+		return err
+	}
+	
+	return nil
+}
+
+
 func (mdb *MemDB) Sync() error {
 	if mdb.fn == "" {
+		// this db is not for syncing
 		return nil
 	}
 
@@ -82,15 +110,11 @@ func (mdb *MemDB) Sync() error {
 
 	mdb.syncMutex.Lock()
 	defer mdb.syncMutex.Unlock()
-
-	f, err := mdb.fn.Create()
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	enc := gob.NewEncoder(f)
-	if err := enc.Encode(mdb.db); err != nil {
+	
+	if err := safeSave(mdb.fn, func(w io.Writer) error {
+		enc := gob.NewEncoder(w)
+		return enc.Encode(mdb.db)
+	}); err != nil {
 		return err
 	}
 
@@ -209,13 +233,7 @@ func (ti *TokenIndexer) Sync() error {
 		return nil
 	}
 
-	f, err := ti.fn.Create()
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	if err := ti.TokenIndexer.Save(f); err != nil {
+	if err := safeSave(ti.fn, ti.TokenIndexer.Save); err != nil {
 		return err
 	}
 

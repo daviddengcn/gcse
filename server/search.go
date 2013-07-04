@@ -24,8 +24,11 @@ var stopWords = villa.NewStrSet([]string{
 	"the", "on", "in", "as",
 }...)
 
-var indexDB *index.TokenSetSearcher
-var indexSegment gcse.Segment
+var (
+	indexDB *index.TokenSetSearcher
+	indexSegment gcse.Segment
+	indexUpdated time.Time
+)
 
 func loadIndex() error {
 	segm, err := gcse.IndexSegments.FindMaxDone()
@@ -53,6 +56,14 @@ func loadIndex() error {
 	log.Printf("Load index from %v", segm)
 
 	indexDB = db
+	updateTime := time.Now()
+	
+	if st, err := segm.Join(gcse.IndexFn).Stat(); err == nil {
+		updateTime = st.ModTime()
+	}
+	
+	indexUpdated = updateTime
+	
 	return nil
 }
 

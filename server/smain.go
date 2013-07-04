@@ -25,6 +25,8 @@ func init() {
 		http.FileServer(http.Dir(gcse.ServerRoot.Join("css").S()))))
 	http.Handle("/images/", http.StripPrefix("/images/",
 		http.FileServer(http.Dir(gcse.ServerRoot.Join("images").S()))))
+	http.Handle("/robots.txt", http.FileServer(http.Dir(
+		gcse.ServerRoot.Join("static").S())))
 
 	http.HandleFunc("/add", pageAdd)
 	http.HandleFunc("/search", pageSearch)
@@ -64,7 +66,13 @@ func pageRoot(w http.ResponseWriter, r *http.Request) {
 	if indexDB != nil {
 		docCount = indexDB.DocCount()
 	}
-	err := templates.ExecuteTemplate(w, "index.html", docCount)
+	err := templates.ExecuteTemplate(w, "index.html", struct {
+		TotalDocs int
+		LastUpdated time.Time
+	}{
+		TotalDocs: docCount,
+		LastUpdated: indexUpdated,
+	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

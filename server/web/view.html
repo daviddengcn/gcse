@@ -26,7 +26,7 @@
 <div>
     <a target="_blank" href="http://godoc.org/{{.Package}}">GoDoc</a>
     | <a target="_blank" href="{{.ProjectURL}}">Project</a>
-    | Last Crawled: {{.LastUpdated.Format "2006-01-02 15:04:05"}}
+    | Last Crawled: {{.LastUpdated.UTC.Format "2006-01-02 15:04:05 (MST)"}}
     | {{printf "%.2f" .StaticScore}}
 </div>    
 {{template "footer.html"}}

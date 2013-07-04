@@ -115,7 +115,9 @@ func (s Size) String() string {
 func dumpMemStats() {
 	var ms runtime.MemStats
 	runtime.ReadMemStats(&ms)
-	log.Printf("[MemStats] Alloc: %v, TotalAlloc: %v, Sys: %v", Size(ms.Alloc), Size(ms.TotalAlloc), Size(ms.Sys))
+	log.Printf("[MemStats] Alloc: %v, TotalAlloc: %v, Sys: %v, Go: %d", 
+		Size(ms.Alloc), Size(ms.TotalAlloc), Size(ms.Sys),
+		runtime.NumGoroutine())
 }
 
 func dumpingStatusLoop(gap time.Duration) {

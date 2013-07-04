@@ -8,7 +8,8 @@
 </div>
 {{if .}}
 <div>
-    Totally <a href="/search">{{.}}</a> packages indexed.
+    Totally <a href="/search">{{.TotalDocs}}</a> packages indexed,
+    last updated on {{.LastUpdated.UTC.Format "2006-01-02 15:04:05 (MST)"}}.
 </div>
 {{end}}
 {{template "footer.html"}}
