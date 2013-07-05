@@ -117,7 +117,7 @@ func doIndex(dbSegm gcse.Segment) {
 
 	log.Printf("Indexing success: %s (%d)", idxSegm, ts.DocCount())
 	
-	ts = nil
+	docDB, importsDB, ts = nil, nil, nil
 	gcse.DumpMemStats()
 	runtime.GC()
 	gcse.DumpMemStats()
