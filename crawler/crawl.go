@@ -53,9 +53,11 @@ func schedulePackage(pkg string, sTime time.Time, etag string) error {
 }
 
 func appendPackage(pkg string) bool {
-	pkg = strings.TrimSpace(pkg)
+	pkg = strings.TrimFunc(strings.TrimSpace(pkg), func(r rune) bool {
+		return r > rune(128)
+	})
 	if !doc.IsValidRemotePath(pkg) {
-		// log.Printf("  [appendPackage] Not a valid remote path: %s", pkg)
+		log.Printf("  [appendPackage] Not a valid remote path: %s", pkg)
 		return false
 	}
 
@@ -66,7 +68,7 @@ func appendPackage(pkg string) bool {
 		exists := docDB.Get(pkg, &di)
 		if exists {
 			// already scheduled
-			//log.Printf("  [appendPackage] Package %s was scheduled to %v", pkg, ent.ScheduleTime)
+			log.Printf("  [appendPackage] Package %s was scheduled to %v", pkg, ent.ScheduleTime)
 			return false
 		}
 	}
@@ -392,8 +394,10 @@ func crawlEnetiresLoop() {
 
 		syncDatabases()
 
-		if processGodoc(httpClient) {
-			didSomething = true
+		if gcse.CrawlByGodocApi {
+			if processGodoc(httpClient) {
+				didSomething = true
+			}
 		}
 
 		if !didSomething {

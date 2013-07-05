@@ -45,7 +45,7 @@ func syncDatabases() {
 
 func syncLoop() {
 	for {
-		time.Sleep(10 * time.Minute)
+		time.Sleep(gcse.CrawlerSyncGap)
 		syncDatabases()
 	}
 }
