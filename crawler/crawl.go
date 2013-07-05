@@ -57,7 +57,7 @@ func appendPackage(pkg string) bool {
 		return r > rune(128)
 	})
 	if !doc.IsValidRemotePath(pkg) {
-		log.Printf("  [appendPackage] Not a valid remote path: %s", pkg)
+		//log.Printf("  [appendPackage] Not a valid remote path: %s", pkg)
 		return false
 	}
 
