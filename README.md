@@ -1,4 +1,4 @@
 GCSE
 ====
 
-Go Code Search Engine
+[Go Code Search Engine](http://go-search.org/)
