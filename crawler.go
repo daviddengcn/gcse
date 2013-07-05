@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	fnDone = ".done"
+	fnLinks = "links.json"
 )
 
 // AppendPackages appends a list packages to imports folder for crawler backend
@@ -27,7 +27,7 @@ func AppendPackages(pkgs []string) bool {
 		return false
 	}
 	log.Printf("Import to %v", segm)
-	if err := WriteJsonFile(segm.Join("links.json"), pkgs); err != nil {
+	if err := WriteJsonFile(segm.Join(fnLinks), pkgs); err != nil {
 		log.Printf("WriteJsonFile failed: %v", err)
 		return false
 	}
@@ -36,6 +36,11 @@ func AppendPackages(pkgs []string) bool {
 		return false
 	}
 	return true
+}
+
+func ReadPackages(segm Segment) (pkgs []string, err error) {
+	err = ReadJsonFile(segm.Join(fnLinks), &pkgs)
+	return pkgs, err
 }
 
 func GenHttpClient(proxy string) *http.Client {

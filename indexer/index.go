@@ -10,35 +10,6 @@ import (
 	"time"
 )
 
-func needIndex() bool {
-	dones, err := gcse.IndexSegments.ListDones()
-	if err != nil {
-		log.Printf("ListDones failed: %v", err)
-		return false
-	}
-
-	if len(dones) == 0 {
-		log.Printf("To generate first index...")
-		return true
-	}
-
-	maxDone, err := gcse.IndexSegments.FindMaxDone()
-	if err != nil {
-		log.Printf("FindMaxDone failed: %v", err)
-		return false
-	}
-
-	fn := maxDone.Join(gcse.IndexFn)
-	fi, err := fn.Stat()
-	if err != nil {
-		log.Printf("fn.Stat failed: %v", err)
-		return true
-	}
-	_ = fi.ModTime()
-
-	return true
-}
-
 func clearOutdatedIndex() error {
 	segm, err := gcse.IndexSegments.FindMaxDone()
 	if err != nil {
@@ -66,19 +37,39 @@ func clearOutdatedIndex() error {
 
 var errNotDocInfo = errors.New("Value is not DocInfo")
 
-func doIndex() {
-	dumpMemStats()
-	segm, err := gcse.IndexSegments.GenMaxSegment()
+func doIndex(dbSegm gcse.Segment) {
+	idxSegm, err := gcse.IndexSegments.GenMaxSegment()
 	if err != nil {
 		log.Printf("GenMaxSegment failed: %v", err)
 		return
 	}
-	log.Printf("Indexing to %v ...", segm)
+	
 	runtime.GC()
-	dumpMemStats()
+	gcse.DumpMemStats()
+	log.Printf("Reading docDB from %v ...", dbSegm)
+	// read docDB
+	docDB := gcse.NewMemDB(dbSegm.Join(""), gcse.KindDocDB)
+	
+	gcse.DumpMemStats()
+	log.Printf("Generating importsDB ...")
+	importsDB := gcse.NewTokenIndexer("", "")
+	// generate importsDB
+	if err := docDB.Iterate(func(pkg string, val interface{}) error {
+		docInfo, ok := val.(gcse.DocInfo)
+		if !ok {
+			return errNotDocInfo
+		}
+		importsDB.Put(pkg, villa.NewStrSet(docInfo.Imports...))
+		return nil
+	}); err != nil {
+		log.Printf("Making importsDB failed: %v", err)
+		return
+	}
+	
+	gcse.DumpMemStats()
+	log.Printf("Indexing to %v ...", idxSegm)
 
 	ts := &index.TokenSetSearcher{}
-
 	if err := docDB.Iterate(func(key string, val interface{}) error {
 		var hitInfo gcse.HitInfo
 
@@ -108,7 +99,7 @@ func doIndex() {
 		return
 	}
 
-	f, err := segm.Join(gcse.IndexFn).Create()
+	f, err := idxSegm.Join(gcse.IndexFn).Create()
 	if err != nil {
 		log.Printf("Create index file failed: %v", err)
 		return
@@ -121,26 +112,28 @@ func doIndex() {
 
 	ts = nil
 
-	if err := segm.Done(); err != nil {
+	if err := idxSegm.Done(); err != nil {
 		log.Printf("segm.Done failed: %v", err)
 		return
 	}
 
-	log.Printf("Indexing success: %s", segm)
-	dumpMemStats()
+	log.Printf("Indexing success: %s", idxSegm)
+	gcse.DumpMemStats()
+	runtime.GC()
+	gcse.DumpMemStats()
 }
 
-func indexLooop(gap time.Duration) {
+func indexLoop(gap time.Duration) {
 	for {
 		if err := gcse.IndexSegments.ClearUndones(); err != nil {
 			log.Printf("ClearUndones failed: %v", err)
 		}
-		if needIndex() {
+		dbSegm, err := gcse.DBOutSegments.FindMaxDone()
+		if err == nil && dbSegm != nil {
 			if err := clearOutdatedIndex(); err != nil {
 				log.Printf("clearOutdatedIndex failed: %v", err)
 			}
-			syncDatabases()
-			doIndex()
+			doIndex(dbSegm)
 		}
 
 		time.Sleep(gap)

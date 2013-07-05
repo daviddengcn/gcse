@@ -6,6 +6,10 @@ import (
 	"strconv"
 )
 
+const (
+	fnDone = ".done"
+)
+
 type Segment interface {
 	Name() string
 	Join(name string) villa.Path
@@ -22,6 +26,9 @@ func (s segment) Name() string {
 }
 
 func (s segment) Join(name string) villa.Path {
+	if name == "" {
+		return villa.Path(s)
+	}
 	return villa.Path(s).Join(name)
 }
 

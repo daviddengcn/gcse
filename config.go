@@ -5,7 +5,12 @@ import (
 	"github.com/daviddengcn/go-villa"
 )
 
-const IndexFn = "index.gob"
+const (
+	KindIndex = "index"
+	IndexFn = KindIndex + ".gob"
+	
+	KindDocDB = "docdb"
+)
 
 var (
 	ServerAddr = ":8080"
@@ -13,9 +18,16 @@ var (
 
 	DataRoot = villa.Path("./data/")
 
+	// producer: server, consumer: crawler
 	ImportPath     villa.Path
 	ImportSegments Segments
+	
+	// producer: crawler, consumer: indexer
+	DBOutPath     villa.Path
+	DBOutSegments Segments
 
+	// producer: indexer, consumer: server.
+	// server never delete index segments, indexer clear updated segments.
 	IndexPath     villa.Path
 	IndexSegments Segments
 )
@@ -30,6 +42,10 @@ func init() {
 	ImportPath = DataRoot.Join("imports")
 	ImportPath.MkdirAll(0755)
 	ImportSegments = segments(ImportPath)
+	
+	DBOutPath = DataRoot.Join("dbout")
+	DBOutPath.MkdirAll(0755)
+	DBOutSegments = segments(DBOutPath)
 
 	IndexPath = DataRoot.Join("index")
 	IndexPath.MkdirAll(0755)

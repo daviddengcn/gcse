@@ -86,47 +86,6 @@ func touchPackage(pkg string) bool {
 	return schedulePackage(pkg, time.Now(), "") == nil
 }
 
-// processing sumitted packages (from go-search.org/add path)
-func processImports() error {
-	segments, err := gcse.ImportSegments.ListDones()
-	if err != nil {
-		return err
-	}
-
-	for _, s := range segments {
-		log.Printf("Processing done segment %v ...", s)
-		files, err := s.ListFiles()
-		if err != nil {
-			log.Printf("ListFiles failed: %v", err)
-			continue
-		}
-
-		for _, fn := range files {
-			var pkgs []string
-			if err := gcse.ReadJsonFile(fn, &pkgs); err != nil {
-				log.Printf("ReadJsonFile failed: %v", err)
-				continue
-			}
-			log.Printf("Importing %d packages ...", len(pkgs))
-			for _, pkg := range pkgs {
-				pkg = strings.TrimSpace(pkg)
-				appendPackage(pkg)
-				//touchPackage(pkg)
-			}
-		}
-
-		if err := cPackageDB.Sync(); err != nil {
-			log.Printf("crawlerDB.Sync failed: %v", err)
-		}
-
-		if err := s.Remove(); err != nil {
-			log.Printf("s.Remove failed: %v", err)
-		}
-	}
-
-	return nil
-}
-
 var errStop = errors.New("Stop")
 
 type EntryInfo struct {
@@ -332,7 +291,7 @@ func processGodoc(httpClient *http.Client) bool {
 	return true
 }
 
-func CrawlEnetires() {
+func crawlEnetiresLoop() {
 	httpClient := gcse.GenHttpClient("")
 
 	for {

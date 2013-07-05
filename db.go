@@ -9,14 +9,16 @@ import (
 	"os"
 	"reflect"
 	"sync"
+	"time"
 )
 
 type MemDB struct {
 	db map[string]interface{}
 	fn villa.Path
 	sync.RWMutex
-	syncMutex sync.Mutex // if lock both mutexes, lock RWMutex first
-	modified  bool
+	syncMutex   sync.Mutex // if lock both mutexes, lock RWMutex first
+	lastModified time.Time
+	modified    bool
 }
 
 func NewMemDB(root villa.Path, kind string) *MemDB {
@@ -24,7 +26,7 @@ func NewMemDB(root villa.Path, kind string) *MemDB {
 		db: make(map[string]interface{}),
 	}
 
-	if len(kind) != 0 {
+	if root != "" {
 		if err := root.MkdirAll(0755); err != nil {
 			log.Printf("MkdirAll failed: %v", err)
 		}
@@ -43,12 +45,22 @@ func (mdb *MemDB) Modified() bool {
 	return mdb.modified
 }
 
+func (mdb *MemDB) LastModified() time.Time {
+	return mdb.lastModified
+}
+
 func (mdb *MemDB) Load() error {
 	if mdb.fn == "" {
 		return nil
 	}
 	mdb.Lock()
 	defer mdb.Unlock()
+
+	lastModified := time.Now()
+	st, err := mdb.fn.Stat()
+	if err == nil {
+		lastModified = st.ModTime()
+	}
 
 	f, err := mdb.fn.Open()
 	if err == os.ErrNotExist {
@@ -65,10 +77,12 @@ func (mdb *MemDB) Load() error {
 		return err
 	}
 
+	mdb.lastModified = lastModified
 	mdb.modified = false
 	return nil
 }
 
+// 1) save to fn.new; 2) remove fn; 3) rename fn.new to fn.
 func safeSave(fn villa.Path, doSave func(w io.Writer) error) error {
 	tmpFn := fn + ".new"
 	if err := func() error {
@@ -120,9 +134,14 @@ func (mdb *MemDB) Sync() error {
 	return nil
 }
 
-func (mdb *MemDB) Export(fn villa.Path) error {
+/*
+	Export saves the data to some space, but not affecting the modified property.
+*/
+func (mdb *MemDB) Export(root villa.Path, kind string) error {
 	mdb.RLock()
 	defer mdb.RUnlock()
+	
+	fn := root.Join(kind + ".gob")
 
 	f, err := fn.Create()
 	if err != nil {
@@ -151,6 +170,7 @@ func (mdb *MemDB) Put(key string, data interface{}) {
 	defer mdb.Unlock()
 
 	mdb.db[key] = data
+	mdb.lastModified = time.Now()
 	mdb.modified = true
 }
 
@@ -159,6 +179,7 @@ func (mdb *MemDB) Delete(key string) {
 	defer mdb.Unlock()
 
 	delete(mdb.db, key)
+	mdb.lastModified = time.Now()
 	mdb.modified = true
 }
 
@@ -180,28 +201,45 @@ type TokenIndexer struct {
 	fn villa.Path
 	sync.RWMutex
 	syncMutex sync.Mutex
+	lastModified time.Time
 	modified  bool
 }
 
 func NewTokenIndexer(root villa.Path, kind string) *TokenIndexer {
-	if err := root.MkdirAll(0755); err != nil {
-		log.Printf("MkdirAll failed: %v", err)
-	}
-
-	ti := &TokenIndexer{
-		fn: root.Join(kind + ".gob"),
-	}
-
-	if err := ti.Load(); err != nil {
-		log.Printf("Load MemDB failed: %v", err)
+	ti := &TokenIndexer{}
+	
+	if root != "" {
+		if err := root.MkdirAll(0755); err != nil {
+			log.Printf("MkdirAll failed: %v", err)
+		}
+		ti.fn = root.Join(kind + ".gob")
+		if err := ti.Load(); err != nil {
+			log.Printf("Load MemDB failed: %v", err)
+			// its ok loading failed
+		}
 	}
 	return ti
 }
+
+func (ti *TokenIndexer) Modified() bool {
+	return ti.modified
+}
+
+func (ti *TokenIndexer) LastModified() time.Time {
+	return ti.lastModified
+}
+
 
 func (ti *TokenIndexer) Load() error {
 	ti.Lock()
 	defer ti.Unlock()
 
+	lastModified := time.Now()
+	st, err := ti.fn.Stat()
+	if err == nil {
+		lastModified = st.ModTime()
+	}
+	
 	f, err := ti.fn.Open()
 	if err == os.ErrNotExist {
 		return nil
@@ -216,6 +254,7 @@ func (ti *TokenIndexer) Load() error {
 		return err
 	}
 
+	ti.lastModified = lastModified
 	ti.modified = false
 	return nil
 }
@@ -239,7 +278,9 @@ func (ti *TokenIndexer) Sync() error {
 	return nil
 }
 
-func (ti *TokenIndexer) Export(fn villa.Path) error {
+func (ti *TokenIndexer) Export(root villa.Path, kind string) error {
+	fn := root.Join(kind + ".gob")
+	
 	ti.RLock()
 	defer ti.RUnlock()
 
@@ -257,6 +298,7 @@ func (ti *TokenIndexer) Put(id string, tokens villa.StrSet) {
 	defer ti.Unlock()
 
 	ti.TokenIndexer.Put(id, tokens)
+	ti.lastModified = time.Now()
 	ti.modified = true
 }
 
