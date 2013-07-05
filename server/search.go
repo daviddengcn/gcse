@@ -25,7 +25,7 @@ var stopWords = villa.NewStrSet([]string{
 }...)
 
 var (
-	indexDB *index.TokenSetSearcher
+	indexDB      *index.TokenSetSearcher
 	indexSegment gcse.Segment
 	indexUpdated time.Time
 )
@@ -35,7 +35,6 @@ func loadIndex() error {
 	if segm == nil || err != nil {
 		return err
 	}
-	
 
 	if indexSegment != nil && !gcse.SegmentLess(indexSegment, segm) {
 		// no new index
@@ -58,13 +57,13 @@ func loadIndex() error {
 
 	indexDB = db
 	updateTime := time.Now()
-	
+
 	if st, err := segm.Join(gcse.IndexFn).Stat(); err == nil {
 		updateTime = st.ModTime()
 	}
-	
+
 	indexUpdated = updateTime
-	
+
 	return nil
 }
 
@@ -94,7 +93,7 @@ func search(q string) (*SearchResult, villa.StrSet, error) {
 			hit := &Hit{
 				HitInfo: hitInfo,
 			}
-			
+
 			hit.MatchScore = gcse.CalcMatchScore(&hitInfo, tokens)
 			hit.Score = hit.StaticScore * hit.MatchScore
 

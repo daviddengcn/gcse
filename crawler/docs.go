@@ -32,6 +32,6 @@ func processDocument(d *gcse.DocInfo) error {
 	log.Printf("Package %s processed!", pkg)
 
 	docDB.Put(pkg, *d)
-	
+
 	return nil
 }

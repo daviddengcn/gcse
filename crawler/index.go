@@ -6,8 +6,8 @@ import (
 	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/go-villa"
 	"log"
-	"time"
 	"runtime"
+	"time"
 )
 
 func needIndex() bool {
@@ -88,7 +88,7 @@ func doIndex() {
 			return errNotDocInfo
 		}
 		hitInfo.Imported = importsDB.IdsOfToken(hitInfo.Package)
-		
+
 		hitInfo.StaticScore = gcse.CalcStaticScore(&hitInfo)
 
 		var tokens villa.StrSet
@@ -118,7 +118,7 @@ func doIndex() {
 		log.Printf("ts.Save failed: %v", err)
 		return
 	}
-	
+
 	ts = nil
 
 	if err := segm.Done(); err != nil {

@@ -67,27 +67,27 @@ func (sd SimpleDuration) String() string {
 	if d.Hours() > 24 {
 		return fmt.Sprintf("%.0f days", d.Hours()/24)
 	}
-	
+
 	if d.Hours() >= 1 {
 		return fmt.Sprintf("%.0f hours", d.Hours())
 	}
-	
+
 	if d.Minutes() >= 1 {
 		return fmt.Sprintf("%.0f mins", d.Minutes())
 	}
-	
+
 	if d.Seconds() >= 1 {
 		return fmt.Sprintf("%.0f sec", d.Seconds())
 	}
-	
+
 	if d.Nanoseconds() >= 1e6 {
 		return fmt.Sprintf("%d ms", d.Nanoseconds()/1e6)
 	}
-	
+
 	if d.Nanoseconds() >= 1e3 {
 		return fmt.Sprintf("%d us", d.Nanoseconds()/1e3)
 	}
-	
+
 	return fmt.Sprintf("%d ns", d.Nanoseconds())
 }
 

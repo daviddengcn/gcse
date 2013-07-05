@@ -30,7 +30,7 @@ type DocInfo struct {
 type HitInfo struct {
 	DocInfo
 	Imported []string
-	
+
 	StaticScore float64
 }
 

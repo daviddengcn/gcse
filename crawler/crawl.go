@@ -6,9 +6,9 @@ import (
 	"errors"
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/gddo/doc"
-	"net/http"
 	"log"
 	"math/rand"
+	"net/http"
 	"strings"
 	"sync"
 	"time"
@@ -41,7 +41,7 @@ func init() {
 }
 
 func schedulePackage(pkg string, sTime time.Time, etag string) error {
-	ent := CrawlingEntry {
+	ent := CrawlingEntry{
 		ScheduleTime: sTime,
 		Etag:         etag,
 	}
@@ -160,9 +160,9 @@ func listCrawlEntriesByHost(db *gcse.MemDB, hostFromID func(id string) string,
 		}
 		if numPerHost > 0 {
 			// check per host limit
-			if len(entryInfos) == numPerHost - 1 {
+			if len(entryInfos) == numPerHost-1 {
 				// this group is about to be full, count it
-				fullGroups ++
+				fullGroups++
 			} else if len(entryInfos) == numPerHost {
 				// no quota for this group
 				return nil
@@ -172,7 +172,7 @@ func listCrawlEntriesByHost(db *gcse.MemDB, hostFromID func(id string) string,
 			ID:   id,
 			Etag: ent.Etag,
 		})
-		
+
 		if fullGroups == maxHosts {
 			return errStop
 		}
@@ -270,7 +270,7 @@ func pushPackage(p *gcse.Package) (succ bool) {
 	for _, ref := range p.References {
 		appendPackage(ref)
 	}
-	
+
 	schedulePackageNextCrawl(d.Package, p.Etag)
 
 	return true
@@ -290,9 +290,10 @@ func pushPerson(p *gcse.Person) (hasNewPkg bool) {
 }
 
 const (
-	godocApiUrl = "http://api.godoc.org/packages"
+	godocApiUrl   = "http://api.godoc.org/packages"
 	godocCrawlGap = 4 * time.Hour
 )
+
 var (
 	godocLastCrawled time.Time
 )
@@ -301,7 +302,7 @@ func processGodoc(httpClient *http.Client) bool {
 	if time.Now().Before(godocLastCrawled.Add(godocCrawlGap)) {
 		return false
 	}
-	
+
 	resp, err := httpClient.Get(godocApiUrl)
 	if err != nil {
 		log.Printf("Get %s failed: %v", godocApiUrl, err)
@@ -312,7 +313,7 @@ func processGodoc(httpClient *http.Client) bool {
 		return false
 	}
 	defer resp.Body.Close()
-	
+
 	godocLastCrawled = time.Now()
 
 	var results map[string][]map[string]string
@@ -327,7 +328,7 @@ func processGodoc(httpClient *http.Client) bool {
 		pkg := res["path"]
 		appendPackage(pkg)
 	}
-	
+
 	return true
 }
 
@@ -363,11 +364,11 @@ func CrawlEnetires() {
 								deletePackage(ent.ID)
 								log.Printf("Remove wrong package %s", ent.ID)
 							} else {
-								failCount ++
-								
+								failCount++
+
 								schedulePackage(ent.ID, time.Now().Add(
-									12 * time.Hour), ent.Etag)
-									
+									12*time.Hour), ent.Etag)
+
 								if failCount >= 10 {
 									log.Printf("Last ten crawling %s packages failed, sleep for a while...",
 										host)
@@ -405,11 +406,11 @@ func CrawlEnetires() {
 					for _, ent := range ents {
 						p, err := gcse.CrawlPerson(httpClient, ent.ID)
 						if err != nil {
-							failCount ++
+							failCount++
 							log.Printf("Crawling person %s failed: %v", ent.ID, err)
-								
-							schedulePerson(ent.ID, time.Now().Add(12 * time.Hour))
-							
+
+							schedulePerson(ent.ID, time.Now().Add(12*time.Hour))
+
 							if failCount >= 10 {
 								log.Printf("Last ten crawling %s persons failed, sleep for a while...",
 									host)
@@ -431,7 +432,7 @@ func CrawlEnetires() {
 		wg.Wait()
 
 		syncDatabases()
-		
+
 		if processGodoc(httpClient) {
 			didSomething = true
 		}

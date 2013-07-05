@@ -80,7 +80,7 @@ func statTops() []StatList {
 
 		topStaticScores.Append(hit)
 		topImported.Append(hit)
-		
+
 		host := strings.ToLower(gcse.HostOfPackage(hit.Package))
 		if host != "" {
 			sites[host] = sites[host] + 1
@@ -123,15 +123,15 @@ func statTops() []StatList {
 	for site := range sites {
 		topSites.Append(site)
 	}
-	tlSites := StatList {
-		Name: "Sites",
+	tlSites := StatList{
+		Name:  "Sites",
 		Info:  "packages",
 		Items: make([]StatItem, 0, topSites.Len()),
 	}
 	for _, st := range topSites.PopAll() {
 		site := st.(string)
 		cnt := sites[site]
-		tlSites.Items = append(tlSites.Items, StatItem {
+		tlSites.Items = append(tlSites.Items, StatItem{
 			Name: site,
 			Link: "http://" + site,
 			Info: fmt.Sprintf("%d", cnt),

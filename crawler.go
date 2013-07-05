@@ -56,7 +56,6 @@ func GenHttpClient(proxy string) *http.Client {
 	}
 }
 
-
 func AuthorOfPackage(pkg string) string {
 	parts := strings.Split(pkg, "/")
 	if len(parts) == 0 {

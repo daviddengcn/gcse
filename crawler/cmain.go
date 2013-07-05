@@ -4,13 +4,13 @@
 package main
 
 import (
+	"fmt"
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/go-villa"
 	"github.com/howeyc/fsnotify"
 	"log"
-	"time"
 	"runtime"
-	"fmt"
+	"time"
 )
 
 func ReadImports(watcher *fsnotify.Watcher) {
@@ -84,6 +84,7 @@ func syncLoop(gap time.Duration) {
 }
 
 type Size int64
+
 func (s Size) String() string {
 	var unit string
 	var base int64
@@ -101,22 +102,22 @@ func (s Size) String() string {
 	case s < 1024*1024*1024*1024*1024*1024:
 		unit, base = "P", 1024*1024*1024*1024*1024
 	}
-	
+
 	remain := int64(s) / base
 	if remain < 10 {
 		return fmt.Sprintf("%.2f%s", float64(s)/float64(base), unit)
-	}	
+	}
 	if remain < 100 {
 		return fmt.Sprintf("%.1f%s", float64(s)/float64(base), unit)
 	}
-	
+
 	return fmt.Sprintf("%d%s", int64(s)/base, unit)
 }
 
 func dumpMemStats() {
 	var ms runtime.MemStats
 	runtime.ReadMemStats(&ms)
-	log.Printf("[MemStats] Alloc: %v, TotalAlloc: %v, Sys: %v, Go: %d", 
+	log.Printf("[MemStats] Alloc: %v, TotalAlloc: %v, Sys: %v, Go: %d",
 		Size(ms.Alloc), Size(ms.TotalAlloc), Size(ms.Sys),
 		runtime.NumGoroutine())
 }
