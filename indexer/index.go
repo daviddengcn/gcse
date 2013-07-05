@@ -110,17 +110,21 @@ func doIndex(dbSegm gcse.Segment) {
 		return
 	}
 
-	ts = nil
-
 	if err := idxSegm.Done(); err != nil {
 		log.Printf("segm.Done failed: %v", err)
 		return
 	}
 
-	log.Printf("Indexing success: %s", idxSegm)
+	log.Printf("Indexing success: %s (%d)", idxSegm, ts.DocCount())
+	
+	ts = nil
 	gcse.DumpMemStats()
 	runtime.GC()
 	gcse.DumpMemStats()
+	
+	if err := dbSegm.Remove(); err != nil {
+		log.Printf("Delete segment %v failed: %v", dbSegm, err)
+	}
 }
 
 func indexLoop(gap time.Duration) {
