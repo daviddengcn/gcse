@@ -4,6 +4,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/go-villa"
@@ -59,17 +60,50 @@ func main() {
 	http.ListenAndServe(gcse.ServerAddr, LogHandler{})
 }
 
+type SimpleDuration time.Duration
+
+func (sd SimpleDuration) String() string {
+	d := time.Duration(sd)
+	if d.Hours() > 24 {
+		return fmt.Sprintf("%.0f days", d.Hours()/24)
+	}
+	
+	if d.Hours() >= 1 {
+		return fmt.Sprintf("%.0f hours", d.Hours())
+	}
+	
+	if d.Minutes() >= 1 {
+		return fmt.Sprintf("%.0f mins", d.Minutes())
+	}
+	
+	if d.Seconds() >= 1 {
+		return fmt.Sprintf("%.0f sec", d.Seconds())
+	}
+	
+	if d.Nanoseconds() >= 1e6 {
+		return fmt.Sprintf("%d ms", d.Nanoseconds()/1e6)
+	}
+	
+	if d.Nanoseconds() >= 1e3 {
+		return fmt.Sprintf("%d us", d.Nanoseconds()/1e3)
+	}
+	
+	return fmt.Sprintf("%d ns", d.Nanoseconds())
+}
+
 func pageRoot(w http.ResponseWriter, r *http.Request) {
 	docCount := 0
 	if indexDB != nil {
 		docCount = indexDB.DocCount()
 	}
 	err := templates.ExecuteTemplate(w, "index.html", struct {
-		TotalDocs int
+		TotalDocs   int
 		LastUpdated time.Time
+		IndexAge    SimpleDuration
 	}{
-		TotalDocs: docCount,
+		TotalDocs:   docCount,
 		LastUpdated: indexUpdated,
+		IndexAge:    SimpleDuration(time.Since(indexUpdated)),
 	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -273,7 +307,7 @@ func pageSearch(w http.ResponseWriter, r *http.Request) {
 	data := struct {
 		Q           string
 		Results     *ShowResults
-		SearchTime  time.Duration
+		SearchTime  SimpleDuration
 		BeforePages []int
 		PrevPage    int
 		CurrentPage int
@@ -284,7 +318,7 @@ func pageSearch(w http.ResponseWriter, r *http.Request) {
 	}{
 		Q:           q,
 		Results:     showResults,
-		SearchTime:  time.Now().Sub(startTime),
+		SearchTime:  SimpleDuration(time.Since(startTime)),
 		BeforePages: beforePages,
 		PrevPage:    prevPage,
 		CurrentPage: p,
