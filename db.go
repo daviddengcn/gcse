@@ -16,9 +16,9 @@ type MemDB struct {
 	db map[string]interface{}
 	fn villa.Path
 	sync.RWMutex
-	syncMutex   sync.Mutex // if lock both mutexes, lock RWMutex first
+	syncMutex    sync.Mutex // if lock both mutexes, lock RWMutex first
 	lastModified time.Time
-	modified    bool
+	modified     bool
 }
 
 func NewMemDB(root villa.Path, kind string) *MemDB {
@@ -140,7 +140,7 @@ func (mdb *MemDB) Sync() error {
 func (mdb *MemDB) Export(root villa.Path, kind string) error {
 	mdb.RLock()
 	defer mdb.RUnlock()
-	
+
 	fn := root.Join(kind + ".gob")
 
 	f, err := fn.Create()
@@ -200,14 +200,14 @@ type TokenIndexer struct {
 	index.TokenIndexer
 	fn villa.Path
 	sync.RWMutex
-	syncMutex sync.Mutex
+	syncMutex    sync.Mutex
 	lastModified time.Time
-	modified  bool
+	modified     bool
 }
 
 func NewTokenIndexer(root villa.Path, kind string) *TokenIndexer {
 	ti := &TokenIndexer{}
-	
+
 	if root != "" {
 		if err := root.MkdirAll(0755); err != nil {
 			log.Printf("MkdirAll failed: %v", err)
@@ -229,7 +229,6 @@ func (ti *TokenIndexer) LastModified() time.Time {
 	return ti.lastModified
 }
 
-
 func (ti *TokenIndexer) Load() error {
 	ti.Lock()
 	defer ti.Unlock()
@@ -239,7 +238,7 @@ func (ti *TokenIndexer) Load() error {
 	if err == nil {
 		lastModified = st.ModTime()
 	}
-	
+
 	f, err := ti.fn.Open()
 	if err == os.ErrNotExist {
 		return nil
@@ -280,7 +279,7 @@ func (ti *TokenIndexer) Sync() error {
 
 func (ti *TokenIndexer) Export(root villa.Path, kind string) error {
 	fn := root.Join(kind + ".gob")
-	
+
 	ti.RLock()
 	defer ti.RUnlock()
 

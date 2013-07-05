@@ -1,11 +1,11 @@
 package gcse
 
 import (
-	"fmt"
-	"log"
 	"encoding/json"
+	"fmt"
 	"github.com/daviddengcn/go-villa"
 	"github.com/howeyc/fsnotify"
+	"log"
 	"runtime"
 	"time"
 )
@@ -85,7 +85,7 @@ func ClearWatcherEvents(watcher *fsnotify.Watcher) {
 }
 
 func WaitForWatcherEvents(watcher *fsnotify.Watcher) {
-	time.Sleep(10*time.Second)
+	time.Sleep(10 * time.Second)
 	return
 	for {
 		select {

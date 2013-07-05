@@ -7,8 +7,8 @@ import (
 
 const (
 	KindIndex = "index"
-	IndexFn = KindIndex + ".gob"
-	
+	IndexFn   = KindIndex + ".gob"
+
 	KindDocDB = "docdb"
 )
 
@@ -21,7 +21,7 @@ var (
 	// producer: server, consumer: crawler
 	ImportPath     villa.Path
 	ImportSegments Segments
-	
+
 	// producer: crawler, consumer: indexer
 	DBOutPath     villa.Path
 	DBOutSegments Segments
@@ -42,7 +42,7 @@ func init() {
 	ImportPath = DataRoot.Join("imports")
 	ImportPath.MkdirAll(0755)
 	ImportSegments = segments(ImportPath)
-	
+
 	DBOutPath = DataRoot.Join("dbout")
 	DBOutPath.MkdirAll(0755)
 	DBOutSegments = segments(DBOutPath)

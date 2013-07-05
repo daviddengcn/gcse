@@ -5,6 +5,7 @@ import (
 	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/go-villa"
 	"log"
+	"runtime"
 	"strings"
 	"time"
 )
@@ -63,6 +64,11 @@ func loadIndex() error {
 	}
 
 	indexUpdated = updateTime
+
+	db = nil
+	gcse.DumpMemStats()
+	runtime.GC()
+	gcse.DumpMemStats()
 
 	return nil
 }

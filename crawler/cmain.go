@@ -65,7 +65,7 @@ func main() {
 
 	go importingLoop()
 	go dumpingLoop()
-	
+
 	go syncLoop()
 	go dumpingStatusLoop()
 

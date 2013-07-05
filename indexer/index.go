@@ -43,13 +43,13 @@ func doIndex(dbSegm gcse.Segment) {
 		log.Printf("GenMaxSegment failed: %v", err)
 		return
 	}
-	
+
 	runtime.GC()
 	gcse.DumpMemStats()
 	log.Printf("Reading docDB from %v ...", dbSegm)
 	// read docDB
 	docDB := gcse.NewMemDB(dbSegm.Join(""), gcse.KindDocDB)
-	
+
 	gcse.DumpMemStats()
 	log.Printf("Generating importsDB ...")
 	importsDB := gcse.NewTokenIndexer("", "")
@@ -65,7 +65,7 @@ func doIndex(dbSegm gcse.Segment) {
 		log.Printf("Making importsDB failed: %v", err)
 		return
 	}
-	
+
 	gcse.DumpMemStats()
 	log.Printf("Indexing to %v ...", idxSegm)
 
@@ -116,12 +116,12 @@ func doIndex(dbSegm gcse.Segment) {
 	}
 
 	log.Printf("Indexing success: %s (%d)", idxSegm, ts.DocCount())
-	
+
 	docDB, importsDB, ts = nil, nil, nil
 	gcse.DumpMemStats()
 	runtime.GC()
 	gcse.DumpMemStats()
-	
+
 	if err := dbSegm.Remove(); err != nil {
 		log.Printf("Delete segment %v failed: %v", dbSegm, err)
 	}

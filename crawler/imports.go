@@ -7,14 +7,13 @@ import (
 	"time"
 )
 
-
 func hasImportsFolders() bool {
 	all, err := gcse.ImportSegments.ListAll()
 	if err != nil {
 		log.Printf("ImportSegments.ListAll failed: %v", err)
 		return false
 	}
-	
+
 	return len(all) > 0
 }
 
@@ -24,7 +23,7 @@ func hasImportsDones() bool {
 		log.Printf("ImportSegments.ListDones failed: %v", err)
 		return false
 	}
-	
+
 	return len(dones) > 0
 }
 
@@ -73,12 +72,12 @@ func importingLoop() {
 		}
 		// wait for done folders
 		for !hasImportsDones() {
-			time.Sleep(10*time.Second)
+			time.Sleep(10 * time.Second)
 		}
 		// process done folders
 		if err := processImports(); err != nil {
 			log.Printf("scanImports failed: %v", err)
-			time.Sleep(1*time.Second)
+			time.Sleep(1 * time.Second)
 		}
 	}
 }

@@ -17,7 +17,7 @@ func hasDonesDBOut() bool {
 		log.Printf("DBOutSegments.ListDones failed: %v", err)
 		return false
 	}
-	
+
 	return len(dones) > 0
 }
 
@@ -34,11 +34,11 @@ func dumpDB() error {
 	if err := docDB.Export(segm.Join(""), gcse.KindDocDB); err != nil {
 		return err
 	}
-	
+
 	if err := segm.Done(); err != nil {
 		return err
 	}
-	
+
 	lastDumpTime = time.Now()
 	return nil
 }
@@ -58,20 +58,19 @@ func dumpingLoop() {
 			gcse.WaitForWatcherEvents(watcher)
 		}
 
-		// wait for data change		
+		// wait for data change
 		for !needDump() {
 			time.Sleep(1 * time.Minute)
-		} 
-		
+		}
+
 		// dump docDB
 		if err := gcse.DBOutSegments.ClearUndones(); err != nil {
 			log.Printf("DBOutSegments.ClearUndones failed: %v", err)
 		}
-		
+
 		if err := dumpDB(); err != nil {
 			log.Printf("dumpDB failed: %v", err)
 			time.Sleep(1 * time.Minute)
 		}
 	}
 }
-
