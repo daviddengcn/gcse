@@ -41,8 +41,8 @@ func init() {
 
 var patURL = regexp.MustCompile(`http[s]?://\S+`)
 
-func filterURLs(text string) string {
-	return patURL.ReplaceAllString(text, " ")
+func filterURLs(text []byte) []byte {
+	return patURL.ReplaceAll(text, []byte(" "))
 }
 
 func isTermSep(r rune) bool {
@@ -123,7 +123,8 @@ func CheckCamel(last, current rune) index.RuneType {
 	return index.TokenBody
 }
 
-func AppendTokens(tokens villa.StrSet, text string) villa.StrSet {
+/*
+func AppendTokens1(tokens villa.StrSet, text string) villa.StrSet {
 	text = filterURLs(text)
 
 	lastToken := ""
@@ -158,6 +159,62 @@ func AppendTokens(tokens villa.StrSet, text string) villa.StrSet {
 		lastToken = tokenStr
 		return nil
 	})
+
+	return tokens
+}
+*/
+
+// a block does not contain blanks
+func appendTokensOfBlock(tokens villa.StrSet, block []byte) villa.StrSet {
+	lastToken := ""
+	index.Tokenize(CheckRuneType, (*villa.ByteSlice)(&block),
+		func(token []byte) error {
+			tokenStr := string(token)
+			if isCamel(tokenStr) {
+				last := ""
+				index.Tokenize(CheckCamel, villa.NewPByteSlice(token),
+					func(token []byte) error {
+						tokenStr = string(token)
+						tokenStr = NormWord(tokenStr)
+						if !stopWords.In(tokenStr) {
+							tokens.Put(tokenStr)
+						}
+		
+						if last != "" {
+							tokens.Put(last + "-" + string(tokenStr))
+						}
+		
+						last = tokenStr
+						return nil
+					})
+			}
+			tokenStr = NormWord(tokenStr)
+			if !stopWords.In(tokenStr) {
+				tokens.Put(tokenStr)
+			}
+	
+			if lastToken != "" {
+				if tokenStr[0] > 128 && lastToken[0] > 128 {
+					tokens.Put(lastToken + tokenStr)
+				} else if tokenStr[0] <= 128 && lastToken[0] <= 128 {
+					tokens.Put(lastToken + "-" + tokenStr)
+				}
+			}
+	
+			lastToken = tokenStr
+			return nil
+		})
+	return tokens
+}
+
+func AppendTokens(tokens villa.StrSet, text []byte) villa.StrSet {
+	textBuf := filterURLs([]byte(text))
+	
+	index.Tokenize(index.SeparatorFRuneTypeFunc(unicode.IsSpace),
+		(*villa.ByteSlice)(&textBuf), func(block []byte) error {
+			tokens = appendTokensOfBlock(tokens, block)
+			return nil
+		})
 
 	return tokens
 }

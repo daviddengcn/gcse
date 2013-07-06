@@ -1,3 +1,17 @@
+/*
+Package gcse is the core supporting library for go-code-serach-engine (GCSE).
+Its exported types and functions are mainly for sub packages. If you want
+some of the function, copy the code away.
+
+Sub-projects
+
+crawler  crawling packages
+
+indexer  creating index data for web-server
+
+server   providing web services, including home/top/search services.
+
+*/
 package gcse
 
 import (

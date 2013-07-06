@@ -84,7 +84,7 @@ func loadIndexLoop() {
 }
 
 func search(q string) (*SearchResult, villa.StrSet, error) {
-	tokens := gcse.AppendTokens(nil, q)
+	tokens := gcse.AppendTokens(nil, []byte(q))
 	log.Printf("tokens for query %s: %v", q, tokens)
 
 	if indexDB == nil {
@@ -182,7 +182,7 @@ func selectSnippets(text string, tokens villa.StrSet, maxBytes int) string {
 		line = strings.TrimSpace(line)
 		lines[i] = line
 
-		lineTokens := gcse.AppendTokens(nil, line)
+		lineTokens := gcse.AppendTokens(nil, []byte(line))
 		reserve := false
 		for token := range tokens {
 			if !hitTokens.In(token) && lineTokens.In(token) {

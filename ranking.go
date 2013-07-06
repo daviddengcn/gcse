@@ -1,6 +1,7 @@
 package gcse
 
 import (
+	"bytes"
 	"github.com/daviddengcn/go-villa"
 	"math"
 	"strings"
@@ -119,13 +120,13 @@ func CalcMatchScore(doc *HitInfo, tokens villa.StrSet) float64 {
 
 	s := float64(0.02 * float64(len(tokens)))
 
-	filteredSyn := filterURLs(doc.Synopsis)
-	synopsis := strings.ToLower(filteredSyn)
+	filteredSyn := filterURLs([]byte(doc.Synopsis))
+	synopsis := string(bytes.ToLower(filteredSyn))
 	synTokens := AppendTokens(nil, filteredSyn)
 	name := strings.ToLower(doc.Name)
-	nameTokens := AppendTokens(nil, name)
+	nameTokens := AppendTokens(nil, []byte(name))
 	pkg := strings.ToLower(doc.Package)
-	pkgTokens := AppendTokens(nil, doc.Package)
+	pkgTokens := AppendTokens(nil, []byte(doc.Package))
 
 	for token := range tokens {
 		if matchToken(token, synopsis, synTokens) {

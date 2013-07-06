@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/daviddengcn/go-villa"
 	"strconv"
+	"github.com/howeyc/fsnotify"
 )
 
 const (
@@ -67,6 +68,7 @@ func (s segment) Remove() error {
 }
 
 type Segments interface {
+	Watch(watcher *fsnotify.Watcher) error
 	ListAll() ([]Segment, error)
 	// all done
 	ListDones() ([]Segment, error)
@@ -85,6 +87,10 @@ type segments villa.Path
 func newSegment(path villa.Path) segment {
 	path.MkdirAll(0755)
 	return segment(path)
+}
+
+func (s segments) Watch(watcher *fsnotify.Watcher) error {
+	return watcher.Watch(string(s))
 }
 
 func (s segments) ListAll() ([]Segment, error) {
