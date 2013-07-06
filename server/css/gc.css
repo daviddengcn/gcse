@@ -1,6 +1,6 @@
 body {
     margin: 0px auto;
-    width: 1024px;
+    max-width: 1024px;
     text-align: left;
     background: #eee;
 }
@@ -15,6 +15,10 @@ input.query-box {
 
 div.content {
     text-align: left;
+}
+
+ol.schres {
+    line-height: 1.2em;
 }
 
 ol.schres li {
@@ -94,6 +98,7 @@ header {
     margin-top: 5px;
     margin-bottom: 10px;
     height: 25px;
+    padding-left: 2px;
 }
 
 header a, footer a {
@@ -106,14 +111,16 @@ div.hdsch {
 }
 
 div.hdsch input[type="search"] {
-    background: #ddd;
     width: 80px;
     transition: width 0.1s ease-in;
+    opacity: 0.5;
 }
 
 div.hdsch input[type="search"]:focus {
     background: white;
+    width: auto;
     width: 300px;
+    opacity: 1.0;
 }
 
 footer {
@@ -211,4 +218,46 @@ div.toplist div.info {
 
 .clearboth {
     clear: both;
+}
+
+
+@media only screen and (max-device-width: 480px) {
+body {
+    margin: 0px auto;
+    width: 100%;
+}
+
+div.main {
+    padding: 0px 0px 0px 2px;
+    overflow: hidden;
+}
+input.query-box {
+    width: auto;
+}
+
+div.hdsch {
+    padding-right: 2px;
+}
+
+div.hdsch input[type="search"]:focus {
+    background: white;
+    width: 150px;
+}
+h1 {
+    font-size: 1em;
+    padding-left: 2px;
+}
+
+h1 img {
+    height: 16px;
+}
+
+div.taframe {
+    padding: 0px;
+}
+
+textarea#pkg {
+    width: 95%;
+    height: 200px;
+}
 }
