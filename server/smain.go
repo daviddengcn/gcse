@@ -31,6 +31,7 @@ func init() {
 	http.HandleFunc("/search", pageSearch)
 	http.HandleFunc("/view", pageView)
 	http.HandleFunc("/tops", pageTops)
+	http.HandleFunc("/about", pageAbout)
 
 	//	http.HandleFunc("/update", pageUpdate)
 
@@ -96,7 +97,7 @@ func pageRoot(w http.ResponseWriter, r *http.Request) {
 	if indexDB != nil {
 		docCount = indexDB.DocCount()
 	}
-	err := templates.ExecuteTemplate(w, "index.html", struct {
+	if err := templates.ExecuteTemplate(w, "index.html", struct {
 		TotalDocs   int
 		LastUpdated time.Time
 		IndexAge    SimpleDuration
@@ -104,8 +105,14 @@ func pageRoot(w http.ResponseWriter, r *http.Request) {
 		TotalDocs:   docCount,
 		LastUpdated: indexUpdated,
 		IndexAge:    SimpleDuration(time.Since(indexUpdated)),
-	})
-	if err != nil {
+	}); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func pageAbout(w http.ResponseWriter, r *http.Request) {
+	if err := templates.ExecuteTemplate(w, "about.html", nil); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
