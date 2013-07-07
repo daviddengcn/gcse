@@ -1,0 +1,73 @@
+{{template "header.html" "About GCSE"}}
+<h3>Motivation</h3>
+<p>
+    When I began to code in Go, I loved it. Directly importing from other
+    open source projects is very useful. Projects are connected in a very
+    elegant way.
+</p>
+<p>
+    So many people are contributing to Go society, and wheels are inevitably
+    invented for several times. Choosing the one to import becames a problem.
+    This is what a search engine can help.
+</p>
+<p>
+    A specific search engine designed for Go can benefit in the following ways:
+    <ul>
+        <li>
+            By analyzing the importing relations between projects, popular
+            projects can be found. This gives a better ranking than general
+            search engine.
+        </li>
+        <li>
+            Structured data for each package can be extracted: package path,
+            name, synopsis, documentation. Match rank can be calculated in
+            a better way.
+        </li>
+        <li>
+            Stars (or watchers) of some sites are crawled to further help ranking.
+        </li>
+    </ul>
+</p>
+<h3>Project</h3>
+<p>
+    This is an <a href="https://github.com/daviddengcn/gcse">open source project</a>
+    hosted on <a target="_blank" href="http://github.com/">github</a>.
+</p>
+<p>
+    If you find a bug, have a new idea or any other suggestion, please
+    fire an issue at <a href="https://github.com/daviddengcn/gcse/issues">here</a>.
+</p>
+<p>
+    Constructing GCSE, several sub-projects are published as well. Unlike GCSE
+    itself, they are designed to be used by other projects.
+    <ul>
+        <li>
+            <a target="_blank" href="https://github/daviddengcn/go-index">go-index</a>:
+            a text indexing package, serving the index/search function in GCSE.
+        </li>
+        <li>
+            <a target="_blank" href="https://github/daviddengcn/go-rpc">go-rpc</a>:
+           an RPC service through HTTP protocol.
+        </li>
+    </ul>
+</p>
+<h3>Acknowledgement</h3>
+<p>
+    GCSE <a href="/view?id={{"github.com/daviddengcn/gcse"}}">imports</a>
+    (or fork) the following projects:
+    <ul>
+        <li>
+            <a target="_blank" href="https://github.com/garyburd/gddo">gddo</a>
+            by <a target="_blank" href="http://gary.beagledreams.com/">Gary Burd</a>,
+            for crawling.
+            It's forked (for modification) to my
+            <a target="_blank" href="github.com/daviddengcn/gddo">gddo</a> project.
+        </li>
+        <li>
+            <a target="_blank" href="https://github.com/agonopol/go-stem">go-stem</a>
+            by <a target="_blank" href="https://github.com/agonopol">Alex Gonopolskiy</a>,
+            for stemming.
+        </li>
+    </ul>
+</p>
+{{template "footer.html"}}
