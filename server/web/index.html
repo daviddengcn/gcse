@@ -1,5 +1,15 @@
 {{template "header.html"}}
-<h1><img class="logo" src="/images/logo-32.png"> Go Code Search Engine</h1>
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+<h1>
+    <img class="logo" src="/images/logo-32.png"> Go Code Search Engine
+</h1>
 <div>
     <form action="search">
         <input class="query-box" type="search" name="q" value="">
@@ -7,9 +17,20 @@
     </form>
 </div>
 {{if .}}
-<div>
+<div class="info">
     Totally <a href="/search">{{.TotalDocs}}</a> packages indexed,
     last updated {{.IndexAge}} before.
+    <div style="vertical-align: middle" class="fb-like" data-href="http://go-search.org/" data-send="false" data-layout="button_count" data-width="450" data-show-faces="true"></div>
+    <div class="g-plusone" data-size="small"></div>
 </div>
+<div>
+</div>
+<script type="text/javascript">
+  (function() {
+    var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+    po.src = 'https://apis.google.com/js/plusone.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+  })();
+</script>
 {{end}}
 {{template "footer.html"}}

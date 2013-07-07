@@ -1,5 +1,16 @@
 {{template "header.html" (printf "%s - Package" .Name)}}
-<h2>Package {{.Name}} - {{.StarCount}} stars</h2>
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+<h2>Package {{.Name}} - {{.StarCount}} stars
+    <div style="vertical-align: middle" class="fb-like" data-href="http://go-search.org/view?id={{.Package}}" data-send="false" data-layout="button_count" data-width="450" data-show-faces="true"></div>
+    <div class="g-plusone" data-size="small"></div>
+</h2>
 <div class="code">
     import "{{.Package}}"
 </div>
@@ -28,5 +39,12 @@
     | <a target="_blank" href="{{.ProjectURL}}">Project</a>
     | Last Crawled: {{.LastUpdated.UTC.Format "2006-01-02 15:04:05 (MST)"}}
     | {{printf "%.2f" .StaticScore}}
-</div>    
+</div>
+<script type="text/javascript">
+  (function() {
+    var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+    po.src = 'https://apis.google.com/js/plusone.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+  })();
+</script>    
 {{template "footer.html"}}
