@@ -45,7 +45,7 @@ func doIndex(dbSegm gcse.Segment) {
 	docDB := gcse.NewMemDB(dbSegm.Join(""), gcse.KindDocDB)
 
 	log.Printf("Indexing to %v ...", idxSegm)
-	
+
 	ts, err := gcse.Index(docDB)
 	if err != nil {
 		log.Printf("Indexing failed: %v", err)

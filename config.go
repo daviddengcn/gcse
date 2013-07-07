@@ -45,10 +45,10 @@ var (
 	// server never delete index segments, indexer clear updated segments.
 	IndexPath     villa.Path
 	IndexSegments Segments
-	
+
 	// configures of crawler
 	CrawlByGodocApi bool = true
-	CrawlerSyncGap = 10 * time.Minute
+	CrawlerSyncGap       = 10 * time.Minute
 )
 
 func init() {
@@ -69,7 +69,7 @@ func init() {
 	IndexPath = DataRoot.Join("index")
 	IndexPath.MkdirAll(0755)
 	IndexSegments = segments(IndexPath)
-	
+
 	CrawlByGodocApi = conf.Bool("crawler.godoc", CrawlByGodocApi)
 	CrawlerSyncGap, _ = time.ParseDuration(conf.String("crawler.syncgap", "10m"))
 }

@@ -38,7 +38,7 @@ func dumpDB() error {
 	if err := segm.Done(); err != nil {
 		return err
 	}
-	
+
 	log.Printf("Dumping docDB to %v success", segm)
 
 	lastDumpTime = time.Now()

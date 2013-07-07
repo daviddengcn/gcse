@@ -55,12 +55,10 @@ func (t *TopN) Len() int {
 	return t.pq.Len()
 }
 
-func statTops() []StatList {
+func statTops(N int) []StatList {
 	if indexDB == nil {
 		return nil
 	}
-
-	const N = 10
 
 	topStaticScores := NewTopN(func(a, b interface{}) int {
 		return villa.FloatValueCompare(a.(gcse.HitInfo).StaticScore,

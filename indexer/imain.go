@@ -16,7 +16,7 @@ func main() {
 		if err := gcse.IndexSegments.ClearUndones(); err != nil {
 			log.Printf("ClearUndones failed: %v", err)
 		}
-		
+
 		if watcher != nil {
 			gcse.ClearWatcherEvents(watcher)
 			for {
@@ -29,7 +29,7 @@ func main() {
 		} else {
 			time.Sleep(1 * time.Minute)
 		}
-		
+
 		dbSegm, err := gcse.DBOutSegments.FindMaxDone()
 		if err == nil && dbSegm != nil {
 			if err := clearOutdatedIndex(); err != nil {

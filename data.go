@@ -179,11 +179,11 @@ func appendTokensOfBlock(tokens villa.StrSet, block []byte) villa.StrSet {
 						if !stopWords.In(tokenStr) {
 							tokens.Put(tokenStr)
 						}
-		
+
 						if last != "" {
 							tokens.Put(last + "-" + string(tokenStr))
 						}
-		
+
 						last = tokenStr
 						return nil
 					})
@@ -192,7 +192,7 @@ func appendTokensOfBlock(tokens villa.StrSet, block []byte) villa.StrSet {
 			if !stopWords.In(tokenStr) {
 				tokens.Put(tokenStr)
 			}
-	
+
 			if lastToken != "" {
 				if tokenStr[0] > 128 && lastToken[0] > 128 {
 					tokens.Put(lastToken + tokenStr)
@@ -200,7 +200,7 @@ func appendTokensOfBlock(tokens villa.StrSet, block []byte) villa.StrSet {
 					tokens.Put(lastToken + "-" + tokenStr)
 				}
 			}
-	
+
 			lastToken = tokenStr
 			return nil
 		})
@@ -209,7 +209,7 @@ func appendTokensOfBlock(tokens villa.StrSet, block []byte) villa.StrSet {
 
 func AppendTokens(tokens villa.StrSet, text []byte) villa.StrSet {
 	textBuf := filterURLs([]byte(text))
-	
+
 	index.Tokenize(index.SeparatorFRuneTypeFunc(unicode.IsSpace),
 		(*villa.ByteSlice)(&textBuf), func(block []byte) error {
 			tokens = appendTokensOfBlock(tokens, block)

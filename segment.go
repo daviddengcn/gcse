@@ -3,8 +3,8 @@ package gcse
 import (
 	"fmt"
 	"github.com/daviddengcn/go-villa"
-	"strconv"
 	"github.com/howeyc/fsnotify"
+	"strconv"
 )
 
 const (

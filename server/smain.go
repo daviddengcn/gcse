@@ -401,7 +401,13 @@ func pageView(w http.ResponseWriter, r *http.Request) {
 }
 
 func pageTops(w http.ResponseWriter, r *http.Request) {
-	err := templates.ExecuteTemplate(w, "tops.html", statTops())
+	N, _ := strconv.Atoi(r.FormValue("len"))
+	if N < 10 {
+		N = 10
+	} else if N > 100 {
+		N = 100
+	}
+	err := templates.ExecuteTemplate(w, "tops.html", statTops(N))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
