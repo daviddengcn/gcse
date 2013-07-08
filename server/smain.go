@@ -248,7 +248,17 @@ mainLoop:
 		projToIdx[d.Package] = cnt
 		if r.In(cnt) {
 			markedName := markText(d.Name, tokens, markWord)
-			raw := selectSnippets(d.Description+"\n"+d.ReadmeData, tokens, 300)
+			readme := ""
+			if d.ReadmeFn != "" {
+				fn := strings.ToLower(d.ReadmeFn)
+				if strings.HasSuffix(fn, ".md") || strings.HasSuffix(fn, ".markdown") {
+					md := index.ParseMarkdown([]byte(d.ReadmeData))
+					readme = string(md.Text)
+				} else {
+					readme = d.ReadmeData
+				}
+			}
+			raw := selectSnippets(d.Description+"\n"+readme, tokens, 300)
 
 			if d.StarCount < 0 {
 				d.StarCount = 0
