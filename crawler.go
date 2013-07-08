@@ -164,6 +164,10 @@ func CrawlPackage(httpClient *http.Client, pkg string, etag string) (p *Package,
 	if pdoc.Doc == "" && pdoc.Synopsis == "" {
 		pdoc.Synopsis = godoc.Synopsis(readmeData)
 	}
+	
+	imports := villa.NewStrSet(pdoc.Imports...)
+	imports.Put(pdoc.TestImports...)
+	imports.Put(pdoc.XTestImports...)
 
 	return &Package{
 		Package:    pdoc.ImportPath,
@@ -174,7 +178,7 @@ func CrawlPackage(httpClient *http.Client, pkg string, etag string) (p *Package,
 		StarCount:  pdoc.StarCount,
 		ReadmeFn:   readmeFn,
 		ReadmeData: readmeData,
-		Imports:    pdoc.Imports,
+		Imports:    imports.Elements(),
 
 		References: pdoc.References,
 		Etag:       pdoc.Etag,
