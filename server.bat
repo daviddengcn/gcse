@@ -1,5 +1,5 @@
-go build github.com/daviddengcn/gcse/server
+go install github.com/daviddengcn/gcse/server
 @if errorlevel 1 goto exit
-server
+bin\server
 
 :exit

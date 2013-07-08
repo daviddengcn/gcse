@@ -1,5 +1,5 @@
-go build github.com/daviddengcn/gcse/crawler
+go install github.com/daviddengcn/gcse/crawler
 @if errorlevel 1 goto exit
-crawler
+bin\crawler
 
 :exit
