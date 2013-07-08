@@ -1,5 +1,5 @@
-go build github.com/daviddengcn/gcse/indexer
+go install github.com/daviddengcn/gcse/indexer
 @if errorlevel 1 goto exit
-indexer
+%GOPATH%\bin\indexer
 
 :exit
