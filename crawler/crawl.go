@@ -79,11 +79,20 @@ func appendPackage(pkg string) bool {
 	return schedulePackage(pkg, time.Now(), "") == nil
 }
 
-func touchPackage(pkg string) bool {
+// reschedule if last crawl time is later than crawledBefore
+func touchPackage(pkg string, crawledBefore time.Time) bool {
 	pkg = strings.TrimSpace(pkg)
 	if !doc.IsValidRemotePath(pkg) {
-		// log.Printf("  [appendPackage] Not a valid remote path: %s", pkg)
+		//log.Printf("  [touchPackage] Not a valid remote path: %s", pkg)
 		return false
+	}
+	
+	var ent gcse.DocInfo 
+	if docDB.Get(pkg, &ent) {
+		if ent.LastUpdated.After(crawledBefore) {
+			//log.Printf("  [touchPackage] no need to update: %s", pkg)
+			return false
+		}
 	}
 
 	// set Etag to "" to force updating
@@ -300,6 +309,37 @@ func processGodoc(httpClient *http.Client) bool {
 	return true
 }
 
+const (
+	githubUpdatesGap = 4 * time.Hour
+)
+
+var (
+	githubUpdatesCrawled time.Time
+)
+
+func touchByGithubUpdates() bool {
+	if time.Now().Before(githubUpdatesCrawled.Add(githubUpdatesGap)) {
+		return false
+	}
+	
+	updates, err := gcse.GithubUpdates()
+	if err != nil {
+		log.Printf("GithubUpdates failed: %v", err)
+		return false
+	}
+	
+	log.Printf("%d updates found!", len(updates))
+	
+	res := false
+	for pkg, ut := range updates {
+		if touchPackage(pkg, ut) {
+			res = true
+		}
+	}
+	
+	return res
+}
+
 func crawlEnetiresLoop() {
 	httpClient := gcse.GenHttpClient("")
 
@@ -405,6 +445,10 @@ func crawlEnetiresLoop() {
 			if processGodoc(httpClient) {
 				didSomething = true
 			}
+		}
+		
+		if touchByGithubUpdates() {
+			didSomething = true
 		}
 
 		if !didSomething {

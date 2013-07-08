@@ -12,6 +12,10 @@ import (
 	"net/url"
 	"strings"
 	"unicode/utf8"
+	"regexp"
+	"strconv"
+	"time"
+	"io/ioutil"
 )
 
 const (
@@ -229,4 +233,47 @@ func CrawlPerson(httpClient *http.Client, id string) (*Person, error) {
 
 func IsBadPackage(err error) bool {
 	return doc.IsNotFound(villa.DeepestNested(err))
+}
+
+var githubProjectPat = regexp.MustCompile(`href="/([^/]+/[^/]+)/stargazers"`)
+var githubUpdatedPat = regexp.MustCompile(`datetime="([^"]+)"`)
+
+func GithubUpdates() (map[string]time.Time, error) {
+	updates := make(map[string]time.Time)
+	for i := 0; i < 2; i++ {
+		resp, err := http.Get("https://github.com/languages/Go/updated?page=" + strconv.Itoa(i+1))
+		if err != nil {
+			return nil, err
+		}
+		p, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+
+		for {
+			m := githubProjectPat.FindSubmatchIndex(p)
+			if m == nil {
+				break
+			}
+			ownerRepo := "github.com/" + string(p[m[2]:m[3]])
+			p = p[m[1]:]
+
+			m = githubUpdatedPat.FindSubmatchIndex(p)
+			if m == nil {
+				return nil, fmt.Errorf("updated not found for %s", ownerRepo)
+			}
+			
+			// Mon Jan 2 15:04:05 -0700 MST 2006
+			updated, _ := time.Parse("2006-01-02T15:04:05-07:00", string(p[m[2]:m[3]]))
+			p = p[m[1]:]
+
+			if _, found := updates[ownerRepo]; !found {
+				updates[ownerRepo] = updated
+			}
+		}
+	}
+	if len(updates) == 0 {
+		return nil, errors.New("no updates found")
+	}
+	return updates, nil
 }
