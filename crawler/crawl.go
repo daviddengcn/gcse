@@ -29,6 +29,7 @@ const (
 
 type CrawlingEntry struct {
 	ScheduleTime time.Time
+	Version      int // if gcse.CrawlerVersion is different from this value, etag is ignored
 	Etag         string
 }
 
@@ -43,6 +44,7 @@ func init() {
 func schedulePackage(pkg string, sTime time.Time, etag string) error {
 	ent := CrawlingEntry{
 		ScheduleTime: sTime,
+		Version:      gcse.CrawlerVersion,
 		Etag:         etag,
 	}
 
@@ -129,9 +131,14 @@ func listCrawlEntriesByHost(db *gcse.MemDB, hostFromID func(id string) string,
 				return nil
 			}
 		}
+		
+		etag := ent.Etag
+		if ent.Version != gcse.CrawlerVersion {
+			etag = ""
+		}
 		groups[host] = append(entryInfos, EntryInfo{
 			ID:   id,
-			Etag: ent.Etag,
+			Etag: etag,
 		})
 
 		if fullGroups == maxHosts {

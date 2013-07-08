@@ -7,10 +7,6 @@ import (
 
 var docDB *gcse.MemDB
 
-const (
-	fieldImports = "i"
-)
-
 func processDocument(d *gcse.DocInfo) error {
 	pkg := d.Package
 

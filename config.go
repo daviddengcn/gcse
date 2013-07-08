@@ -49,6 +49,16 @@ var (
 	// configures of crawler
 	CrawlByGodocApi bool = true
 	CrawlerSyncGap       = 10 * time.Minute
+
+	/*
+		Increase this to ignore etag of last versions to crawl and parse all
+		packages.
+
+		ChangeLog:
+		   0    First version
+		   1    Add TestImports/XTestImports to Imports
+	*/
+	CrawlerVersion = 1
 )
 
 func init() {
