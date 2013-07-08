@@ -396,13 +396,21 @@ func pageView(w http.ResponseWriter, r *http.Request) {
 
 		showReadme := len(doc.Description) < 10 && len(doc.ReadmeData) > 0
 
+		docCount := 0
+		if indexDB != nil {
+			docCount = indexDB.DocCount()
+		}
 		if err := templates.ExecuteTemplate(w, "view.html", struct {
 			gcse.HitInfo
-			DescHTML   template.HTML
-			ShowReadme bool
+			DescHTML      template.HTML
+			TotalDocCount int
+			StaticRank    int
+			ShowReadme    bool
 		}{
 			HitInfo:    doc,
 			DescHTML:   template.HTML(descHTML),
+			TotalDocCount: docCount,
+			StaticRank: doc.StaticRank + 1,
 			ShowReadme: showReadme,
 		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

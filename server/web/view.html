@@ -39,6 +39,7 @@
     | <a target="_blank" href="{{.ProjectURL}}">Project</a>
     | Last Crawled: {{.LastUpdated.UTC.Format "2006-01-02 15:04:05 (MST)"}}
     | {{printf "%.2f" .StaticScore}}
+    | {{.StaticRank}}/{{.TotalDocCount}}
 </div>
 <script type="text/javascript">
   (function() {

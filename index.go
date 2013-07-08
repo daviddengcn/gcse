@@ -7,6 +7,11 @@ import (
 	"log"
 )
 
+const (
+	IndexTextField = "text"
+	IndexPkgField  = "pkg"
+)
+
 var errNotDocInfo = errors.New("Value is not DocInfo")
 
 func Index(docDB *MemDB) (*index.TokenSetSearcher, error) {
@@ -27,8 +32,8 @@ func Index(docDB *MemDB) (*index.TokenSetSearcher, error) {
 
 	DumpMemStats()
 	log.Printf("Making TokenSetSearcher ...")
-
-	ts := &index.TokenSetSearcher{}
+	
+	var hits []HitInfo
 	if err := docDB.Iterate(func(key string, val interface{}) error {
 		var hitInfo HitInfo
 
@@ -40,22 +45,48 @@ func Index(docDB *MemDB) (*index.TokenSetSearcher, error) {
 		hitInfo.Imported = importsDB.IdsOfToken(hitInfo.Package)
 		// StaticScore is calculated after setting all other fields of hitInfo
 		hitInfo.StaticScore = CalcStaticScore(&hitInfo)
-
-		var tokens villa.StrSet
-		tokens = AppendTokens(tokens, []byte(hitInfo.Name))
-		tokens = AppendTokens(tokens, []byte(hitInfo.Package))
-		tokens = AppendTokens(tokens, []byte(hitInfo.Description))
-		tokens = AppendTokens(tokens, []byte(hitInfo.ReadmeData))
-		tokens = AppendTokens(tokens, []byte(hitInfo.Author))
-
-		ts.AddDoc(map[string]villa.StrSet{
-			"text": tokens,
-			"pkg":  villa.NewStrSet(hitInfo.Package),
-		}, hitInfo)
+		
+		hits = append(hits, hitInfo)
 		return nil
 	}); err != nil {
 		return nil, err
 	}
+	
+	log.Printf("%d hits collected, sorting static-scores in descending order",
+		len(hits))
+	idxs := make([]int, len(hits))
+	for i := range idxs {
+		idxs[i] = i
+	}
+	villa.SortF(len(idxs), func(i, j int) bool {
+		return hits[idxs[i]].StaticScore > hits[idxs[j]].StaticScore
+	}, func(i, j int) {
+		idxs[i], idxs[j] = idxs[j], idxs[i]
+	})
+	ts := &index.TokenSetSearcher{}
+	
+	log.Printf("Indexing to TokenSetSearcher ...")
+	rank := 0
+	for i := range idxs {
+		hit := &hits[idxs[i]]
+		if i > 0 && hit.StaticScore < hits[idxs[i - 1]].StaticScore {
+			rank = i
+		}
+		hit.StaticRank = rank
+		
+		var tokens villa.StrSet
+		tokens = AppendTokens(tokens, []byte(hit.Name))
+		tokens = AppendTokens(tokens, []byte(hit.Package))
+		tokens = AppendTokens(tokens, []byte(hit.Description))
+		tokens = AppendTokens(tokens, []byte(hit.ReadmeData))
+		tokens = AppendTokens(tokens, []byte(hit.Author))
+
+		ts.AddDoc(map[string]villa.StrSet{
+			IndexTextField: tokens,
+			IndexPkgField:  villa.NewStrSet(hit.Package),
+		}, *hit)
+	}
+
 	importsDB = nil
 	return ts, nil
 }

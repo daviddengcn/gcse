@@ -32,6 +32,7 @@ type HitInfo struct {
 	Imported []string
 
 	StaticScore float64
+	StaticRank  int // zero-based
 }
 
 func init() {
