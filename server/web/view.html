@@ -8,8 +8,8 @@
   fjs.parentNode.insertBefore(js, fjs);
 }(document, 'script', 'facebook-jssdk'));</script>
 <h2>Package {{.Name}} - {{.StarCount}} stars
-    <div style="vertical-align: middle" class="fb-like" data-href="http://go-search.org/view?id={{.Package}}" data-send="false" data-layout="button_count" data-width="450" data-show-faces="true"></div>
-    <div class="g-plusone" data-size="small"></div>
+    <div style="vertical-align: middle" class="fb-like" data-href="{{.ProjectURL}}" data-send="false" data-layout="button_count" data-width="450" data-show-faces="true"></div>
+    <div class="g-plusone" data-size="small" data-href="{{.ProjectURL}}"></div>
 </h2>
 <div class="code">
     import "{{.Package}}"
