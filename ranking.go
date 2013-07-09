@@ -6,7 +6,7 @@ import (
 	"math"
 	"strings"
 	
-	"log"
+//	"log"
 )
 
 func scoreOfPkgByProject(n int, sameProj bool) float64 {
