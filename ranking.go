@@ -115,7 +115,7 @@ func matchToken(token string, text string, tokens villa.StrSet) bool {
 	return false
 }
 
-func CalcMatchScore(doc *HitInfo, tokens villa.StrSet) float64 {
+func CalcMatchScore(doc *HitInfo, tokens villa.StrSet, N int, Df func(token string) int) float64 {
 	if len(tokens) == 0 {
 		return 1.
 	}
@@ -131,16 +131,22 @@ func CalcMatchScore(doc *HitInfo, tokens villa.StrSet) float64 {
 	pkgTokens := AppendTokens(nil, []byte(doc.Package))
 	
 	for token := range tokens {
+		df := Df(token)
+		if df < 1 {
+			df = 1
+		}
+		idf := math.Log(float64(N) / float64(df))
+		
 		if matchToken(token, synopsis, synTokens) {
-			s += 0.25
+			s += 0.25*idf
 		}
 
 		if matchToken(token, name, nameTokens) {
-			s += 0.4
+			s += 0.4*idf
 		}
 
 		if matchToken(token, pkg, pkgTokens) {
-			s += 0.1
+			s += 0.1*idf
 		}
 	}
 

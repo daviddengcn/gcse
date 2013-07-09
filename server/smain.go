@@ -8,6 +8,7 @@ import (
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/go-villa"
+	"github.com/russross/blackfriday"
 	godoc "go/doc"
 	"html/template"
 	"log"
@@ -17,9 +18,19 @@ import (
 	"time"
 )
 
-var templates = template.Must(template.ParseGlob(gcse.ServerRoot.Join(`web/*`).S()))
+var templates *template.Template
+
+func Markdown(templ string) template.HTML {
+	var out villa.ByteSlice
+	templates.ExecuteTemplate(&out, templ, nil)
+	return template.HTML(blackfriday.MarkdownCommon(out))
+}
 
 func init() {
+	templates = template.Must(template.New("templates").Funcs(template.FuncMap{
+		"markdown": Markdown,
+	}).ParseGlob(gcse.ServerRoot.Join(`web/*`).S()))
+	
 	http.Handle("/css/", http.StripPrefix("/css/",
 		http.FileServer(http.Dir(gcse.ServerRoot.Join("css").S()))))
 	http.Handle("/images/", http.StripPrefix("/images/",

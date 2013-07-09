@@ -157,6 +157,7 @@ div.desc pre {
 }
 
 pre.readme {
+    word-break: break-word;
     font-size: 13px;
 }
 

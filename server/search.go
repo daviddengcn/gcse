@@ -87,20 +87,27 @@ func search(q string) (*SearchResult, villa.StrSet, error) {
 	tokens := gcse.AppendTokens(nil, []byte(q))
 	log.Printf("tokens for query %s: %v", q, tokens)
 
+	indexDB := indexDB
+
 	if indexDB == nil {
 		return &SearchResult{}, tokens, nil
 	}
-
+	
 	var hits []*Hit
+	
+	N := indexDB.DocCount()
+	Df := func(token string) int {
+		return len(indexDB.TokenDocList(gcse.IndexTextField, token))
+	}
 
-	indexDB.Search(map[string]villa.StrSet{"text": tokens},
+	indexDB.Search(map[string]villa.StrSet{gcse.IndexTextField: tokens},
 		func(docID int32, data interface{}) error {
 			hitInfo, _ := data.(gcse.HitInfo)
 			hit := &Hit{
 				HitInfo: hitInfo,
 			}
 
-			hit.MatchScore = gcse.CalcMatchScore(&hitInfo, tokens)
+			hit.MatchScore = gcse.CalcMatchScore(&hitInfo, tokens, N, Df)
 			hit.Score = hit.StaticScore * hit.MatchScore
 
 			hits = append(hits, hit)

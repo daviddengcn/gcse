@@ -1,79 +1,52 @@
 {{template "header.html" "About GCSE"}}
-<h3>Motivation</h3>
-<p>
-    When I began to code in <a target="_blank" href="http://golang.org/">Go</a>,
-    I loved it.  The integrated tooling for importing directly from version 
-    control systems is exceptional useful.  It allows projects to be connected 
-    in an elegant manner. 
-</p>
-<p>
-    With so many brillant people contributing to the Go ecosystem, there is a 
-    lot of "reinventing the wheel" happening.  Due to the way Go does imports, 
-    a central clearing house like Maven or NPM is simply not needed.  However, 
-    what is needed is a way to find the packages you want to import, and that is
-    why GCSE was created. 
-</p>
-<p>
-    A search engine specifically designed for Go can help in the following ways:
-    <ul>
-        <li>
-            By analyzing the importing relations between projects, popular
-            projects can be found. This gives a better ranking than general
-            search engine.
-        </li>
-        <li>
-            Structured data for each package can be extracted: package path,
-            name, synopsis, documentation. Match rank can be calculated in
-            a better way.
-        </li>
-        <li>
-            Package comments can be parsed and indexed.
-        </li>
-        <li>
-            Stars (or watchers) of some sites are crawled to further help ranking.
-        </li>
-    </ul>
-</p>
-<h3>Project</h3>
-<p>
-    This is an <a href="https://github.com/daviddengcn/gcse">open source project</a>
-    hosted on <a target="_blank" href="http://github.com/">github</a>.
-</p>
-<p>
-    If you find a bug, have a new idea or any other suggestion, please
-    submit an <a href="https://github.com/daviddengcn/gcse/issues">issue</a>.
-</p>
-<p>
-    While creating GCSE, several supporting projects were created and are published. 
-    Feel free to use them! 
-    <ul>
-        <li>
-            <a target="_blank" href="https://github.com/daviddengcn/go-index">go-index</a>:
-            a text indexing package, serving the index/search function in GCSE.
-        </li>
-        <li>
-            <a target="_blank" href="https://github.com/daviddengcn/go-rpc">go-rpc</a>:
-            an RPC service through HTTP protocol.
-        </li>
-    </ul>
-</p>
-<h3>Acknowledgement</h3>
-<p>
-    GCSE <a href="/view?id={{"github.com/daviddengcn/gcse"}}">imports</a>
-    (or forks) the following projects:
-    <ul>
-        <li>
-            <a target="_blank" href="https://github.com/garyburd/gddo">gddo</a>
-            by <a target="_blank" href="http://gary.beagledreams.com/">Gary Burd</a>,
-            for crawling.
-            It's forked (for modification) to my
-            <a target="_blank" href="https://github.com/daviddengcn/gddo">gddo</a> project.
-        </li>
-        <li>
-            <a target="_blank" href="https://github.com/agonopol/go-stem">go-stem</a>
-            by <a target="_blank" href="https://github.com/agonopol">Alex Gonopolskiy</a>,
-            for stemming.
-        </li>
-    </ul>
-</p>
+{{define "body"}}
+### Motivation
+
+When I began [Go](http://golang.org/), I loved it. The integrated tooling for
+importing directly from version control systems is exceptional useful. It allows
+projects to be connected in an elegant manner. 
+
+With so many brillant people contributing to the Go ecosystem, there is a lot of
+"reinventing the wheel" happening.  Due to the way Go does imports, a central 
+clearing house like Maven or NPM is simply not needed.  However, what is needed 
+is a way to find the packages you want to import, and that is why GCSE was 
+created. 
+    
+A search engine specifically designed for Go can help in the following ways:
+
+* By analyzing the importing relations between projects, popular projects can be 
+found. This gives a better ranking than general search engine.
+* Structured data for each package can be extracted: package path, name, 
+synopsis, documentation. Match rank can be calculated in a better way.
+* Package comments can be parsed and indexed.
+* Stars (or watchers) of some sites are crawled to further help ranking.
+
+### Project
+
+This is an [open source project]("https://github.com/daviddengcn/gcse") hosted
+on [github](http://github.com/)
+
+If you find a bug, have a new idea or any other suggestion, please submit 
+an [issue](https://github.com/daviddengcn/gcse/issues).
+
+While creating GCSE, several supporting projects were created and are published.
+Feel free to use them! 
+
+* [go-index](https://github.com/daviddengcn/go-index): a text indexing package,
+serving the index/search function in GCSE.
+* [go-rpc](https://github.com/daviddengcn/go-rpc): an RPC service through HTTP 
+protocol.
+
+### Acknowledgement
+
+GCSE [imports](/view?id={{urlquery "github.com/daviddengcn/gcse"}}) (or forks) the 
+following projects:
+
+* [gddo](https://github.com/garyburd/gddo) by
+[Gary Burd](http://gary.beagledreams.com/) for crawling. It's forked (for 
+modification) to my [gddo](https://github.com/daviddengcn/gddo) project.
+* [go-stem](https://github.com/agonopol/go-stem) by 
+[Alex Gonopolskiy](https://github.com/agonopol) for stemming.
+{{end}}
+{{markdown "body"}}
 {{template "footer.html"}}
