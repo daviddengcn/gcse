@@ -258,6 +258,9 @@ mainLoop:
 					readme = d.ReadmeData
 				}
 			}
+			if len(readme) > 20*1024 {
+				readme = readme[:20*1024]
+			}
 			raw := selectSnippets(d.Description+"\n"+readme, tokens, 300)
 
 			if d.StarCount < 0 {
@@ -364,28 +367,6 @@ func pageView(w http.ResponseWriter, r *http.Request) {
 					return nil
 				})
 		}
-		/*
-			//err, exists := ddb.Get(id, &doc)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-
-			if !exists {
-				fmt.Fprintf(w, `<html><body>No such entry!`)
-
-				ent, _ := findCrawlingEntry(c, kindCrawlerPackage, id)
-				if ent != nil {
-					fmt.Fprintf(w, ` Scheduled to be crawled at %s`,
-						ent.ScheduleTime.Format("2006-01-02 15:04:05"))
-				} else {
-					fmt.Fprintf(w, ` Not found yet!`)
-				}
-				fmt.Fprintf(w, ` Click to <a href="crawl?id=%s">crawl</a>.</body></html>`,
-					template.URLQueryEscaper(id))
-				return
-			}
-		*/
 
 		if doc.StarCount < 0 {
 			doc.StarCount = 0

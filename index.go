@@ -32,7 +32,7 @@ func Index(docDB *MemDB) (*index.TokenSetSearcher, error) {
 
 	DumpMemStats()
 	log.Printf("Making TokenSetSearcher ...")
-	
+
 	var hits []HitInfo
 	if err := docDB.Iterate(func(key string, val interface{}) error {
 		var hitInfo HitInfo
@@ -45,13 +45,13 @@ func Index(docDB *MemDB) (*index.TokenSetSearcher, error) {
 		hitInfo.Imported = importsDB.IdsOfToken(hitInfo.Package)
 		// StaticScore is calculated after setting all other fields of hitInfo
 		hitInfo.StaticScore = CalcStaticScore(&hitInfo)
-		
+
 		hits = append(hits, hitInfo)
 		return nil
 	}); err != nil {
 		return nil, err
 	}
-	
+
 	log.Printf("%d hits collected, sorting static-scores in descending order",
 		len(hits))
 	idxs := make([]int, len(hits))
@@ -64,16 +64,16 @@ func Index(docDB *MemDB) (*index.TokenSetSearcher, error) {
 		idxs[i], idxs[j] = idxs[j], idxs[i]
 	})
 	ts := &index.TokenSetSearcher{}
-	
+
 	log.Printf("Indexing to TokenSetSearcher ...")
 	rank := 0
 	for i := range idxs {
 		hit := &hits[idxs[i]]
-		if i > 0 && hit.StaticScore < hits[idxs[i - 1]].StaticScore {
+		if i > 0 && hit.StaticScore < hits[idxs[i-1]].StaticScore {
 			rank = i
 		}
 		hit.StaticRank = rank
-		
+
 		var tokens villa.StrSet
 		tokens = AppendTokens(tokens, []byte(hit.Name))
 		tokens = AppendTokens(tokens, []byte(hit.Package))

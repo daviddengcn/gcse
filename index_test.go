@@ -1,8 +1,8 @@
 package gcse
 
-import(
-	"log"
+import (
 	"github.com/daviddengcn/go-villa"
+	"log"
 	"testing"
 )
 
@@ -22,10 +22,10 @@ func TestIndex(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	
+
 	numDocs := ts.DocCount()
 	villa.AssertEquals(t, "DocCount", numDocs, 2)
-	
+
 	var pkgs []string
 	if err := ts.Search(map[string]villa.StrSet{IndexTextField: nil},
 		func(docID int32, data interface{}) error {
@@ -38,6 +38,6 @@ func TestIndex(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	villa.AssertStringEquals(t, "all", pkgs, 
+	villa.AssertStringEquals(t, "all", pkgs,
 		"[github.com/daviddengcn/gcse github.com/daviddengcn/gcse/indexer]")
 }

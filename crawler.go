@@ -7,15 +7,15 @@ import (
 	"github.com/daviddengcn/gddo/doc"
 	"github.com/daviddengcn/go-villa"
 	godoc "go/doc"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
-	"strings"
-	"unicode/utf8"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
-	"io/ioutil"
+	"unicode/utf8"
 )
 
 const (
@@ -169,6 +169,10 @@ func CrawlPackage(httpClient *http.Client, pkg string, etag string) (p *Package,
 		pdoc.Synopsis = godoc.Synopsis(readmeData)
 	}
 
+	if len(readmeData) > 100*1024 {
+		readmeData = readmeData[:100*1024]
+	}
+
 	imports := villa.NewStrSet(pdoc.Imports...)
 	imports.Put(pdoc.TestImports...)
 	imports.Put(pdoc.XTestImports...)
@@ -262,7 +266,7 @@ func GithubUpdates() (map[string]time.Time, error) {
 			if m == nil {
 				return nil, fmt.Errorf("updated not found for %s", ownerRepo)
 			}
-			
+
 			// Mon Jan 2 15:04:05 -0700 MST 2006
 			updated, _ := time.Parse("2006-01-02T15:04:05-07:00", string(p[m[2]:m[3]]))
 			p = p[m[1]:]
