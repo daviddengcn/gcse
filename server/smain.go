@@ -250,13 +250,7 @@ mainLoop:
 			markedName := markText(d.Name, tokens, markWord)
 			readme := ""
 			if d.ReadmeFn != "" {
-				fn := strings.ToLower(d.ReadmeFn)
-				if strings.HasSuffix(fn, ".md") || strings.HasSuffix(fn, ".markdown") {
-					md := index.ParseMarkdown([]byte(d.ReadmeData))
-					readme = string(md.Text)
-				} else {
-					readme = d.ReadmeData
-				}
+				readme = gcse.ReadmeToText(d.ReadmeData)
 			}
 			if len(readme) > 20*1024 {
 				readme = readme[:20*1024]

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/daviddengcn/gddo/doc"
 	"github.com/daviddengcn/go-villa"
+	"github.com/daviddengcn/go-index"
 	godoc "go/doc"
 	"io/ioutil"
 	"log"
@@ -145,6 +146,15 @@ var (
 	ErrPackageNotModifed = errors.New("package not modified")
 )
 
+func ReadmeToText(fn, data string) string {
+	fn = strings.ToLower(fn)
+	if strings.HasPrefix(fn, ".md") || strings.HasPrefix(fn, ".markdown") {
+		md := index.ParseMarkdown([]byte(data))
+		return string(md.Text)
+	}
+	return data
+}
+
 func CrawlPackage(httpClient *http.Client, pkg string, etag string) (p *Package, err error) {
 	pdoc, err := doc.Get(httpClient, pkg, etag)
 	if err == doc.ErrNotModified {
@@ -166,7 +176,7 @@ func CrawlPackage(httpClient *http.Client, pkg string, etag string) (p *Package,
 
 	// try find synopsis from readme
 	if pdoc.Doc == "" && pdoc.Synopsis == "" {
-		pdoc.Synopsis = godoc.Synopsis(readmeData)
+		pdoc.Synopsis = godoc.Synopsis(ReadmeToText(readmeFn, readmeData))
 	}
 
 	if len(readmeData) > 100*1024 {

@@ -55,10 +55,11 @@ var (
 		packages.
 
 		ChangeLog:
-		   0    First version
-		   1    Add TestImports/XTestImports to Imports
+		    0    First version
+		    1    Add TestImports/XTestImports to Imports
+		    2    Parse markdown readme to text before selecting synopsis from it
 	*/
-	CrawlerVersion = 1
+	CrawlerVersion = 2
 )
 
 func init() {

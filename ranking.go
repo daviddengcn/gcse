@@ -5,6 +5,8 @@ import (
 	"github.com/daviddengcn/go-villa"
 	"math"
 	"strings"
+	
+	"log"
 )
 
 func scoreOfPkgByProject(n int, sameProj bool) float64 {
@@ -127,7 +129,7 @@ func CalcMatchScore(doc *HitInfo, tokens villa.StrSet) float64 {
 	nameTokens := AppendTokens(nil, []byte(name))
 	pkg := strings.ToLower(doc.Package)
 	pkgTokens := AppendTokens(nil, []byte(doc.Package))
-
+	
 	for token := range tokens {
 		if matchToken(token, synopsis, synTokens) {
 			s += 0.25
