@@ -27,6 +27,8 @@ func Markdown(templ string) template.HTML {
 }
 
 func init() {
+	log.SetFlags(log.LstdFlags | log.Lmicroseconds)
+	
 	templates = template.Must(template.New("templates").Funcs(template.FuncMap{
 		"markdown": Markdown,
 	}).ParseGlob(gcse.ServerRoot.Join(`web/*`).S()))
@@ -105,6 +107,7 @@ func (sd SimpleDuration) String() string {
 
 func pageRoot(w http.ResponseWriter, r *http.Request) {
 	docCount := 0
+	indexDB := indexDBBox.Get().(*index.TokenSetSearcher)
 	if indexDB != nil {
 		docCount = indexDB.DocCount()
 	}
@@ -252,10 +255,6 @@ mainLoop:
 			}
 		}
 
-		//		if len(docs) >= 1000 {
-		//			continue
-		//		}
-
 		projToIdx[d.Package] = cnt
 		if r.In(cnt) {
 			markedName := markText(d.Name, tokens, markWord)
@@ -304,7 +303,7 @@ func pageSearch(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
+	
 	showResults := showSearchResults(results, tokens,
 		Range{(p - 1) * itemsPerPage, itemsPerPage})
 	totalPages := (showResults.TotalEntries + itemsPerPage - 1) / itemsPerPage
@@ -362,6 +361,7 @@ func pageView(w http.ResponseWriter, r *http.Request) {
 	if id != "" {
 		var doc gcse.HitInfo
 
+		indexDB := indexDBBox.Get().(*index.TokenSetSearcher)
 		if indexDB != nil {
 			indexDB.Search(index.SingleFieldQuery("pkg", id),
 				func(docID int32, data interface{}) error {

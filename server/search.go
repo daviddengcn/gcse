@@ -26,7 +26,7 @@ var stopWords = villa.NewStrSet([]string{
 }...)
 
 var (
-	indexDB      *index.TokenSetSearcher
+	indexDBBox   villa.AtomicBox
 	indexSegment gcse.Segment
 	indexUpdated time.Time
 )
@@ -56,7 +56,7 @@ func loadIndex() error {
 	indexSegment = segm
 	log.Printf("Load index from %v (%d packages)", segm, db.DocCount())
 
-	indexDB = db
+	indexDBBox.Set(db)
 	updateTime := time.Now()
 
 	if st, err := segm.Join(gcse.IndexFn).Stat(); err == nil {
@@ -87,7 +87,7 @@ func search(q string) (*SearchResult, villa.StrSet, error) {
 	tokens := gcse.AppendTokens(nil, []byte(q))
 	log.Printf("tokens for query %s: %v", q, tokens)
 
-	indexDB := indexDB
+	indexDB := indexDBBox.Get().(*index.TokenSetSearcher)
 
 	if indexDB == nil {
 		return &SearchResult{}, tokens, nil
@@ -99,6 +99,8 @@ func search(q string) (*SearchResult, villa.StrSet, error) {
 	Df := func(token string) int {
 		return len(indexDB.TokenDocList(gcse.IndexTextField, token))
 	}
+	
+	_, _ = N, Df
 
 	indexDB.Search(map[string]villa.StrSet{gcse.IndexTextField: tokens},
 		func(docID int32, data interface{}) error {

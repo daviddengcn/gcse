@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/daviddengcn/gcse"
+	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/go-villa"
 	"strings"
 )
@@ -56,6 +57,7 @@ func (t *TopN) Len() int {
 }
 
 func statTops(N int) []StatList {
+	indexDB := indexDBBox.Get().(*index.TokenSetSearcher)
 	if indexDB == nil {
 		return nil
 	}

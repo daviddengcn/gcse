@@ -47,7 +47,7 @@ func filterURLs(text []byte) []byte {
 }
 
 func isTermSep(r rune) bool {
-	return unicode.IsSpace(r) || unicode.IsPunct(r) || unicode.IsSymbol(r)
+	return unicode.IsPunct(r) || unicode.IsSymbol(r)
 }
 
 var stemBlackList = map[string]string{
@@ -123,47 +123,6 @@ func CheckCamel(last, current rune) index.RuneType {
 
 	return index.TokenBody
 }
-
-/*
-func AppendTokens1(tokens villa.StrSet, text string) villa.StrSet {
-	text = filterURLs(text)
-
-	lastToken := ""
-	index.Tokenize(CheckRuneType, villa.NewPByteSlice([]byte(text)), func(token []byte) error {
-		tokenStr := string(token)
-		if isCamel(tokenStr) {
-			last := ""
-			index.Tokenize(CheckCamel, villa.NewPByteSlice(token), func(token []byte) error {
-				tokenStr = string(token)
-				tokenStr = NormWord(tokenStr)
-				if !stopWords.In(tokenStr) {
-					tokens.Put(tokenStr)
-				}
-
-				if last != "" {
-					tokens.Put(last + "-" + string(tokenStr))
-				}
-
-				last = tokenStr
-				return nil
-			})
-		}
-		tokenStr = NormWord(tokenStr)
-		if !stopWords.In(tokenStr) {
-			tokens.Put(tokenStr)
-		}
-
-		if tokenStr[0] > 128 && len(lastToken) > 0 && lastToken[0] > 128 {
-			tokens.Put(lastToken + tokenStr)
-		}
-
-		lastToken = tokenStr
-		return nil
-	})
-
-	return tokens
-}
-*/
 
 // a block does not contain blanks
 func appendTokensOfBlock(tokens villa.StrSet, block []byte) villa.StrSet {

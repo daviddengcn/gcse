@@ -105,13 +105,13 @@ func matchToken(token string, text string, tokens villa.StrSet) bool {
 	if tokens.In(token) {
 		return true
 	}
-
+	
 	for tk := range tokens {
 		if strings.HasPrefix(tk, token) || strings.HasSuffix(tk, token) {
 			return true
 		}
 	}
-
+	
 	return false
 }
 
@@ -125,8 +125,10 @@ func CalcMatchScore(doc *HitInfo, tokens villa.StrSet, N int, Df func(token stri
 	filteredSyn := filterURLs([]byte(doc.Synopsis))
 	synopsis := string(bytes.ToLower(filteredSyn))
 	synTokens := AppendTokens(nil, filteredSyn)
+	
 	name := strings.ToLower(doc.Name)
 	nameTokens := AppendTokens(nil, []byte(name))
+	
 	pkg := strings.ToLower(doc.Package)
 	pkgTokens := AppendTokens(nil, []byte(doc.Package))
 	
