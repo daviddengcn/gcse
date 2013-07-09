@@ -248,10 +248,7 @@ mainLoop:
 		projToIdx[d.Package] = cnt
 		if r.In(cnt) {
 			markedName := markText(d.Name, tokens, markWord)
-			readme := ""
-			if d.ReadmeFn != "" {
-				readme = gcse.ReadmeToText(d.ReadmeData)
-			}
+			readme := gcse.ReadmeToText(d.ReadmeFn, d.ReadmeData)
 			if len(readme) > 20*1024 {
 				readme = readme[:20*1024]
 			}
