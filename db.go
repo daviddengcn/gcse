@@ -57,8 +57,7 @@ func (mdb *MemDB) Load() error {
 	defer mdb.Unlock()
 
 	lastModified := time.Now()
-	st, err := mdb.fn.Stat()
-	if err == nil {
+	if st, err := mdb.fn.Stat(); err == nil {
 		lastModified = st.ModTime()
 	}
 
@@ -69,10 +68,23 @@ func (mdb *MemDB) Load() error {
 		if err := dec.Decode(&mdb.db); err != nil {
 			return err
 		}
-	} else if !os.IsNotExist(err) {
-		return err
+	} else if os.IsNotExist(err) {
+		// try recover from fn.new
+		if f, err := (mdb.fn + ".new").Open(); err == nil {
+			defer f.Close()
+	
+			dec := gob.NewDecoder(f)
+			if err := dec.Decode(&mdb.db); err != nil {
+				return err
+			}
+		} else if os.IsNotExist(err) {
+			// just an empty db
+			mdb.db = make(map[string]interface{})
+		} else {
+			return err
+		}
 	} else {
-		mdb.db = make(map[string]interface{})
+		return err
 	}
 
 	mdb.lastModified = lastModified
