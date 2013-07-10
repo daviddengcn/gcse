@@ -185,6 +185,24 @@ func Plusone(httpClient *http.Client, url string) (int, error) {
 	return int(0.5 + v[0].Result.Metadata.GlobalCounts.Count), nil
 }
 
+func LikeButton(httpClient *http.Client, Url string) (int, error) {
+	resp, err := httpClient.Get("http://graph.facebook.com/?" +
+		url.Values{"ids": {Url}}.Encode())
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+	dec := json.NewDecoder(resp.Body)
+	var v map[string]struct {
+		Shares int
+	}
+	if err := dec.Decode(&v); err != nil {
+		return 0, err
+	}
+
+	return v[Url].Shares, nil
+}
+
 func CrawlPackage(httpClient *http.Client, pkg string, etag string) (p *Package, err error) {
 	pdoc, err := doc.Get(httpClient, pkg, etag)
 	if err == doc.ErrNotModified {
@@ -195,9 +213,14 @@ func CrawlPackage(httpClient *http.Client, pkg string, etag string) (p *Package,
 	}
 
 	if pdoc.StarCount < 0 {
-		starCount, err := Plusone(httpClient, pdoc.ProjectURL)
-		if err == nil {
+		// if starcount is not fetched, choose max of Plusone and LikeButton
+		if starCount, err := Plusone(httpClient, pdoc.ProjectURL); err == nil {
 			pdoc.StarCount = starCount
+		}
+		if starCount, err := LikeButton(httpClient, pdoc.ProjectURL); err == nil {
+			if starCount > pdoc.StarCount {
+				pdoc.StarCount = starCount
+			}
 		}
 	}
 
