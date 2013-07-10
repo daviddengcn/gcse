@@ -56,16 +56,30 @@ func (t *TopN) Len() int {
 	return t.pq.Len()
 }
 
+func inProjects(projs villa.StrSet, pkg string) bool {
+	for {
+		if projs.In(pkg) {
+			return true
+		}
+		p := strings.LastIndex(pkg, "/")
+		if p < 0 {
+			break
+		}
+		pkg = pkg[:p]
+	}
+	
+	return false
+}
+
 func statTops(N int) []StatList {
 	indexDB := indexDBBox.Get().(*index.TokenSetSearcher)
 	if indexDB == nil {
 		return nil
 	}
 
-	topStaticScores := NewTopN(func(a, b interface{}) int {
-		return villa.FloatValueCompare(a.(gcse.HitInfo).StaticScore,
-			b.(gcse.HitInfo).StaticScore)
-	}, N)
+	var topStaticScores []gcse.HitInfo
+	var tssProjects villa.StrSet
+
 
 	topImported := NewTopN(func(a, b interface{}) int {
 		return villa.IntValueCompare(len(a.(gcse.HitInfo).Imported),
@@ -73,12 +87,19 @@ func statTops(N int) []StatList {
 	}, N)
 
 	sites := make(map[string]int)
-
+		
 	indexDB.Search(nil, func(docID int32, data interface{}) error {
 		hit := data.(gcse.HitInfo)
 		hit.Name = packageShowName(hit.Name, hit.Package)
 
-		topStaticScores.Append(hit)
+		// assuming all packages has been sorted by static-scores.
+		if len(topStaticScores) < N {
+			if !inProjects(tssProjects, hit.Package) {
+				topStaticScores = append(topStaticScores, hit)
+				tssProjects.Put(hit.Package)
+			}
+		}
+		
 		topImported.Append(hit)
 
 		host := strings.ToLower(gcse.HostOfPackage(hit.Package))
@@ -92,10 +113,9 @@ func statTops(N int) []StatList {
 	tlStaticScore := StatList{
 		Name:  "Hot",
 		Info:  "refs stars",
-		Items: make([]StatItem, 0, topStaticScores.Len()),
+		Items: make([]StatItem, 0, len(topStaticScores)),
 	}
-	for _, item := range topStaticScores.PopAll() {
-		hit := item.(gcse.HitInfo)
+	for _, hit := range topStaticScores {
 		tlStaticScore.Items = append(tlStaticScore.Items, StatItem{
 			Name:    hit.Name,
 			Package: hit.Package,

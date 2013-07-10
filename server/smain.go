@@ -235,6 +235,7 @@ mainLoop:
 
 		parts := strings.Split(d.Package, "/")
 		if len(parts) > 2 {
+			// try fold it (if its parent has been in the list)
 			for i := len(parts) - 1; i >= 2; i-- {
 				pkg := strings.Join(parts[:i], "/")
 				if idx, ok := projToIdx[pkg]; ok {

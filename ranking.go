@@ -35,9 +35,34 @@ func minFloat(a, b float64) float64 {
 	return b
 }
 
+func effectiveImported(imported []string, author, project string) float64 {
+	s := float64(0.)
+	
+	var sigs villa.StrSet
+	for _, imp := range imported {
+		sig := AuthorOfPackage(imp)
+		if sig == "" {
+			sig = ProjectOfPackage(imp)
+		}
+		if sigs.In(sig) {
+			continue
+		}
+		sigs.Put(sig)
+		
+		if sig == author || sig == project {
+			s += 0.5
+		} else {
+			s += 1.0
+		}
+	}
+	
+	return s
+}
+
 func CalcStaticScore(doc *HitInfo) float64 {
 	s := float64(1)
-
+	
+	
 	author := doc.Author
 	if author == "" {
 		author = AuthorOfPackage(doc.Package)
@@ -45,30 +70,7 @@ func CalcStaticScore(doc *HitInfo) float64 {
 
 	project := ProjectOfPackage(doc.Package)
 
-	authorCount := make(map[string]int)
-	projectCount := make(map[string]int)
-	for _, imp := range doc.Imported {
-		impProject := ProjectOfPackage(imp)
-		projectCount[impProject] = projectCount[impProject] + 1
-
-		impAuthor := AuthorOfPackage(imp)
-		if impAuthor != "" {
-			authorCount[impAuthor] = authorCount[impAuthor] + 1
-		}
-	}
-
-	for _, imp := range doc.Imported {
-		impProject := ProjectOfPackage(imp)
-
-		vl := scoreOfPkgByProject(projectCount[impProject], impProject == project)
-
-		impAuthor := AuthorOfPackage(imp)
-		if impAuthor != "" {
-			vl = minFloat(vl, scoreOfPkgByAuthor(authorCount[impAuthor], impAuthor == author))
-		}
-
-		s += vl
-	}
+	s += effectiveImported(doc.Imported, author, project)
 
 	desc := strings.TrimSpace(doc.Description)
 	if len(desc) > 0 {
@@ -77,7 +79,7 @@ func CalcStaticScore(doc *HitInfo) float64 {
 			s += 0.5
 		}
 
-		if strings.HasPrefix(desc, "Package "+doc.Name) {
+		if strings.HasPrefix(desc, "Package "+doc.Name) || strings.HasPrefix(desc, doc.Name+" package") {
 			s += 0.5
 		} else if strings.HasPrefix(desc, "package "+doc.Name) {
 			s += 0.4
