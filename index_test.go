@@ -2,7 +2,6 @@ package gcse
 
 import (
 	"github.com/daviddengcn/go-villa"
-	"log"
 	"testing"
 )
 
@@ -31,7 +30,7 @@ func TestIndex(t *testing.T) {
 		func(docID int32, data interface{}) error {
 			hit := data.(HitInfo)
 			pkgs = append(pkgs, hit.Package)
-			log.Printf("%s: %v", hit.Package, hit)
+			t.Logf("%s: %v", hit.Package, hit)
 			return nil
 		},
 	); err != nil {

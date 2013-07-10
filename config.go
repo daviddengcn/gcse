@@ -17,6 +17,7 @@ package gcse
 import (
 	"github.com/daviddengcn/go-ljson-conf"
 	"github.com/daviddengcn/go-villa"
+	"log"
 	"time"
 )
 
@@ -47,8 +48,9 @@ var (
 	IndexSegments Segments
 
 	// configures of crawler
-	CrawlByGodocApi bool = true
-	CrawlerSyncGap       = 10 * time.Minute
+	CrawlByGodocApi   = true
+	CrawlGithubUpdate = true
+	CrawlerSyncGap    = 10 * time.Minute
 
 	/*
 		Increase this to ignore etag of last versions to crawl and parse all
@@ -63,7 +65,10 @@ var (
 )
 
 func init() {
-	conf, _ := ljconf.Load("conf.json")
+	conf, err := ljconf.Load("conf.json")
+	if err != nil {
+		log.Fatal(err)
+	}
 	ServerAddr = conf.String("web.addr", ServerAddr)
 	ServerRoot = conf.Path("web.root", ServerRoot)
 
@@ -82,5 +87,6 @@ func init() {
 	IndexSegments = segments(IndexPath)
 
 	CrawlByGodocApi = conf.Bool("crawler.godoc", CrawlByGodocApi)
+	CrawlGithubUpdate = conf.Bool("crawler.github_update", CrawlGithubUpdate)
 	CrawlerSyncGap, _ = time.ParseDuration(conf.String("crawler.syncgap", "10m"))
 }

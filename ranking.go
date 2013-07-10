@@ -5,7 +5,7 @@ import (
 	"github.com/daviddengcn/go-villa"
 	"math"
 	"strings"
-	
+
 //	"log"
 )
 
@@ -105,13 +105,13 @@ func matchToken(token string, text string, tokens villa.StrSet) bool {
 	if tokens.In(token) {
 		return true
 	}
-	
+
 	for tk := range tokens {
 		if strings.HasPrefix(tk, token) || strings.HasSuffix(tk, token) {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
@@ -125,30 +125,30 @@ func CalcMatchScore(doc *HitInfo, tokens villa.StrSet, N int, Df func(token stri
 	filteredSyn := filterURLs([]byte(doc.Synopsis))
 	synopsis := string(bytes.ToLower(filteredSyn))
 	synTokens := AppendTokens(nil, filteredSyn)
-	
+
 	name := strings.ToLower(doc.Name)
 	nameTokens := AppendTokens(nil, []byte(name))
-	
+
 	pkg := strings.ToLower(doc.Package)
 	pkgTokens := AppendTokens(nil, []byte(doc.Package))
-	
+
 	for token := range tokens {
 		df := Df(token)
 		if df < 1 {
 			df = 1
 		}
 		idf := math.Log(float64(N) / float64(df))
-		
+
 		if matchToken(token, synopsis, synTokens) {
-			s += 0.25*idf
+			s += 0.25 * idf
 		}
 
 		if matchToken(token, name, nameTokens) {
-			s += 0.4*idf
+			s += 0.4 * idf
 		}
 
 		if matchToken(token, pkg, pkgTokens) {
-			s += 0.1*idf
+			s += 0.1 * idf
 		}
 	}
 

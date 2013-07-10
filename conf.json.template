@@ -1,0 +1,16 @@
+{
+    web: {
+        // addr: ":8080"
+        // root: "./server/"
+    }
+    
+    back: {
+        // dbroot: "./data/"
+    }
+    
+    crawler: {
+        // syncgap: "10m"
+        // godoc: true
+        // github_update: true
+    }
+} 

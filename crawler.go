@@ -1,12 +1,14 @@
 package gcse
 
 import (
+	"bytes"
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/daviddengcn/gddo/doc"
-	"github.com/daviddengcn/go-villa"
 	"github.com/daviddengcn/go-index"
+	"github.com/daviddengcn/go-villa"
 	godoc "go/doc"
 	"io/ioutil"
 	"log"
@@ -155,6 +157,34 @@ func ReadmeToText(fn, data string) string {
 	return data
 }
 
+func Plusone(httpClient *http.Client, url string) (int, error) {
+	resp, err := httpClient.Post(
+		"https://clients6.google.com/rpc?key=AIzaSyCKSbrvQasunBoV16zDH9R33D88CeLr9gQ",
+		"application/json",
+		bytes.NewReader([]byte(`[{"method":"pos.plusones.get","id":"p","params":{"nolog":true,"id": "`+
+			url+`","source":"widget","userId":"@viewer","groupId":"@self"},"jsonrpc":"2.0","key":"p","apiVersion":"v1"}]`)))
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+
+	dec := json.NewDecoder(resp.Body)
+	var v [1]struct {
+		Result struct {
+			Metadata struct {
+				GlobalCounts struct {
+					Count float64
+				}
+			}
+		}
+	}
+	if err := dec.Decode(&v); err != nil {
+		return 0, err
+	}
+
+	return int(0.5 + v[0].Result.Metadata.GlobalCounts.Count), nil
+}
+
 func CrawlPackage(httpClient *http.Client, pkg string, etag string) (p *Package, err error) {
 	pdoc, err := doc.Get(httpClient, pkg, etag)
 	if err == doc.ErrNotModified {
@@ -162,6 +192,13 @@ func CrawlPackage(httpClient *http.Client, pkg string, etag string) (p *Package,
 	}
 	if err != nil {
 		return nil, villa.NestErrorf(err, "CrawlPackage(%s)", pkg)
+	}
+
+	if pdoc.StarCount < 0 {
+		starCount, err := Plusone(httpClient, pdoc.ProjectURL)
+		if err == nil {
+			pdoc.StarCount = starCount
+		}
 	}
 
 	readmeFn, readmeData := "", ""

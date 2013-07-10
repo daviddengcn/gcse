@@ -107,7 +107,7 @@ func (sd SimpleDuration) String() string {
 
 func pageRoot(w http.ResponseWriter, r *http.Request) {
 	docCount := 0
-	indexDB := indexDBBox.Get().(*index.TokenSetSearcher)
+	indexDB, _ := indexDBBox.Get().(*index.TokenSetSearcher)
 	if indexDB != nil {
 		docCount = indexDB.DocCount()
 	}
@@ -361,7 +361,7 @@ func pageView(w http.ResponseWriter, r *http.Request) {
 	if id != "" {
 		var doc gcse.HitInfo
 
-		indexDB := indexDBBox.Get().(*index.TokenSetSearcher)
+		indexDB, _ := indexDBBox.Get().(*index.TokenSetSearcher)
 		if indexDB != nil {
 			indexDB.Search(index.SingleFieldQuery("pkg", id),
 				func(docID int32, data interface{}) error {

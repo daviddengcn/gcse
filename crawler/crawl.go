@@ -280,6 +280,7 @@ func processGodoc(httpClient *http.Client) bool {
 		return false
 	}
 
+	log.Printf("processGodoc ...")
 	resp, err := httpClient.Get(godocApiUrl)
 	if err != nil {
 		log.Printf("Get %s failed: %v", godocApiUrl, err)
@@ -322,6 +323,8 @@ func touchByGithubUpdates() bool {
 		return false
 	}
 	
+	log.Printf("touchByGithubUpdates ...")
+	
 	updates, err := gcse.GithubUpdates()
 	if err != nil {
 		log.Printf("GithubUpdates failed: %v", err)
@@ -341,6 +344,9 @@ func touchByGithubUpdates() bool {
 }
 
 func crawlEnetiresLoop() {
+	// wait for imports, if any
+	time.Sleep(10 * time.Second)
+	
 	httpClient := gcse.GenHttpClient("")
 
 	for {
@@ -447,8 +453,10 @@ func crawlEnetiresLoop() {
 			}
 		}
 		
-		if touchByGithubUpdates() {
-			didSomething = true
+		if gcse.CrawlGithubUpdate {
+			if touchByGithubUpdates() {
+				didSomething = true
+			}
 		}
 
 		if !didSomething {

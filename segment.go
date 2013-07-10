@@ -188,7 +188,7 @@ func (s segments) GenNewSegment() (Segment, error) {
 
 func (s segments) GenMaxSegment() (Segment, error) {
 	var maxS Segment
-	dones, err := s.ListDones()
+	dones, err := s.ListAll()
 	if err != nil {
 		return nil, err
 	}

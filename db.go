@@ -62,19 +62,17 @@ func (mdb *MemDB) Load() error {
 		lastModified = st.ModTime()
 	}
 
-	f, err := mdb.fn.Open()
-	if err == os.ErrNotExist {
-		return nil
-	}
+	if f, err := mdb.fn.Open(); err == nil {
+		defer f.Close()
 
-	if err != nil {
+		dec := gob.NewDecoder(f)
+		if err := dec.Decode(&mdb.db); err != nil {
+			return err
+		}
+	} else if !os.IsNotExist(err) {
 		return err
-	}
-	defer f.Close()
-
-	dec := gob.NewDecoder(f)
-	if err := dec.Decode(&mdb.db); err != nil {
-		return err
+	} else {
+		mdb.db = make(map[string]interface{})
 	}
 
 	mdb.lastModified = lastModified
@@ -97,7 +95,7 @@ func safeSave(fn villa.Path, doSave func(w io.Writer) error) error {
 		return err
 	}
 
-	if err := fn.Remove(); err != nil {
+	if err := fn.Remove(); err != nil && !os.IsNotExist(err) {
 		return err
 	}
 	if err := tmpFn.Rename(fn); err != nil {
