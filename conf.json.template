@@ -6,6 +6,7 @@
     
     back: {
         // dbroot: "./data/"
+        // update_cycle: "1h"
     }
     
     crawler: {

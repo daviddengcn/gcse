@@ -22,6 +22,10 @@ func hasDonesDBOut() bool {
 }
 
 func needDump() bool {
+	if time.Now().Before(lastDumpTime.Add(gcse.UpdateCycle)) {
+		return false
+	}
+	
 	return docDB.LastModified().After(lastDumpTime)
 }
 

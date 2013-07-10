@@ -33,6 +33,8 @@ var (
 	ServerRoot = villa.Path("./server/")
 
 	DataRoot = villa.Path("./data/")
+	// The cycle of outdb/index
+	UpdateCycle = 1 * time.Hour
 
 	// producer: server, consumer: crawler
 	ImportPath     villa.Path
@@ -51,6 +53,7 @@ var (
 	CrawlByGodocApi   = true
 	CrawlGithubUpdate = true
 	CrawlerSyncGap    = 10 * time.Minute
+	
 
 	/*
 		Increase this to ignore etag of last versions to crawl and parse all
@@ -73,6 +76,7 @@ func init() {
 	ServerRoot = conf.Path("web.root", ServerRoot)
 
 	DataRoot = conf.Path("back.dbroot", DataRoot)
+	UpdateCycle = conf.Duration("back.update_cycle", UpdateCycle)
 
 	ImportPath = DataRoot.Join("imports")
 	ImportPath.MkdirAll(0755)
@@ -88,5 +92,5 @@ func init() {
 
 	CrawlByGodocApi = conf.Bool("crawler.godoc", CrawlByGodocApi)
 	CrawlGithubUpdate = conf.Bool("crawler.github_update", CrawlGithubUpdate)
-	CrawlerSyncGap, _ = time.ParseDuration(conf.String("crawler.syncgap", "10m"))
+	CrawlerSyncGap = conf.Duration("crawler.syncgap", CrawlerSyncGap)
 }
