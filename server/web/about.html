@@ -2,22 +2,22 @@
 {{define "body"}}
 ### Motivation
 
-When I began [Go](http://golang.org/), I loved it. The integrated tooling for
+When I began to learn [Go](http://golang.org/), I loved it. The integrated tooling for
 importing directly from version control systems is exceptional useful. It allows
 projects to be connected in an elegant manner. 
 
 With so many brillant people contributing to the Go ecosystem, there is a lot of
-"reinventing the wheel" happening.  Due to the way Go does imports, a central 
-clearing house like Maven or NPM is simply not needed.  However, what is needed 
-is a way to find the packages you want to import, and that is why GCSE was 
-created. 
+"reinventing the wheel" happening. Due to the way Go does imports, a central 
+clearing house like Maven or NPM is simply not needed. However, what is needed 
+is a way to find the packages you need to import, and that is why GCSE, the
+_Go code search engine_, was created. 
     
 A search engine specifically designed for Go can help in the following ways:
 
 * By analyzing the importing relations between projects, popular projects can be 
-found. This gives a better ranking than general search engine.
+found. This gives a better ranking than a general search engine.
 * Structured data for each package can be extracted: package path, name, 
-synopsis, documentation. Match rank can be calculated in a better way.
+synopsis, documentation, etc. Matching can be done in a better way.
 * Package comments can be parsed and indexed.
 * Stars (or watchers) of some sites are crawled to further help ranking.
 
@@ -45,8 +45,13 @@ following projects:
 * [gddo](https://github.com/garyburd/gddo) by
 [Gary Burd](http://gary.beagledreams.com/) for crawling. It's forked (for 
 modification) to my [gddo](https://github.com/daviddengcn/gddo) project.
+* [fsnotify](https://github.com/howeyc/fsnotify) by 
+[Chris Howey](http://chris.howey.me) for monitoring folders.
 * [go-stem](https://github.com/agonopol/go-stem) by 
-[Alex Gonopolskiy](https://github.com/agonopol) for stemming.
+[Alex Gonopolskiy](https://github.com/agonopol) for word stemming.
+
+Thanks to [Robert Melton](https://github.com/robertmeta) for textual refining.
 {{end}}
+
 {{markdown "body"}}
 {{template "footer.html"}}
