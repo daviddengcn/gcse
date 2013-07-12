@@ -72,7 +72,7 @@ func (mdb *MemDB) Load() error {
 		// try recover from fn.new
 		if f, err := (mdb.fn + ".new").Open(); err == nil {
 			defer f.Close()
-	
+
 			dec := gob.NewDecoder(f)
 			if err := dec.Decode(&mdb.db); err != nil {
 				return err

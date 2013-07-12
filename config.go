@@ -53,7 +53,6 @@ var (
 	CrawlByGodocApi   = true
 	CrawlGithubUpdate = true
 	CrawlerSyncGap    = 10 * time.Minute
-	
 
 	/*
 		Increase this to ignore etag of last versions to crawl and parse all

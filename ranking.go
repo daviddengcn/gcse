@@ -37,7 +37,7 @@ func minFloat(a, b float64) float64 {
 
 func effectiveImported(imported []string, author, project string) float64 {
 	s := float64(0.)
-	
+
 	var sigs villa.StrSet
 	for _, imp := range imported {
 		sig := AuthorOfPackage(imp)
@@ -48,21 +48,20 @@ func effectiveImported(imported []string, author, project string) float64 {
 			continue
 		}
 		sigs.Put(sig)
-		
+
 		if sig == author || sig == project {
 			s += 0.5
 		} else {
 			s += 1.0
 		}
 	}
-	
+
 	return s
 }
 
 func CalcStaticScore(doc *HitInfo) float64 {
 	s := float64(1)
-	
-	
+
 	author := doc.Author
 	if author == "" {
 		author = AuthorOfPackage(doc.Package)

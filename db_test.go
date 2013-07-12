@@ -41,13 +41,13 @@ func TestMemDB_Recover(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	
+
 	if err := path.Rename(path + ".new"); err != nil {
 		t.Error(err)
 		return
 	}
 	// Now in the status of fn.new exists, fn not exist
-	
+
 	if err := db.Load(); err != nil {
 		t.Error(err)
 		return

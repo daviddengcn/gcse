@@ -206,17 +206,18 @@ func fuseStars(a, b int) int {
 	if a > b {
 		a, b = b, a
 	}
-	// now, a <= b
-	
-	if a < 0 {
+
+	/*
+		Now, a <= b
+		Supposing half of the stargzers are shared ones. The numbers could be
+		a/2, or b/2. The mean is (a + b) / 4. Exclude this from a + b, and
+		assure it greater than b.
+	*/
+	if a <= b/3 {
 		return b
 	}
 
-	// return b + max(0, a - b/2)	
-	if a <= b/2 {
-		return b
-	}
-	return b + a - b/2
+	return (a + b) * 3 / 4
 }
 
 func CrawlPackage(httpClient *http.Client, pkg string, etag string) (p *Package, err error) {
