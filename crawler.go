@@ -1,7 +1,6 @@
 package gcse
 
 import (
-	"bytes"
 	"crypto/tls"
 	"encoding/json"
 	"errors"
@@ -161,7 +160,7 @@ func Plusone(httpClient *http.Client, url string) (int, error) {
 	resp, err := httpClient.Post(
 		"https://clients6.google.com/rpc?key=AIzaSyCKSbrvQasunBoV16zDH9R33D88CeLr9gQ",
 		"application/json",
-		bytes.NewReader([]byte(`[{"method":"pos.plusones.get","id":"p","params":{"nolog":true,"id": "`+
+		villa.NewPByteSlice([]byte(`[{"method":"pos.plusones.get","id":"p","params":{"nolog":true,"id": "`+
 			url+`","source":"widget","userId":"@viewer","groupId":"@self"},"jsonrpc":"2.0","key":"p","apiVersion":"v1"}]`)))
 	if err != nil {
 		return 0, err
@@ -203,6 +202,23 @@ func LikeButton(httpClient *http.Client, Url string) (int, error) {
 	return v[Url].Shares, nil
 }
 
+func fuseStars(a, b int) int {
+	if a > b {
+		a, b = b, a
+	}
+	// now, a <= b
+	
+	if a < 0 {
+		return b
+	}
+
+	// return b + max(0, a - b/2)	
+	if a <= b/2 {
+		return b
+	}
+	return b + a - b/2
+}
+
 func CrawlPackage(httpClient *http.Client, pkg string, etag string) (p *Package, err error) {
 	pdoc, err := doc.Get(httpClient, pkg, etag)
 	if err == doc.ErrNotModified {
@@ -213,15 +229,15 @@ func CrawlPackage(httpClient *http.Client, pkg string, etag string) (p *Package,
 	}
 
 	if pdoc.StarCount < 0 {
-		// if starcount is not fetched, choose max of Plusone and LikeButton
+		// if starcount is not fetched, choose fusion of Plusone and LikeButton
+		plus, like := -1, -1
 		if starCount, err := Plusone(httpClient, pdoc.ProjectURL); err == nil {
-			pdoc.StarCount = starCount
+			plus = starCount
 		}
 		if starCount, err := LikeButton(httpClient, pdoc.ProjectURL); err == nil {
-			if starCount > pdoc.StarCount {
-				pdoc.StarCount = starCount
-			}
+			like = starCount
 		}
+		pdoc.StarCount = fuseStars(plus, like)
 	}
 
 	readmeFn, readmeData := "", ""

@@ -112,7 +112,7 @@ div.hdsch {
 
 div.hdsch input[type="search"] {
     width: 80px;
-    transition: width 0.1s ease-in;
+    transition: all 0.1s ease-in;
     opacity: 0.5;
 }
 
@@ -121,6 +121,14 @@ div.hdsch input[type="search"]:focus {
     width: auto;
     width: 300px;
     opacity: 1.0;
+}
+
+div.hdsch input[type="search"]~button {
+    display: none;
+}
+
+div.hdsch input[type="search"]:focus~button {
+    display: inline-block;
 }
 
 footer {
