@@ -404,8 +404,8 @@ func pageView(w http.ResponseWriter, r *http.Request) {
 
 func pageTops(w http.ResponseWriter, r *http.Request) {
 	N, _ := strconv.Atoi(r.FormValue("len"))
-	if N < 10 {
-		N = 10
+	if N < 20 {
+		N = 20
 	} else if N > 100 {
 		N = 100
 	}

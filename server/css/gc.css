@@ -131,6 +131,10 @@ div.hdsch input[type="search"]:focus~button {
     display: inline-block;
 }
 
+div.rightalign {
+    text-align: right;
+}
+
 footer {
     margin-top: 10px;
     border-top: 1px solid gray;
