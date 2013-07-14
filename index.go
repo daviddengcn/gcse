@@ -43,6 +43,10 @@ func Index(docDB *MemDB) (*index.TokenSetSearcher, error) {
 			return errNotDocInfo
 		}
 		hitInfo.Imported = importsDB.IdsOfToken(hitInfo.Package)
+		
+		readme := ReadmeToText(hitInfo.ReadmeFn, hitInfo.ReadmeData)
+
+		hitInfo.ImportantSentences = ChooseImportantSentenses(readme, hitInfo.Name, hitInfo.Package)
 		// StaticScore is calculated after setting all other fields of hitInfo
 		hitInfo.StaticScore = CalcStaticScore(&hitInfo)
 

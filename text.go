@@ -146,6 +146,26 @@ func init() {
 	patISWrap = regexp.MustCompile(`^(` + reWrap + `)[.]?$`)
 }
 
+func reEscapeRune(r rune) string {
+	switch r {
+	case '+', '?', '*', '\\':
+		return "[" + string(r) + "]"
+	}
+	
+	return string(r)
+}
+
+func reEscapeString(s string) string {
+	if strings.IndexAny(s, "+?*\\") < 0 {
+		return s
+	}
+	var buf villa.ByteSlice
+	for _, r := range s {
+		buf.WriteString(reEscapeRune(r))
+	}
+	return string(buf)
+}
+
 func reName(name string) string {
 	var res villa.ByteSlice
 	p := len(name)
@@ -158,7 +178,7 @@ func reName(name string) string {
 		if i > 0 {
 			res.WriteString(" ?")
 		}
-		res.WriteRune(r)
+		res.WriteString(reEscapeRune(r))
 
 		if i >= p {
 			res.WriteRune('?')
@@ -205,6 +225,8 @@ func ChooseImportantSentenses(text string, name, pkg string) []string {
 		word := strings.Join(parts[i:], "/")
 		if i == len(parts)-1 {
 			word = `(go )?` + reName(word) + `([.]go)?`
+		} else {
+			word = reEscapeString(word)
 		}
 		re := `(` + word + `)|`
 		namePrefix.WriteString(re)
@@ -215,9 +237,10 @@ func ChooseImportantSentenses(text string, name, pkg string) []string {
 	}
 	namePrefix.WriteString(`)( package)?`)
 
-	pat, err := regexp.Compile(`^(package )?(` + string(namePrefix) + reVerbs + `)`)
+	re := `^(package )?(` + string(namePrefix) + reVerbs + `)`
+	pat, err := regexp.Compile(re)
 	if err != nil {
-		log.Printf("regexp.Compile failed: %v", err)
+		log.Printf("regexp.Compile %s failed: %v", re, err)
 	}
 
 	//log.Printf("pat: %v", pat)

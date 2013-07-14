@@ -132,6 +132,13 @@ func CalcMatchScore(doc *HitInfo, tokens villa.StrSet, N int, Df func(token stri
 
 	pkg := strings.ToLower(doc.Package)
 	pkgTokens := AppendTokens(nil, []byte(doc.Package))
+	
+	var isTokens villa.StrSet
+	isText := ""
+	for _, sent := range doc.ImportantSentences {
+		isTokens = AppendTokens(isTokens, []byte(sent))
+		isText += strings.ToLower(sent) + " "
+	}
 
 	for token := range tokens {
 		df := Df(token)
@@ -141,6 +148,10 @@ func CalcMatchScore(doc *HitInfo, tokens villa.StrSet, N int, Df func(token stri
 		idf := math.Log(float64(N) / float64(df))
 
 		if matchToken(token, synopsis, synTokens) {
+			s += 0.25 * idf
+		}
+
+		if matchToken(token, isText, isTokens) {
 			s += 0.25 * idf
 		}
 

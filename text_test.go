@@ -91,3 +91,14 @@ GoBot is an IRC Bot programmed in Golang![Build Status](https://secure.travis-ci
 	importants := ChooseImportantSentenses(TEXT, "main", "github.com/wei2912/GoBot")
 	index.AssertStringsEqual(t, "importants", importants, IMPORTANTS)
 }
+
+func TestChooseImportantSentenses_PackageEscape(t *testing.T) {
+	TEXT := `
+GoBot is an IRC Bot programmed.
+`
+	IMPORTANTS := []string{
+		`GoBot is an IRC Bot programmed.`,
+	}
+	importants := ChooseImportantSentenses(TEXT, "main", "github.com/+wei2912/GoBot")
+	index.AssertStringsEqual(t, "importants", importants, IMPORTANTS)
+}

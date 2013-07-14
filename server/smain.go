@@ -263,7 +263,12 @@ mainLoop:
 			if len(readme) > 20*1024 {
 				readme = readme[:20*1024]
 			}
-			raw := selectSnippets(d.Description+"\n"+readme, tokens, 300)
+			desc := d.Description
+			for _, sent := range d.ImportantSentences {
+				desc += "\n" + sent
+			}
+			desc += "\n" + readme
+			raw := selectSnippets(desc, tokens, 300)
 
 			if d.StarCount < 0 {
 				d.StarCount = 0
