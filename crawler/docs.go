@@ -5,6 +5,10 @@ import (
 	"log"
 )
 
+/*
+	key string       package
+	val gcse.DocInfo
+*/
 var docDB *gcse.MemDB
 
 func processDocument(d *gcse.DocInfo) error {

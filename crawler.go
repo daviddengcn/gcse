@@ -147,9 +147,12 @@ var (
 	ErrPackageNotModifed = errors.New("package not modified")
 )
 
+var patSingleReturn = regexp.MustCompile(`\b\n\b`)
+
 func ReadmeToText(fn, data string) string {
 	fn = strings.ToLower(fn)
-	if strings.HasSuffix(fn, ".md") || strings.HasSuffix(fn, ".markdown") {
+	if strings.HasSuffix(fn, ".md") || strings.HasSuffix(fn, ".markdown") ||
+		strings.HasSuffix(fn, ".mkd") {
 		md := index.ParseMarkdown([]byte(data))
 		return string(md.Text)
 	}
