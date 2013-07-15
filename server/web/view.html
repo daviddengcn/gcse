@@ -34,13 +34,22 @@
             <li><a target="_blank" href="view?id={{.}}">{{.}}</a></li>
         {{end}}
     </ol>
-<div>
+<div class="view-bottom">
     <a target="_blank" href="http://godoc.org/{{.Package}}">GoDoc</a>
     | <a target="_blank" href="{{.ProjectURL}}">Project</a>
     | Last Crawled: {{.LastUpdated.UTC.Format "2006-01-02 15:04:05 (MST)"}}
     | {{printf "%.2f" .StaticScore}}
     | {{.StaticRank}}/{{.TotalDocCount}}
 </div>
+
+<div class="bottom-search">
+    <form action="/search">
+        <label for="q">GCSE</label>
+        <input class="query-box" id="q" type="search" name="q" value="">
+        <button>search</button>
+    </form>
+</div>
+
 <script type="text/javascript">
   (function() {
     var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;

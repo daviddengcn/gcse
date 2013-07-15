@@ -237,6 +237,14 @@ div.info {
     margin-top: 5px;
 }
 
+div.view-bottom {
+    margin-bottom: 5px;
+}
+
+div.bottom-search {
+    margin-top: 5px;
+}
+
 @media only screen and (max-device-width: 480px) {
 body {
     margin: 0px auto;
