@@ -245,6 +245,10 @@ div.bottom-search {
     margin-top: 5px;
 }
 
+h4 {
+    margin: 1em 0px 0px 0px;
+}
+
 @media only screen and (max-device-width: 480px) {
 body {
     margin: 0px auto;

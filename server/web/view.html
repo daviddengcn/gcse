@@ -21,14 +21,14 @@
 {{end}}{{if .ShowReadme}}<pre class="readme">({{.ReadmeFn}})
 {{.ReadmeData}}
 </pre>{{end}}
-<div>Imported by {{len .Imported}} package(s):</div>
+<h4>Imported by {{len .Imported}} package(s):</h4>
     <ol>
         {{range .Imported}}
             <li><a target="_blank" href="view?id={{.}}">{{.}}</a></li>
         {{end}}
     </ol>
 <div>
-<div>Imports {{len .Imports}} package(s):</div>
+<h4>Imports {{len .Imports}} package(s):</h4>
     <ol>
         {{range .Imports}}
             <li><a target="_blank" href="view?id={{.}}">{{.}}</a></li>
