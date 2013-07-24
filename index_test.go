@@ -23,7 +23,7 @@ func TestIndex(t *testing.T) {
 	}
 
 	numDocs := ts.DocCount()
-	villa.AssertEquals(t, "DocCount", numDocs, 2)
+	AssertEquals(t, "DocCount", numDocs, 2)
 
 	var pkgs []string
 	if err := ts.Search(map[string]villa.StrSet{IndexTextField: nil},
@@ -37,6 +37,6 @@ func TestIndex(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	villa.AssertStringEquals(t, "all", pkgs,
+	AssertStringEquals(t, "all", pkgs,
 		"[github.com/daviddengcn/gcse github.com/daviddengcn/gcse/indexer]")
 }

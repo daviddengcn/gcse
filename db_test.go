@@ -18,11 +18,11 @@ func TestMemDB_Bug_Sync(t *testing.T) {
 		t.Error(err)
 	}
 
-	villa.AssertEquals(t, "Exists", path.Exists(), true)
+	AssertEquals(t, "Exists", path.Exists(), true)
 	if err := path.Remove(); err != nil {
 		t.Error(err)
 	}
-	villa.AssertEquals(t, "Exists", path.Exists(), false)
+	AssertEquals(t, "Exists", path.Exists(), false)
 
 	//if err := db.Load(); err != nil {
 	//	t.Error(err)
@@ -57,5 +57,5 @@ func TestMemDB_Recover(t *testing.T) {
 		t.Error("Recover failed!")
 		return
 	}
-	villa.AssertEquals(t, "vl", vl, 1)
+	AssertEquals(t, "vl", vl, 1)
 }
