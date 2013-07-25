@@ -19,6 +19,7 @@ const (
 var (
 	DocDBPath     villa.Path
 	CrawlerDBPath villa.Path
+	AppStopTime      time.Time
 )
 
 func init() {
@@ -44,7 +45,7 @@ func syncDatabases() {
 }
 
 func syncLoop() {
-	for {
+	for time.Now().Before(AppStopTime) {
 		time.Sleep(gcse.CrawlerSyncGap)
 		syncDatabases()
 	}
@@ -58,6 +59,10 @@ func dumpingStatusLoop() {
 }
 
 func main() {
+	log.Println("crawler started...")
+	
+	AppStopTime = time.Now().Add(6*time.Hour)
+	
 	docDB = gcse.NewMemDB(DocDBPath, gcse.KindDocDB)
 
 	cPackageDB = gcse.NewMemDB(CrawlerDBPath, kindPackage)

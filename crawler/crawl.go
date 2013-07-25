@@ -349,7 +349,7 @@ func crawlEnetiresLoop() {
 	
 	httpClient := gcse.GenHttpClient("")
 
-	for {
+	for time.Now().Before(AppStopTime) {
 		didSomething := false
 		var wg sync.WaitGroup
 

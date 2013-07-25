@@ -64,7 +64,7 @@ func importingLoop() {
 	}
 	watcher.Watch(gcse.ImportPath.S())
 
-	for {
+	for time.Now().Before(AppStopTime) {
 		gcse.ClearWatcherEvents(watcher)
 		// wait for some folders
 		for !hasImportsFolders() {

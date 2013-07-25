@@ -31,11 +31,11 @@ func clearOutdatedIndex() error {
 	return nil
 }
 
-func doIndex(dbSegm gcse.Segment) {
+func doIndex(dbSegm gcse.Segment) bool {
 	idxSegm, err := gcse.IndexSegments.GenMaxSegment()
 	if err != nil {
 		log.Printf("GenMaxSegment failed: %v", err)
-		return
+		return false
 	}
 
 	runtime.GC()
@@ -49,23 +49,23 @@ func doIndex(dbSegm gcse.Segment) {
 	ts, err := gcse.Index(docDB)
 	if err != nil {
 		log.Printf("Indexing failed: %v", err)
-		return
+		return false
 	}
 
 	f, err := idxSegm.Join(gcse.IndexFn).Create()
 	if err != nil {
 		log.Printf("Create index file failed: %v", err)
-		return
+		return false
 	}
 	defer f.Close()
 	if err := ts.Save(f); err != nil {
 		log.Printf("ts.Save failed: %v", err)
-		return
+		return false
 	}
 
 	if err := idxSegm.Done(); err != nil {
 		log.Printf("segm.Done failed: %v", err)
-		return
+		return false
 	}
 
 	log.Printf("Indexing success: %s (%d)", idxSegm, ts.DocCount())
@@ -78,4 +78,6 @@ func doIndex(dbSegm gcse.Segment) {
 	if err := dbSegm.Remove(); err != nil {
 		log.Printf("Delete segment %v failed: %v", dbSegm, err)
 	}
+	
+	return true
 }

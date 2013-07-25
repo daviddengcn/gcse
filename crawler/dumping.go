@@ -56,7 +56,7 @@ func dumpingLoop() {
 		watcher = nil
 	}
 	watcher.Watch(gcse.DBOutPath.S())
-	for {
+	for time.Now().Before(AppStopTime) {
 		// clear watcher events (most generated for dumping docDB)
 		gcse.ClearWatcherEvents(watcher)
 		// wait for indexer to consume

@@ -8,6 +8,8 @@ import (
 )
 
 func main() {
+	log.Println("indexer started...")
+	
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Printf("NewWatcher failed: %v", err)
@@ -35,7 +37,9 @@ func main() {
 			if err := clearOutdatedIndex(); err != nil {
 				log.Printf("clearOutdatedIndex failed: %v", err)
 			}
-			doIndex(dbSegm)
+			if doIndex(dbSegm) {
+				break
+			}
 		}
 	}
 }
