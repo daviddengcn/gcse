@@ -9,6 +9,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -365,6 +366,7 @@ func crawlEnetiresLoop() {
 				go func(host string, ents []EntryInfo) {
 					failCount := 0
 					for _, ent := range ents {
+						runtime.GC()
 						p, err := gcse.CrawlPackage(httpClient, ent.ID, ent.Etag)
 						if err != nil && err != gcse.ErrPackageNotModifed {
 							log.Printf("Crawling pkg %s failed: %v", ent.ID, err)
