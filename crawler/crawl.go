@@ -366,11 +366,7 @@ func crawlEnetiresLoop() {
 					failCount := 0
 					for _, ent := range ents {
 						p, err := gcse.CrawlPackage(httpClient, ent.ID, ent.Etag)
-						if err == gcse.ErrPackageNotModifed {
-							log.Printf("Package %s unchanged!", ent.ID)
-							schedulePackageNextCrawl(ent.ID, ent.Etag)
-						}
-						if err != nil {
+						if err != nil && err != gcse.ErrPackageNotModifed {
 							log.Printf("Crawling pkg %s failed: %v", ent.ID, err)
 
 							if gcse.IsBadPackage(err) {
@@ -391,8 +387,13 @@ func crawlEnetiresLoop() {
 								}
 							}
 							continue
-						} else {
-							failCount = 0
+						}
+						
+						failCount = 0
+						if err == gcse.ErrPackageNotModifed {
+							log.Printf("Package %s unchanged!", ent.ID)
+							schedulePackageNextCrawl(ent.ID, ent.Etag)
+							continue
 						}
 
 						log.Printf("Crawled package %s success!", ent.ID)
