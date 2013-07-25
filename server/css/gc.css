@@ -124,11 +124,11 @@ div.hdsch input[type="search"]:focus {
 }
 
 div.hdsch input[type="search"]~button {
-    display: none;
+    opacity: 0.5;
 }
 
 div.hdsch input[type="search"]:focus~button {
-    display: inline-block;
+    opacity: 1.0;
 }
 
 div.rightalign {
@@ -218,7 +218,6 @@ div.toplist div.pkg span {
 }
 
 div.toplist div.info {
-    //float: none;
     display: inline-block;
     width: 60px;
     height: 18px;
