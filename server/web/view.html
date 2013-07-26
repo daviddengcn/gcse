@@ -7,7 +7,8 @@
   js.src = "//connect.facebook.net/en_US/all.js#xfbml=1";
   fjs.parentNode.insertBefore(js, fjs);
 }(document, 'script', 'facebook-jssdk'));</script>
-<h2>Package {{.Name}} - {{.StarCount}} stars
+<div itemscope itemtype="http://schema.org/Code">
+<h2>Package <span itemprop="name">{{.Name}}</span> - {{.StarCount}} stars
     <div style="vertical-align: middle" class="fb-like" data-href="{{.ProjectURL}}" data-send="false" data-layout="button_count" data-width="450" data-show-faces="true"></div>
     <div class="g-plusone" data-size="small" data-href="{{.ProjectURL}}"></div>
 </h2>
@@ -15,10 +16,10 @@
     import "{{.Package}}"
 </div>
 {{if .Description}}
-<div class="desc">
+<div class="desc" itemprop="description">
     {{.DescHTML}}
 </div>
-{{end}}{{if .ShowReadme}}<pre class="readme">({{.ReadmeFn}})
+{{end}}{{if .ShowReadme}}<pre class="readme" itemprop="description">({{.ReadmeFn}})
 {{.ReadmeData}}
 </pre>{{end}}
 <h4>Imported by {{len .Imported}} package(s):</h4>
@@ -36,12 +37,14 @@
     </ol>
 <div class="view-bottom">
     <a target="_blank" href="http://godoc.org/{{.Package}}">GoDoc</a>
-    | <a target="_blank" href="{{.ProjectURL}}">Project</a>
+    | <a target="_blank" href="{{.ProjectURL}}" itemprop="url">Project</a>
     | Last Crawled: {{.LastUpdated.UTC.Format "2006-01-02 15:04:05 (MST)"}}
     | {{printf "%.2f" .StaticScore}}
     | {{.StaticRank}}/{{.TotalDocCount}}
 </div>
-
+<div itemprop="programmingLanguage" itemscope itemtype="http://schema.org/Thing">
+    <meta itemprop="name" content="Go"></meta>
+</div>
 <div class="bottom-search">
     <form action="/search">
         <label for="q">GCSE</label>
@@ -49,7 +52,7 @@
         <button>search</button>
     </form>
 </div>
-
+</div>
 <script type="text/javascript">
   (function() {
     var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;

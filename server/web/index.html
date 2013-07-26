@@ -7,9 +7,13 @@
   js.src = "//connect.facebook.net/en_US/all.js#xfbml=1";
   fjs.parentNode.insertBefore(js, fjs);
 }(document, 'script', 'facebook-jssdk'));</script>
+<div itemscope itemtype="http://schema.org/WebApplication">
 <h1>
-    <img class="logo" src="/images/logo-32.png"> Go Code Search Engine
+    <img class="logo" src="/images/logo-32.png" itemprop="image">
+    <span itemprop="name">Go Code Search Engine</span>
 </h1>
+<meta itemprop="url" content="http://go-search.org/"></meta>
+<meta itemprop="applicationCategory" content="Search Engine"></meta>
 <div>
     <form action="search">
         <input class="query-box" type="search" name="q" value="" autofocus>
@@ -22,6 +26,7 @@
     last updated {{.IndexAge}} ago.
     <div style="vertical-align: middle" class="fb-like" data-href="http://go-search.org/" data-send="false" data-layout="button_count" data-width="450" data-show-faces="true"></div>
     <div class="g-plusone" data-size="small" data-href="http://go-search.org/"></div>
+</div>
 </div>
 <script type="text/javascript">
   (function() {
