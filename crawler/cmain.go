@@ -8,6 +8,7 @@ import (
 	"github.com/daviddengcn/go-villa"
 	"log"
 	"runtime"
+	"sync"
 	"time"
 )
 
@@ -44,15 +45,16 @@ func syncDatabases() {
 	gcse.DumpMemStats()
 }
 
-func syncLoop() {
-	for time.Now().Before(AppStopTime) {
+func syncLoop(wg *sync.WaitGroup) {
+	for AppStopTime.Sub(time.Now()) > gcse.CrawlerSyncGap {
 		time.Sleep(gcse.CrawlerSyncGap)
 		syncDatabases()
 	}
+	wg.Done()
 }
 
 func dumpingStatusLoop() {
-	for {
+	for time.Now().Before(AppStopTime) {
 		gcse.DumpMemStats()
 		time.Sleep(10 * time.Minute)
 	}
@@ -61,18 +63,31 @@ func dumpingStatusLoop() {
 func main() {
 	log.Println("crawler started...")
 	
-	AppStopTime = time.Now().Add(6*time.Hour)
+	AppStopTime = time.Now().Add(30 * time.Minute)
+	
 	
 	docDB = gcse.NewMemDB(DocDBPath, gcse.KindDocDB)
 
 	cPackageDB = gcse.NewMemDB(CrawlerDBPath, kindPackage)
 	cPersonDB = gcse.NewMemDB(CrawlerDBPath, kindPerson)
 
-	go importingLoop()
-	go dumpingLoop()
-
-	go syncLoop()
 	go dumpingStatusLoop()
+	
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go syncLoop(&wg)
 
-	crawlEnetiresLoop()
+	crawlEntriesLoop()
+	
+	// dump docDB
+	if err := gcse.DBOutSegments.ClearUndones(); err != nil {
+		log.Printf("DBOutSegments.ClearUndones failed: %v", err)
+	}
+
+	if err := dumpDB(); err != nil {
+		log.Printf("dumpDB failed: %v", err)
+	}
+	
+	wg.Wait()
+	log.Println("crawler stopped...")
 }

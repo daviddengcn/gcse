@@ -2,20 +2,8 @@ package main
 
 import (
 	"github.com/daviddengcn/gcse"
-	"github.com/howeyc/fsnotify"
 	"log"
-	"time"
 )
-
-func hasImportsFolders() bool {
-	all, err := gcse.ImportSegments.ListAll()
-	if err != nil {
-		log.Printf("ImportSegments.ListAll failed: %v", err)
-		return false
-	}
-
-	return len(all) > 0
-}
 
 func hasImportsDones() bool {
 	dones, err := gcse.ImportSegments.ListDones()
@@ -57,27 +45,12 @@ func processImports() error {
 	return nil
 }
 
-func importingLoop() {
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		log.Fatal(err)
-	}
-	watcher.Watch(gcse.ImportPath.S())
-
-	for time.Now().Before(AppStopTime) {
-		gcse.ClearWatcherEvents(watcher)
-		// wait for some folders
-		for !hasImportsFolders() {
-			gcse.WaitForWatcherEvents(watcher)
-		}
-		// wait for done folders
-		for !hasImportsDones() {
-			time.Sleep(10 * time.Second)
-		}
+func checkImports() {
+	for hasImportsDones() {
 		// process done folders
 		if err := processImports(); err != nil {
 			log.Printf("scanImports failed: %v", err)
-			time.Sleep(1 * time.Second)
+			break
 		}
 	}
 }

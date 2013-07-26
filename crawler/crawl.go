@@ -71,7 +71,7 @@ func appendPackage(pkg string) bool {
 		exists := docDB.Get(pkg, &di)
 		if exists {
 			// already scheduled
-			log.Printf("  [appendPackage] Package %s was scheduled to %v", pkg, ent.ScheduleTime)
+			// log.Printf("  [appendPackage] Package %s was scheduled to %v", pkg, ent.ScheduleTime)
 			return false
 		}
 	}
@@ -193,7 +193,7 @@ func appendPerson(site, username string) bool {
 	exists := cPersonDB.Get(id, &ent)
 	if exists {
 		// already scheduled
-		log.Printf("  [appendPerson] Person %s was scheduled to %v", id, ent.ScheduleTime)
+		// log.Printf("  [appendPerson] Person %s was scheduled to %v", id, ent.ScheduleTime)
 		return false
 	}
 
@@ -344,13 +344,16 @@ func touchByGithubUpdates() bool {
 	return res
 }
 
-func crawlEnetiresLoop() {
-	// wait for imports, if any
-	time.Sleep(10 * time.Second)
-	
+func crawlEntriesLoop() {
 	httpClient := gcse.GenHttpClient("")
 
 	for time.Now().Before(AppStopTime) {
+		checkImports()
+	
+		if gcse.CrawlByGodocApi {
+			processGodoc(httpClient)
+		}
+		
 		didSomething := false
 		var wg sync.WaitGroup
 
@@ -366,6 +369,9 @@ func crawlEnetiresLoop() {
 				go func(host string, ents []EntryInfo) {
 					failCount := 0
 					for _, ent := range ents {
+						if time.Now().After(AppStopTime) {
+							break
+						}
 						runtime.GC()
 						p, err := gcse.CrawlPackage(httpClient, ent.ID, ent.Etag)
 						if err != nil && err != gcse.ErrPackageNotModifed {
@@ -382,9 +388,14 @@ func crawlEnetiresLoop() {
 									12*time.Hour), ent.Etag)
 
 								if failCount >= 10 {
+									durToSleep := 10 * time.Minute
+									if time.Now().Add(durToSleep).After(AppStopTime) {
+										break
+									}
+									
 									log.Printf("Last ten crawling %s packages failed, sleep for a while...",
 										host)
-									time.Sleep(10 * time.Minute)
+									time.Sleep(durToSleep)
 									failCount = 0
 								}
 							}
@@ -421,6 +432,10 @@ func crawlEnetiresLoop() {
 				go func(host string, ents []EntryInfo) {
 					failCount := 0
 					for _, ent := range ents {
+						if time.Now().After(AppStopTime) {
+							break
+						}
+						
 						p, err := gcse.CrawlPerson(httpClient, ent.ID)
 						if err != nil {
 							failCount++
@@ -429,9 +444,14 @@ func crawlEnetiresLoop() {
 							schedulePerson(ent.ID, time.Now().Add(12*time.Hour))
 
 							if failCount >= 10 {
+								durToSleep := 10 * time.Minute
+								if time.Now().Add(durToSleep).After(AppStopTime) {
+									break
+								}
+								
 								log.Printf("Last ten crawling %s persons failed, sleep for a while...",
 									host)
-								time.Sleep(10 * time.Minute)
+								time.Sleep(durToSleep)
 								failCount = 0
 							}
 							continue
@@ -440,6 +460,7 @@ func crawlEnetiresLoop() {
 						log.Printf("Crawled person %s success!", ent.ID)
 						pushPerson(p)
 						log.Printf("Push person %s success", ent.ID)
+						failCount = 0
 					}
 
 					wg.Done()
@@ -450,12 +471,6 @@ func crawlEnetiresLoop() {
 
 		syncDatabases()
 
-		if gcse.CrawlByGodocApi {
-			if processGodoc(httpClient) {
-				didSomething = true
-			}
-		}
-		
 		if gcse.CrawlGithubUpdate {
 			if touchByGithubUpdates() {
 				didSomething = true

@@ -2,32 +2,8 @@ package main
 
 import (
 	"github.com/daviddengcn/gcse"
-	"github.com/howeyc/fsnotify"
 	"log"
-	"time"
 )
-
-var (
-	lastDumpTime time.Time
-)
-
-func hasDonesDBOut() bool {
-	dones, err := gcse.DBOutSegments.ListDones()
-	if err != nil {
-		log.Printf("DBOutSegments.ListDones failed: %v", err)
-		return false
-	}
-
-	return len(dones) > 0
-}
-
-func needDump() bool {
-	if time.Now().Before(lastDumpTime.Add(gcse.UpdateCycle)) {
-		return false
-	}
-	
-	return docDB.LastModified().After(lastDumpTime)
-}
 
 func dumpDB() error {
 	segm, err := gcse.DBOutSegments.GenMaxSegment()
@@ -44,39 +20,5 @@ func dumpDB() error {
 	}
 
 	log.Printf("Dumping docDB to %v success", segm)
-
-	lastDumpTime = time.Now()
 	return nil
-}
-
-func dumpingLoop() {
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		log.Printf("Creating watcher failed: %v", err)
-		watcher = nil
-	}
-	watcher.Watch(gcse.DBOutPath.S())
-	for time.Now().Before(AppStopTime) {
-		// clear watcher events (most generated for dumping docDB)
-		gcse.ClearWatcherEvents(watcher)
-		// wait for indexer to consume
-		for hasDonesDBOut() {
-			gcse.WaitForWatcherEvents(watcher)
-		}
-
-		// wait for data change
-		for !needDump() {
-			time.Sleep(1 * time.Minute)
-		}
-
-		// dump docDB
-		if err := gcse.DBOutSegments.ClearUndones(); err != nil {
-			log.Printf("DBOutSegments.ClearUndones failed: %v", err)
-		}
-
-		if err := dumpDB(); err != nil {
-			log.Printf("dumpDB failed: %v", err)
-			time.Sleep(1 * time.Minute)
-		}
-	}
 }
