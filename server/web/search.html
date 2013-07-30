@@ -64,4 +64,11 @@
     </form>
 </div>
 {{end}}
+<script>
+window.onload = function() {
+    var q = '{{.Q}}';
+    q = q.toLowerCase().trim();
+    ga('send', 'event', 'search', 'query', q);
+};
+</script>
 {{template "footer.html"}}
