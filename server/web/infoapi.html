@@ -1,0 +1,66 @@
+{{template "header.html" "GCSE API"}}
+{{define "apibody"}}
+### Introduction
+
+GCSE API returns structured data with json or jsonp format.
+
+The path of GCSE API is "`/api`"
+
+### Shared parameters
+
+Field      | Comments
+-----------|------------------------------------------------------------------
+`action`   | Possible values: `package`, `tops`
+`callback` | (optional) If provided, return jsonp code with this as the callback function. <br> The callback function has two parameters. First parameter is an integer of code, and the second is the value object returned.<br>[Example](/api?action=tops&callback=myfunc)
+
+### "package" Call
+
+Returns the information of a package. [Example](/api?action=package&id=github.com%2fdaviddengcn%2fgcse)
+
+* Parameters
+
+    Field    | Comments
+    ---------|-----------------------------------------------------------------
+    `action` | `package`
+    `id`     | The ID of the package. Same as the string used to import
+
+* Return value
+
+    Field         | Type       | Comments
+    --------------|------------|-----------------------------------------------
+    `Package`     | `string`   | Import path, ID of a package in GCSE
+    `Name`        | `string`   | Package name
+    `StarCount`   | `int`      | Number of stars(github, bitbucket, plus/like buttons)
+    `Synopsis`    | `string`   | Synopsis(from package comment or documentaion)
+    `Description` | `string`   | Detailed documents
+    `Imported`    | `[]string` | List of packages that imports this package
+    `Imports`     | `[]string` | List of packages this package imports
+    `ProjectURL`  | `string`   | URL of the project of this package
+    `StaticRank`  | `int`      | Static rank of this package. One-based.
+
+
+### "tops" Call
+
+Returns the [tops](/tops) tables. [Example](/api?action=tops)
+
+* Parameters
+
+    Key      | Comments
+    ---------|------------------------------------------------------------------
+    `action` | `tops`
+    `len`    | (optional) The maximum number of entries in each table. Limited to [20, 100].
+    
+* Return value (An array of tables)
+
+    Field   | Type       | Comments
+    --------|------------|-----------------------------------------------
+    `Name`  | `string`   | Table title
+    `Info`  | `string`   | Top right comments
+    `Items` | `[]`       | Items of the table. For each item:<br> `Name` is the anchor text,<br> `Package` is the package import path,<br> `Link` is the URL if the item is not a package,<br> `Info` is the information text on the second column
+
+
+{{end}}
+<div class="markdown">
+{{markdown "apibody"}}
+</div>
+{{template "footer.html"}}
