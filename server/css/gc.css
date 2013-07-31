@@ -105,6 +105,12 @@ header a, footer a {
     text-decoration: none;
 }
 
+div#totopbtn {
+    position: fixed;
+    bottom: 5px;
+    right: 0px;
+}
+
 div.hdsch {
     float: right;
     margin-top: -2px;
@@ -133,6 +139,16 @@ div.hdsch input[type="search"]:focus~button {
 
 div.rightalign {
     text-align: right;
+}
+
+
+h4 a#imported {
+    text-decoration: none;
+    color: rgba(0, 0, 0, 0);
+}
+
+h4:hover a#imported, h4 a#imported:focus {
+    color: inherit;
 }
 
 footer {
@@ -248,6 +264,19 @@ h4 {
     margin: 1em 0px 0px 0px;
 }
 
+div.markdown ul {
+    padding-left: 20px;
+}
+
+div.markdown thead td {
+    font-weight: bold;
+}
+
+div.markdown td {
+    vertical-align: top;
+    padding: 0px 10px 0px 0px;
+}
+
 @media only screen and (max-device-width: 480px) {
 body {
     margin: 0px auto;
@@ -286,5 +315,9 @@ div.taframe {
 textarea#pkg {
     width: 95%;
     height: 200px;
+}
+
+div#totopbtn {
+    display: none;
 }
 }

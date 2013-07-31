@@ -5,10 +5,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/daviddengcn/gcse"
-	"github.com/daviddengcn/go-index"
-	"github.com/daviddengcn/go-villa"
-	"github.com/russross/blackfriday"
 	godoc "go/doc"
 	"html/template"
 	"log"
@@ -16,6 +12,11 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	
+	"github.com/daviddengcn/gcse"
+	"github.com/daviddengcn/go-index"
+	"github.com/daviddengcn/go-villa"
+	"github.com/russross/blackfriday"
 )
 
 var templates *template.Template
@@ -44,7 +45,9 @@ func init() {
 	http.HandleFunc("/search", pageSearch)
 	http.HandleFunc("/view", pageView)
 	http.HandleFunc("/tops", pageTops)
-	http.HandleFunc("/about", pageAbout)
+	http.HandleFunc("/about", staticPage("about.html"))
+	http.HandleFunc("/infoapi", staticPage("infoapi.html"))
+	http.HandleFunc("/api", pageApi)
 
 	//	http.HandleFunc("/update", pageUpdate)
 
@@ -106,6 +109,13 @@ func (sd SimpleDuration) String() string {
 }
 
 func pageRoot(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/" {
+		w.WriteHeader(http.StatusNotFound)
+		if err := templates.ExecuteTemplate(w, "404.html", nil); err != nil {
+			w.Write([]byte(err.Error()))
+		}
+		return
+	}
 	docCount := 0
 	indexDB, _ := indexDBBox.Get().(*index.TokenSetSearcher)
 	if indexDB != nil {
@@ -125,10 +135,12 @@ func pageRoot(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func pageAbout(w http.ResponseWriter, r *http.Request) {
-	if err := templates.ExecuteTemplate(w, "about.html", nil); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+func staticPage(tempName string) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := templates.ExecuteTemplate(w, tempName, nil); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 }
 
@@ -362,20 +374,29 @@ func pageSearch(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Search results rendered")
 }
 
+func findPackage(id string, doc *gcse.HitInfo) (found bool) {
+	indexDB, _ := indexDBBox.Get().(*index.TokenSetSearcher)
+	if indexDB == nil {
+		return false
+	}
+	indexDB.Search(index.SingleFieldQuery("pkg", id),
+		func(docID int32, data interface{}) error {
+			*doc, _ = data.(gcse.HitInfo)
+			found = true
+			return nil
+		})
+	return found
+}
+
 func pageView(w http.ResponseWriter, r *http.Request) {
 	id := strings.TrimSpace(r.FormValue("id"))
 	if id != "" {
 		var doc gcse.HitInfo
-
-		indexDB, _ := indexDBBox.Get().(*index.TokenSetSearcher)
-		if indexDB != nil {
-			indexDB.Search(index.SingleFieldQuery("pkg", id),
-				func(docID int32, data interface{}) error {
-					doc, _ = data.(gcse.HitInfo)
-					return nil
-				})
+		if !findPackage(id, &doc) {
+			http.Error(w, fmt.Sprintf("Package %s not found!", id), http.StatusNotFound)
+			return
 		}
-
+		indexDB, _ := indexDBBox.Get().(*index.TokenSetSearcher)
 		if doc.StarCount < 0 {
 			doc.StarCount = 0
 		}
@@ -417,5 +438,84 @@ func pageTops(w http.ResponseWriter, r *http.Request) {
 	err := templates.ExecuteTemplate(w, "tops.html", statTops(N))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func ApiContent(w http.ResponseWriter, code int, obj interface{}, callback string) error {
+	if callback == "" {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(code)
+		_, err := w.Write(JSon(obj))
+		return err
+	}
+	
+	w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
+	if _, err := w.Write([]byte(fmt.Sprintf("%s(%d, ", callback, code))); err != nil {
+		return err
+	}
+	if _, err := w.Write(JSon(obj)); err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte(");")); err != nil {
+		return err
+	}
+	return nil
+}
+
+func pageApi(w http.ResponseWriter, r *http.Request) {
+	action := strings.ToLower(r.FormValue("action"))
+	callback := strings.TrimSpace(r.FormValue("callback"))
+	callback = FilterFunc(callback, func(r rune) bool {
+		if r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' {
+			return false
+		}
+		if r == '_' || r == '$' {
+			return false
+		}
+		return true
+	})
+	switch action {
+	case "package":
+		id := r.FormValue("id")
+		
+		var doc gcse.HitInfo
+		if !findPackage(id, &doc) {
+			ApiContent(w, http.StatusNotFound,
+				fmt.Sprintf("Package %s not found!", id), callback)
+			return
+		}
+		
+		ApiContent(w, http.StatusOK, struct {
+			Package string
+			Name string
+			StarCount int
+			Synopsis string
+			Description string
+			Imported []string
+			Imports []string
+			ProjectURL string
+			StaticRank int
+		}{
+			doc.Package,
+			doc.Name,
+			doc.StarCount,
+			doc.Synopsis,
+			doc.Description,
+			doc.Imported,
+			doc.Imports,
+			doc.ProjectURL,
+			doc.StaticRank + 1,
+		}, callback)
+	case "tops":
+		N, _ := strconv.Atoi(r.FormValue("len"))
+		if N < 20 {
+			N = 20
+		} else if N > 100 {
+			N = 100
+		}
+		ApiContent(w, http.StatusOK, statTops(N), callback)
+	default:
+		ApiContent(w, http.StatusBadRequest,
+			fmt.Sprintf("Unknown action: %s", action), callback)
 	}
 }
