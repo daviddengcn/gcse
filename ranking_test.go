@@ -195,3 +195,116 @@ launchpad.net/mgo/v2`)
 		t.Errorf("effectiveImported failed!")
 	}
 }
+
+func TestEffectiveImported_projsame(t *testing.T) {
+	pkg := "github.com/dotcloud/docker/term"
+	imported := strings.Fields(
+		`github.com/AsherBond/docker
+github.com/ChaosCloud/docker
+github.com/CodeNow/docker
+github.com/DanielBryan/docker
+github.com/Jukkrapong/docker
+github.com/ToothlessGear/docker
+github.com/Vladimiroff/docker
+github.com/ZeissS/docker
+github.com/amaudy/docker
+github.com/anachronistic/docker
+github.com/apatil/docker-cpuset-cpus
+github.com/apatil/docker-lxc-options
+github.com/aybabtme/docker
+github.com/bdon/docker
+github.com/benoitc/docker
+github.com/billyoung/docker
+github.com/bits/docker
+github.com/bpo/docker
+github.com/bradobro/docker
+github.com/c4milo/docker
+github.com/calavera/docker
+github.com/carlosdp/docker
+github.com/cespare/docker
+github.com/crosbymichael/docker
+github.com/dhrp/docker
+github.com/dillera/docker
+github.com/dlintw/docker
+github.com/dotcloud/docker
+github.com/dr-strangecode/docker
+github.com/dsissitka/docker
+github.com/dynport/docker
+github.com/ehazlett/docker
+github.com/errnoh/docker
+github.com/fmd/docker
+github.com/fsouza/docker
+github.com/fsouza/go-dockerclient
+github.com/gaffo/docker
+github.com/gale320/docker
+github.com/hantuo/docker
+github.com/hukeli/docker
+github.com/irr/docker
+github.com/ismell/docker
+github.com/jaepil/docker
+github.com/jamtur01/docker
+github.com/jbardin/docker
+github.com/jmcvetta/docker
+github.com/johnbellone/docker
+github.com/johnnydtan/docker
+github.com/junk16/docker
+github.com/justone/docker
+github.com/kencochrane/docker
+github.com/kisielk/docker
+github.com/kmindg/docker
+github.com/kpelykh/docker
+github.com/kstaken/docker
+github.com/lopter/docker
+github.com/mars9/docker
+github.com/maxhodak/docker
+github.com/metalivedev/docker
+github.com/mewpkg/docker
+github.com/mhennings/docker
+github.com/mindreframer/docker
+github.com/monnand/docker
+github.com/ndarilek/docker
+github.com/nickstenning/docker
+github.com/offby1/docker
+github.com/ooyala/docker
+github.com/oss17888/docker
+github.com/petar/gocircuit-docker
+github.com/philips/docker
+github.com/pjvds/docker
+github.com/rhoml/docker
+github.com/richo/docker
+github.com/ryfow/docker
+github.com/sabzil/docker
+github.com/shin-/docker
+github.com/silpion/docker
+github.com/sinhalabs/docker
+github.com/sleekslush/docker
+github.com/sridatta/docker
+github.com/stevedomin/docker
+github.com/steveruckdashel/docker
+github.com/stfp/docker
+github.com/synack/docker
+github.com/timcubb/docker
+github.com/titanous/docker
+github.com/twmb/docker
+github.com/unclejack/docker
+github.com/vagmi/docker
+github.com/zimbatm/docker
+github.com/zsol/docker`)
+	author := AuthorOfPackage(pkg)
+	project := ProjectOfPackage(pkg)
+	t.Logf("pkg: %s, author: %s, project: %s", pkg, author, project)
+	_ = imported
+	cnt := effectiveImported(imported, author, project)
+	t.Logf("cnt: %f", cnt)
+
+	if cnt > 10 {
+		t.Errorf("effectiveImported failed!")
+	}
+}
+
+func TestProjectOfPackage(t *testing.T) {
+	proj := ProjectOfPackage(`github.com/AsherBond/docker`)
+	if proj != "docker" {
+		t.Errorf("TestProjectOfPackage")
+	}
+}

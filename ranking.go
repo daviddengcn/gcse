@@ -38,18 +38,23 @@ func minFloat(a, b float64) float64 {
 func effectiveImported(imported []string, author, project string) float64 {
 	s := float64(0.)
 
-	var sigs villa.StrSet
+	var authorSet, projSet villa.StrSet
 	for _, imp := range imported {
-		sig := AuthorOfPackage(imp)
-		if sig == "" {
-			sig = ProjectOfPackage(imp)
+		impAuthor := AuthorOfPackage(imp)
+		if impAuthor != "" {
+			if authorSet.In(impAuthor) {
+				continue
+			}
+			authorSet.Put(impAuthor)
 		}
-		if sigs.In(sig) {
+		
+		impProj := ProjectOfPackage(imp)
+		if projSet.In(impProj) {
 			continue
 		}
-		sigs.Put(sig)
+		projSet.Put(impProj)
 
-		if sig == author || sig == project {
+		if impAuthor != "" && impAuthor == author || impProj == project {
 			s += 0.5
 		} else {
 			s += 1.0
