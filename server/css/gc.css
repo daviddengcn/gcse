@@ -142,20 +142,33 @@ div.rightalign {
 }
 
 
-h4 a#imported {
+h4 a.anchor {
     text-decoration: none;
     color: rgba(0, 0, 0, 0);
 }
 
-h4:hover a#imported, h4 a#imported:focus {
+h4:hover a.anchor, h4 a.anchor:focus {
     color: inherit;
 }
 
 footer {
-    margin-top: 10px;
+    margin-top: 15px;
     border-top: 1px solid gray;
     padding-bottom: 20px;
     text-align: center;
+}
+
+footer div.block {
+    display: inline-block;
+    height: 50px;
+    text-align: left;
+    vertical-align: top;
+    margin-top: 10px;
+    padding: 0px 10px;
+}
+
+footer div.rightline {
+    border-right: 1px solid gray;
 }
 
 tfoot tr td {

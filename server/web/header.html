@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, width=device-width" />
-    <title>{{if .}}{{.}} - Go Code Search Engine{{else}}Go Code Search Engine - Find the package to import!{{end}}</title>
+    <title>{{if .}}{{.}} - Go Search{{else}}Go Search - Find popular and relevant packages!{{end}}</title>
     <link href="css/gc.css" rel="stylesheet" type="text/css">
     <link rel='shortcut icon' href='/images/logo-16.png' type='image/png'/>
 </head>
@@ -12,12 +12,11 @@
     <a id="top"></a>
     <div class="hdsch">
         <form action="search">
-            <input class="query-box" type="search" name="q" value="" placeholder="search"><button>search</button>
+            <input class="query-box" type="search" name="q"><button>search</button>
         </form>
     </div>
-    <img src="/images/logo-16.png" class="logo">
-    <a href="/">GCSE</a>
-    | <a href="/add">Add Packages</a>
+    <a href="/"><img src="/images/logo-16.png" class="logo"></a>
+    <a href="/add">Add Packages</a>
     | <a href="/tops">Top Packages</a>
 </header>
 <div id="totopbtn">

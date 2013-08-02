@@ -1,10 +1,10 @@
-{{template "header.html" "GCSE API"}}
+{{template "header.html" "Go Search API"}}
 {{define "apibody"}}
 ### Introduction
 
-GCSE API returns structured data with json or jsonp format.
+Go Search API, or GSAPI, returns structured data with json or jsonp format.
 
-The path of GCSE API is "`/api`"
+The path of GSAPI is "`/api`"
 
 ### Shared parameters
 
@@ -28,7 +28,7 @@ Returns the information of a package. [Example](/api?action=package&id=github.co
 
     Field         | Type       | Comments
     --------------|------------|-----------------------------------------------
-    `Package`     | `string`   | Import path, ID of a package in GCSE
+    `Package`     | `string`   | Import path, ID of a package in GS
     `Name`        | `string`   | Package name
     `StarCount`   | `int`      | Number of stars(github, bitbucket, plus/like buttons)
     `Synopsis`    | `string`   | Synopsis(from package comment or documentaion)

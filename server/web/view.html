@@ -22,14 +22,14 @@
 {{end}}{{if .ShowReadme}}<pre class="readme" itemprop="description">({{.ReadmeFn}})
 {{.ReadmeData}}
 </pre>{{end}}
-<h4>Imported by {{len .Imported}} package(s) <a href="#imported" id="imported">¶</a></h4>
+<h4>Imported by {{len .Imported}} package(s) <a href="#imported" id="imported" class="anchor">¶</a></h4>
     <ol>
         {{range .Imported}}
             <li><a target="_blank" href="view?id={{.}}">{{.}}</a></li>
         {{end}}
     </ol>
 <div>
-<h4>Imports {{len .Imports}} package(s)</h4>
+<h4>Imports {{len .Imports}} package(s) <a href="#imports" id="imports" class="anchor">¶</a></h4>
     <ol>
         {{range .Imports}}
             <li><a target="_blank" href="view?id={{.}}">{{.}}</a></li>
@@ -48,7 +48,7 @@
 </div>
 <div class="bottom-search">
     <form action="/search">
-        <label for="q">GCSE</label>
+        <label for="q">Go Search</label>
         <input class="query-box" id="q" type="search" name="q" value="">
         <button>search</button>
     </form>
