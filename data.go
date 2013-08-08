@@ -136,14 +136,14 @@ func appendTokensOfBlock(tokens villa.StrSet, block []byte) villa.StrSet {
 				last := ""
 				index.Tokenize(CheckCamel, villa.NewPByteSlice(token),
 					func(token []byte) error {
-						tokenStr = string(token)
+						tokenStr := string(token)
 						tokenStr = NormWord(tokenStr)
 						if !stopWords.In(tokenStr) {
 							tokens.Put(tokenStr)
 						}
 
 						if last != "" {
-							tokens.Put(last + "-" + string(tokenStr))
+							tokens.Put(last + string(tokenStr))
 						}
 
 						last = tokenStr
@@ -157,6 +157,7 @@ func appendTokensOfBlock(tokens villa.StrSet, block []byte) villa.StrSet {
 
 			if lastToken != "" {
 				if tokenStr[0] > 128 && lastToken[0] > 128 {
+					// Chinese bigrams
 					tokens.Put(lastToken + tokenStr)
 				} else if tokenStr[0] <= 128 && lastToken[0] <= 128 {
 					tokens.Put(lastToken + "-" + tokenStr)
