@@ -450,6 +450,9 @@ func ApiContent(w http.ResponseWriter, code int, obj interface{}, callback strin
 	}
 	
 	w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
+	/*
+		<callback>(<code>, <obj(JSON)>);
+	*/
 	if _, err := w.Write([]byte(fmt.Sprintf("%s(%d, ", callback, code))); err != nil {
 		return err
 	}
@@ -506,6 +509,7 @@ func pageApi(w http.ResponseWriter, r *http.Request) {
 			doc.ProjectURL,
 			doc.StaticRank + 1,
 		}, callback)
+		
 	case "tops":
 		N, _ := strconv.Atoi(r.FormValue("len"))
 		if N < 20 {
@@ -514,6 +518,21 @@ func pageApi(w http.ResponseWriter, r *http.Request) {
 			N = 100
 		}
 		ApiContent(w, http.StatusOK, statTops(N), callback)
+		
+	case "packages":
+		indexDB := indexDBBox.Get().(*index.TokenSetSearcher)
+		var pkgs []string
+		if indexDB != nil {
+			pkgs = make([]string, 0, indexDB.DocCount())
+			indexDB.Search(nil, func(docID int32, data interface{}) error {
+				doc := data.(gcse.HitInfo)
+				pkgs = append(pkgs, doc.Package)
+				
+				return nil
+			})
+		}
+		ApiContent(w, http.StatusOK, pkgs, callback)
+		
 	default:
 		ApiContent(w, http.StatusBadRequest,
 			fmt.Sprintf("Unknown action: %s", action), callback)

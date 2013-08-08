@@ -8,25 +8,25 @@ The path of GSAPI is "`/api`"
 
 ### Shared parameters
 
-Field      | Comments
+Field      | Value
 -----------|------------------------------------------------------------------
-`action`   | Possible values: `package`, `tops`
-`callback` | (optional) If provided, return jsonp code with this as the callback function. <br> The callback function has two parameters. First parameter is an integer of code, and the second is the value object returned.<br>[Example](/api?action=tops&callback=myfunc)
+`action`   | Possible values: `package`, `tops`, `packages`
+`callback` | (optional) If provided, return jsonp code with this as the callback function. <br> The callback function has two parameters. First parameter is an integer of code, and the second is the value object returned.<br>[example](/api?action=tops&callback=myfunc)
 
-### "package" Call
+### "package" Action
 
 Returns the information of a package. [Example](/api?action=package&id=github.com%2fdaviddengcn%2fgcse)
 
 * Parameters
 
-    Field    | Comments
+    Field    | Value
     ---------|-----------------------------------------------------------------
     `action` | `package`
     `id`     | The ID of the package. Same as the string used to import
 
 * Return value
 
-    Field         | Type       | Comments
+    Field         | Type       | Value
     --------------|------------|-----------------------------------------------
     `Package`     | `string`   | Import path, ID of a package in GS
     `Name`        | `string`   | Package name
@@ -39,24 +39,39 @@ Returns the information of a package. [Example](/api?action=package&id=github.co
     `StaticRank`  | `int`      | Static rank of this package. One-based.
 
 
-### "tops" Call
+### "tops" Action
 
-Returns the [tops](/tops) tables. [Example](/api?action=tops)
+Returns the [tops](/tops) tables. [example](/api?action=tops)
 
 * Parameters
 
-    Key      | Comments
+    Key      | Value
     ---------|------------------------------------------------------------------
     `action` | `tops`
     `len`    | (optional) The maximum number of entries in each table. Limited to [20, 100].
     
 * Return value (An array of tables)
 
-    Field   | Type       | Comments
+    Field   | Type       | Value
     --------|------------|-----------------------------------------------
     `Name`  | `string`   | Table title
     `Info`  | `string`   | Top right comments
     `Items` | `[]`       | Items of the table. For each item:<br> `Name` is the anchor text,<br> `Package` is the package import path,<br> `Link` is the URL if the item is not a package,<br> `Info` is the information text on the second column
+
+
+### "packages" Action
+
+Returns the ID array of all packages. [link](/api?action=packages)
+
+* Parameters
+
+    Key      | Value
+    ---------|------------------------------------------------------------------
+    `action` | `packages`
+
+* Return values
+
+An array of strings, each of which is the ID (or import path) of a package.
 
 
 {{end}}
