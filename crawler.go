@@ -5,10 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/daviddengcn/gddo/doc"
-	"github.com/daviddengcn/go-index"
-	"github.com/daviddengcn/go-villa"
-	godoc "go/doc"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -18,6 +14,11 @@ import (
 	"strings"
 	"time"
 	"unicode/utf8"
+	
+	"github.com/daviddengcn/gddo/doc"
+	"github.com/daviddengcn/go-index"
+	"github.com/daviddengcn/go-villa"
+	godoc "go/doc"
 )
 
 const (
@@ -329,13 +330,13 @@ func IsBadPackage(err error) bool {
 	return doc.IsNotFound(villa.DeepestNested(err))
 }
 
-var githubProjectPat = regexp.MustCompile(`href="/([^/]+/[^/]+)/stargazers"`)
+var githubProjectPat = regexp.MustCompile(`href="([^/]+/[^/]+)/stargazers"`)
 var githubUpdatedPat = regexp.MustCompile(`datetime="([^"]+)"`)
 
 func GithubUpdates() (map[string]time.Time, error) {
 	updates := make(map[string]time.Time)
 	for i := 0; i < 2; i++ {
-		resp, err := http.Get("https://github.com/languages/Go/updated?page=" + strconv.Itoa(i+1))
+		resp, err := http.Get("https://github.com/search?l=go&o=desc&q=stars%3A%3E%3D0&s=updated&type=Repositories&p=" + strconv.Itoa(i+1))
 		if err != nil {
 			return nil, err
 		}
@@ -350,6 +351,7 @@ func GithubUpdates() (map[string]time.Time, error) {
 				break
 			}
 			ownerRepo := "github.com/" + string(p[m[2]:m[3]])
+			
 			p = p[m[1]:]
 
 			m = githubUpdatedPat.FindSubmatchIndex(p)

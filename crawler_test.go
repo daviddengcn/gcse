@@ -2,10 +2,11 @@ package gcse
 
 import (
 	"fmt"
-	"github.com/daviddengcn/go-villa"
 	"net/http"
 	"strings"
 	"testing"
+	
+	"github.com/daviddengcn/go-villa"
 )
 
 func TestGithubUpdates(t *testing.T) {
@@ -13,7 +14,7 @@ func TestGithubUpdates(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	// log.Printf("Updates: %v", updates)
+	//log.Printf("Updates: %v", updates)
 }
 
 func TestReadmeToText(t *testing.T) {
