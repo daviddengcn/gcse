@@ -156,6 +156,9 @@ footer {
     border-top: 1px solid gray;
     padding-bottom: 20px;
     text-align: center;
+    font-size: 90%;
+    line-height: 150%;
+    margin-bottom: 10px;
 }
 
 footer div.block {
@@ -266,7 +269,14 @@ div.info {
 }
 
 div.view-bottom {
-    margin-bottom: 5px;
+    color: gray;
+    margin-top: 0px;
+    margin-bottom: 10px;
+    font-size: 75%;
+}
+
+div.view-bottom a:link {
+    color: gray;
 }
 
 div.bottom-search {

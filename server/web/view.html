@@ -12,6 +12,14 @@
     <div style="vertical-align: middle" class="fb-like" data-href="{{.ProjectURL}}" data-send="false" data-layout="button_count" data-width="450" data-show-faces="true"></div>
     <div class="g-plusone" data-size="small" data-href="{{.ProjectURL}}" data-callback="plusonecallback"></div>
 </h2>
+<div class="view-bottom">
+    <a href="http://godoc.org/{{.Package}}">GoDoc</a>
+    <a href="{{.ProjectURL}}" itemprop="url">Project</a>
+    <a href="/api?action=package&id={{.Package}}">JSON</a>
+    Last crawled: {{.LastUpdated.UTC.Format "2006-01-02 15:04:05 (MST)"}}
+    {{printf "%.2f" .StaticScore}}
+    {{.StaticRank}}/{{.TotalDocCount}}
+</div>
 <div class="code">
     import "{{.Package}}"
 </div>
@@ -32,17 +40,9 @@
 <h4>Imports {{len .Imports}} package(s) <a href="#imports" id="imports" class="anchor">¶</a></h4>
     <ol>
         {{range .Imports}}
-            <li><a target="_blank" href="view?id={{.}}">{{.}}</a></li>
+            <li><a href="view?id={{.}}">{{.}}</a></li>
         {{end}}
     </ol>
-<div class="view-bottom">
-    <a target="_blank" href="http://godoc.org/{{.Package}}">GoDoc</a>
-    | <a target="_blank" href="{{.ProjectURL}}" itemprop="url">Project</a>
-    | <a href="/api?action=package&id={{.Package}}">JSON</a>
-    | Last crawled: {{.LastUpdated.UTC.Format "2006-01-02 15:04:05 (MST)"}}
-    | {{printf "%.2f" .StaticScore}}
-    | {{.StaticRank}}/{{.TotalDocCount}}
-</div>
 <div itemprop="programmingLanguage" itemscope itemtype="http://schema.org/Thing">
     <meta itemprop="name" content="Go"></meta>
 </div>
