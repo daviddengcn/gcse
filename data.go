@@ -24,6 +24,7 @@ type DocInfo struct {
 	ReadmeFn    string
 	ReadmeData  string
 	Imports     []string
+	Exported    []string // exported tokens(funcs/types)
 }
 
 // HitInfo is the information provided to frontend

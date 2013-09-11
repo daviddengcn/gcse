@@ -84,6 +84,9 @@ func Index(docDB *MemDB) (*index.TokenSetSearcher, error) {
 		tokens = AppendTokens(tokens, []byte(hit.Description))
 		tokens = AppendTokens(tokens, []byte(hit.ReadmeData))
 		tokens = AppendTokens(tokens, []byte(hit.Author))
+		for _, word := range hit.Exported {
+			AppendTokens(tokens, []byte(word))
+		}
 
 		ts.AddDoc(map[string]villa.StrSet{
 			IndexTextField: tokens,

@@ -220,6 +220,7 @@ func pushPackage(p *gcse.Package) (succ bool) {
 		StarCount:   p.StarCount,
 		ReadmeFn:    p.ReadmeFn,
 		ReadmeData:  p.ReadmeData,
+		Exported:    p.Exported,
 	}
 
 	d.Imports = nil
