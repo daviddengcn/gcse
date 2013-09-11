@@ -29,7 +29,7 @@ type DocInfo struct {
 // HitInfo is the information provided to frontend
 type HitInfo struct {
 	DocInfo
-	
+
 	Imported           []string
 	ImportantSentences []string
 

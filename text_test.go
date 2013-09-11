@@ -108,7 +108,6 @@ func showText(text string) string {
 	return text + "."
 }
 
-
 func AssertStringsEqual(t *testing.T, name string, act, exp []string) {
 	if villa.StringSlice(exp).Equals(act) {
 		return

@@ -47,7 +47,7 @@ func effectiveImported(imported []string, author, project string) float64 {
 			}
 			authorSet.Put(impAuthor)
 		}
-		
+
 		impProj := ProjectOfPackage(imp)
 		if projSet.In(impProj) {
 			continue
@@ -137,7 +137,7 @@ func CalcMatchScore(doc *HitInfo, tokens villa.StrSet, N int, Df func(token stri
 
 	pkg := strings.ToLower(doc.Package)
 	pkgTokens := AppendTokens(nil, []byte(doc.Package))
-	
+
 	var isTokens villa.StrSet
 	isText := ""
 	for _, sent := range doc.ImportantSentences {

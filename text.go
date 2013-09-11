@@ -81,7 +81,7 @@ var (
 		`这是一个`,
 		`这个项目是`,
 		op(reJust) + op(reA) + op(reBasic) + op(reGo) + n(reImplementation) + ` ` + reOf + ` `,
-		op(op(reThe) + op(reGo) + n(reImplementation)) + v(reImplement) + ` `,
+		op(op(reThe)+op(reGo)+n(reImplementation)) + v(reImplement) + ` `,
 		op(reGo) + op(reBasic) + n(reImplementation) + ` that `,
 		op(reA) + op(reBasic) + reGo + ` `,
 		`extended version of ` + reGo + `'s template ` + n(reImplementation) + ` ` + reOf + ` `,
@@ -151,7 +151,7 @@ func reEscapeRune(r rune) string {
 	case '+', '?', '*', '\\':
 		return "[" + string(r) + "]"
 	}
-	
+
 	return string(r)
 }
 
@@ -193,20 +193,20 @@ func removeBrackets(sent string) string {
 		if l < 0 {
 			break
 		}
-		r := strings.IndexAny(sent[l + 1:], ")")
+		r := strings.IndexAny(sent[l+1:], ")")
 		if r < 0 {
 			break
 		}
-		
+
 		r += l + 1
-		
-		if l > 0 && sent[l - 1] == byte(' ') && r < len(sent) - 1 && sent[r + 1] == byte(' ') {
+
+		if l > 0 && sent[l-1] == byte(' ') && r < len(sent)-1 && sent[r+1] == byte(' ') {
 			// if both ends are spaces, increase r to reduce one
-			r ++
+			r++
 		}
-		sent = sent[:l] + sent[r + 1:]
+		sent = sent[:l] + sent[r+1:]
 	}
-	
+
 	return strings.TrimSpace(sent)
 }
 

@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 	"unicode/utf8"
-	
+
 	"github.com/daviddengcn/gddo/doc"
 	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/go-villa"
@@ -139,6 +139,7 @@ type Package struct {
 	ReadmeFn   string
 	ReadmeData string
 	Imports    []string
+	Exported   []string // exported tokens(funcs/types)
 
 	References []string
 	Etag       string
@@ -268,6 +269,14 @@ func CrawlPackage(httpClient *http.Client, pkg string, etag string) (p *Package,
 	imports.Put(pdoc.TestImports...)
 	imports.Put(pdoc.XTestImports...)
 
+	var exported villa.StrSet
+	for _, f := range pdoc.Funcs {
+		exported.Put(f.Name)
+	}
+	for _, t := range pdoc.Types {
+		exported.Put(t.Name)
+	}
+
 	return &Package{
 		Package:    pdoc.ImportPath,
 		Name:       pdoc.Name,
@@ -278,6 +287,7 @@ func CrawlPackage(httpClient *http.Client, pkg string, etag string) (p *Package,
 		ReadmeFn:   readmeFn,
 		ReadmeData: readmeData,
 		Imports:    imports.Elements(),
+		Exported:   exported.Elements(),
 
 		References: pdoc.References,
 		Etag:       pdoc.Etag,
@@ -333,10 +343,13 @@ func IsBadPackage(err error) bool {
 var githubProjectPat = regexp.MustCompile(`href="([^/]+/[^/]+)/stargazers"`)
 var githubUpdatedPat = regexp.MustCompile(`datetime="([^"]+)"`)
 
+const githubSearchURL =
+	"https://github.com/search?l=go&o=desc&q=stars%3A%3E%3D0&s=updated&type=Repositories&p="
+
 func GithubUpdates() (map[string]time.Time, error) {
 	updates := make(map[string]time.Time)
 	for i := 0; i < 2; i++ {
-		resp, err := http.Get("https://github.com/search?l=go&o=desc&q=stars%3A%3E%3D0&s=updated&type=Repositories&p=" + strconv.Itoa(i+1))
+		resp, err := http.Get(githubSearchURL + strconv.Itoa(i+1))
 		if err != nil {
 			return nil, err
 		}
@@ -351,7 +364,7 @@ func GithubUpdates() (map[string]time.Time, error) {
 				break
 			}
 			ownerRepo := "github.com/" + string(p[m[2]:m[3]])
-			
+
 			p = p[m[1]:]
 
 			m = githubUpdatedPat.FindSubmatchIndex(p)
