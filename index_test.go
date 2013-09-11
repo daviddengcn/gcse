@@ -1,8 +1,10 @@
 package gcse
 
 import (
-	"github.com/daviddengcn/go-villa"
 	"testing"
+	
+	"github.com/daviddengcn/go-assert"
+	"github.com/daviddengcn/go-villa"
 )
 
 func TestIndex(t *testing.T) {
@@ -23,7 +25,7 @@ func TestIndex(t *testing.T) {
 	}
 
 	numDocs := ts.DocCount()
-	AssertEquals(t, "DocCount", numDocs, 2)
+	assert.Equals(t, "DocCount", numDocs, 2)
 
 	var pkgs []string
 	if err := ts.Search(map[string]villa.StrSet{IndexTextField: nil},
@@ -37,6 +39,6 @@ func TestIndex(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	AssertStringEquals(t, "all", pkgs,
+	assert.StringEquals(t, "all", pkgs,
 		"[github.com/daviddengcn/gcse github.com/daviddengcn/gcse/indexer]")
 }

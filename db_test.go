@@ -1,8 +1,10 @@
 package gcse
 
 import (
-	"github.com/daviddengcn/go-villa"
 	"testing"
+	
+	"github.com/daviddengcn/go-assert"
+	"github.com/daviddengcn/go-villa"
 )
 
 func TestMemDB_Bug_Sync(t *testing.T) {
@@ -18,11 +20,11 @@ func TestMemDB_Bug_Sync(t *testing.T) {
 		t.Error(err)
 	}
 
-	AssertEquals(t, "Exists", path.Exists(), true)
+	assert.Equals(t, "Exists", path.Exists(), true)
 	if err := path.Remove(); err != nil {
 		t.Error(err)
 	}
-	AssertEquals(t, "Exists", path.Exists(), false)
+	assert.Equals(t, "Exists", path.Exists(), false)
 
 	//if err := db.Load(); err != nil {
 	//	t.Error(err)
@@ -57,5 +59,5 @@ func TestMemDB_Recover(t *testing.T) {
 		t.Error("Recover failed!")
 		return
 	}
-	AssertEquals(t, "vl", vl, 1)
+	assert.Equals(t, "vl", vl, 1)
 }
