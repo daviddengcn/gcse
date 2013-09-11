@@ -22,6 +22,10 @@ func TestReadmeToText(t *testing.T) {
 	assert.Equals(t, "text", text, "abc")
 }
 
+func TestReadmeToText_Panic(t *testing.T) {
+	ReadmeToText("a.md", "* [[t]](/t)")
+}
+
 func _TestPlusone(t *testing.T) {
 	url := "http://www.google.com/"
 	cnt, err := Plusone(http.DefaultClient, url)

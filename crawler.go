@@ -155,6 +155,11 @@ func ReadmeToText(fn, data string) string {
 	fn = strings.ToLower(fn)
 	if strings.HasSuffix(fn, ".md") || strings.HasSuffix(fn, ".markdown") ||
 		strings.HasSuffix(fn, ".mkd") {
+		defer func() {
+			if r := recover(); r != nil {
+				return
+			}
+		}()
 		md := index.ParseMarkdown([]byte(data))
 		return string(md.Text)
 	}
