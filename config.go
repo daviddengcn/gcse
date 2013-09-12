@@ -62,8 +62,9 @@ var (
 		    0    First version
 		    1    Add TestImports/XTestImports to Imports
 		    2    Parse markdown readme to text before selecting synopsis from it
+			3    Add exported tokens to indexes
 	*/
-	CrawlerVersion = 2
+	CrawlerVersion = 3
 )
 
 func init() {
