@@ -11,6 +11,18 @@ indexer  creating index data for web-server
 
 server   providing web services, including home/top/search services.
 
+
+Data-flows
+
+project Read          Write
+------- ----          -----
+crawler fnCrawlerDB   fnCrawlerDB
+        fnDocDB       fnDocDB
+		              DBOutSegments
+indexer DBOutSegments IndexSegments
+
+server  IndexSegments
+
 */
 package gcse
 

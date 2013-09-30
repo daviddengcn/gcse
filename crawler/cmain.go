@@ -4,23 +4,25 @@
 package main
 
 import (
-	"github.com/daviddengcn/gcse"
-	"github.com/daviddengcn/go-villa"
 	"log"
 	"runtime"
 	"sync"
 	"time"
+	
+	"github.com/daviddengcn/gcse"
+	"github.com/daviddengcn/go-villa"
 )
 
 const (
-	fnDocDB     = "docdb"
+	fnOldDocDB  = "docdb"
+	fnDocDB     = "packed-docdb"
 	fnCrawlerDB = "crawler"
 )
 
 var (
 	DocDBPath     villa.Path
 	CrawlerDBPath villa.Path
-	AppStopTime      time.Time
+	AppStopTime   time.Time
 )
 
 func init() {
@@ -60,25 +62,42 @@ func dumpingStatusLoop() {
 	}
 }
 
+func loadDocDB(oldDocDBPath, docDBPath villa.Path) (docDB gcse.PackedDocDB) {
+	oldDocDB := gcse.NewMemDB(oldDocDBPath, gcse.KindDocDB)
+	docDB = gcse.PackedDocDB{gcse.NewMemDB(docDBPath, gcse.KindDocDB)}
+	if err := oldDocDB.Iterate(func(pkg string, data interface{}) error {
+		var info gcse.DocInfo
+		if docDB.Get(pkg, &info) {
+			return nil
+		}
+		
+		docDB.Put(pkg, data.(gcse.DocInfo))
+		return nil
+	}); err != nil {
+		log.Fatalf("oldDocDB.Iterate failed: %v", err)
+	}
+	
+	return
+}
+
 func main() {
 	log.Println("crawler started...")
-	
+
 	AppStopTime = time.Now().Add(30 * time.Minute)
-	
-	
-	docDB = gcse.NewMemDB(DocDBPath, gcse.KindDocDB)
+
+	docDB = loadDocDB(gcse.DataRoot.Join(fnDocDB), DocDBPath)
 
 	cPackageDB = gcse.NewMemDB(CrawlerDBPath, kindPackage)
 	cPersonDB = gcse.NewMemDB(CrawlerDBPath, kindPerson)
 
 	go dumpingStatusLoop()
-	
+
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go syncLoop(&wg)
 
 	crawlEntriesLoop()
-	
+
 	// dump docDB
 	if err := gcse.DBOutSegments.ClearUndones(); err != nil {
 		log.Printf("DBOutSegments.ClearUndones failed: %v", err)
@@ -87,7 +106,7 @@ func main() {
 	if err := dumpDB(); err != nil {
 		log.Printf("dumpDB failed: %v", err)
 	}
-	
+
 	wg.Wait()
 	log.Println("crawler stopped...")
 }

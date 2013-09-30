@@ -1,15 +1,16 @@
 package main
 
 import (
-	"github.com/daviddengcn/gcse"
 	"log"
+
+	"github.com/daviddengcn/gcse"
 )
 
 /*
 	key string       package
 	val gcse.DocInfo
 */
-var docDB *gcse.MemDB
+var docDB gcse.DocDB
 
 func processDocument(d *gcse.DocInfo) error {
 	pkg := d.Package

@@ -2,14 +2,15 @@ package gcse
 
 import (
 	"encoding/gob"
-	"github.com/daviddengcn/go-index"
-	"github.com/daviddengcn/go-villa"
 	"io"
 	"log"
 	"os"
 	"reflect"
 	"sync"
 	"time"
+
+	"github.com/daviddengcn/go-index"
+	"github.com/daviddengcn/go-villa"
 )
 
 type MemDB struct {
@@ -163,6 +164,7 @@ func (mdb *MemDB) Export(root villa.Path, kind string) error {
 	return enc.Encode(mdb.db)
 }
 
+// Get fetches an entry of specified key. data is a pointer. Return false if not exists
 func (mdb *MemDB) Get(key string, data interface{}) bool {
 	mdb.RLock()
 	defer mdb.RUnlock()

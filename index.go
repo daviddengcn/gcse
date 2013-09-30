@@ -2,9 +2,10 @@ package gcse
 
 import (
 	"errors"
+	"log"
+
 	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/go-villa"
-	"log"
 )
 
 const (
@@ -14,7 +15,7 @@ const (
 
 var errNotDocInfo = errors.New("Value is not DocInfo")
 
-func Index(docDB *MemDB) (*index.TokenSetSearcher, error) {
+func Index(docDB DocDB) (*index.TokenSetSearcher, error) {
 	DumpMemStats()
 	log.Printf("Generating importsDB ...")
 	importsDB := NewTokenIndexer("", "")

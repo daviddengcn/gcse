@@ -1,6 +1,7 @@
 package gcse
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 	"testing"
@@ -65,4 +66,32 @@ func TestGddo(t *testing.T) {
 		t.Logf("p: %+v", p.Exported)
 	}
 	//	t.Error(nil)
+}
+
+func TestDocDB(t *testing.T) {
+	var db DocDB = PackedDocDB{NewMemDB("", "")}
+
+	info := DocInfo{
+		Name: "github.com/daviddengcn/gcse",
+	}
+	db.Put("hello", info)
+	var info2 DocInfo
+	if ok := db.Get("hello", &info2); !ok {
+		t.Error("db.Get failed!")
+		return
+	}
+	assert.StringEquals(t, "hello", info2, info)
+
+	if err := db.Iterate(func(key string, val interface{}) error {
+		info3, ok := val.(DocInfo)
+		if !ok {
+			return errors.New("errNotDocInfo")
+		}
+		
+		assert.StringEquals(t, key, info3, info)
+		return nil
+	}); err != nil {
+		t.Error("db.Iterate failed: %v", err)
+	}
+
 }

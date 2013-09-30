@@ -87,8 +87,8 @@ func touchPackage(pkg string, crawledBefore time.Time) bool {
 		//log.Printf("  [touchPackage] Not a valid remote path: %s", pkg)
 		return false
 	}
-	
-	var ent gcse.DocInfo 
+
+	var ent gcse.DocInfo
 	if docDB.Get(pkg, &ent) {
 		if ent.LastUpdated.After(crawledBefore) {
 			//log.Printf("  [touchPackage] no need to update: %s", pkg)
@@ -141,7 +141,7 @@ func listCrawlEntriesByHost(db *gcse.MemDB, hostFromID func(id string) string,
 				return nil
 			}
 		}
-		
+
 		etag := ent.Etag
 		if ent.Version != gcse.CrawlerVersion {
 			etag = ""
@@ -324,24 +324,24 @@ func touchByGithubUpdates() bool {
 	if time.Now().Before(githubUpdatesCrawled.Add(githubUpdatesGap)) {
 		return false
 	}
-	
+
 	log.Printf("touchByGithubUpdates ...")
-	
+
 	updates, err := gcse.GithubUpdates()
 	if err != nil {
 		log.Printf("GithubUpdates failed: %v", err)
 		return false
 	}
-	
+
 	log.Printf("%d updates found!", len(updates))
-	
+
 	res := false
 	for pkg, ut := range updates {
 		if touchPackage(pkg, ut) {
 			res = true
 		}
 	}
-	
+
 	return res
 }
 
@@ -350,11 +350,11 @@ func crawlEntriesLoop() {
 
 	for time.Now().Before(AppStopTime) {
 		checkImports()
-	
+
 		if gcse.CrawlByGodocApi {
 			processGodoc(httpClient)
 		}
-		
+
 		didSomething := false
 		var wg sync.WaitGroup
 
@@ -393,7 +393,7 @@ func crawlEntriesLoop() {
 									if time.Now().Add(durToSleep).After(AppStopTime) {
 										break
 									}
-									
+
 									log.Printf("Last ten crawling %s packages failed, sleep for a while...",
 										host)
 									time.Sleep(durToSleep)
@@ -402,7 +402,7 @@ func crawlEntriesLoop() {
 							}
 							continue
 						}
-						
+
 						failCount = 0
 						if err == gcse.ErrPackageNotModifed {
 							log.Printf("Package %s unchanged!", ent.ID)
@@ -436,7 +436,7 @@ func crawlEntriesLoop() {
 						if time.Now().After(AppStopTime) {
 							break
 						}
-						
+
 						p, err := gcse.CrawlPerson(httpClient, ent.ID)
 						if err != nil {
 							failCount++
@@ -449,7 +449,7 @@ func crawlEntriesLoop() {
 								if time.Now().Add(durToSleep).After(AppStopTime) {
 									break
 								}
-								
+
 								log.Printf("Last ten crawling %s persons failed, sleep for a while...",
 									host)
 								time.Sleep(durToSleep)

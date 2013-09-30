@@ -42,7 +42,7 @@ func doIndex(dbSegm gcse.Segment) bool {
 	gcse.DumpMemStats()
 	log.Printf("Reading docDB from %v ...", dbSegm)
 	// read docDB
-	docDB := gcse.NewMemDB(dbSegm.Join(""), gcse.KindDocDB)
+	docDB := gcse.PackedDocDB{gcse.NewMemDB(dbSegm.Join(""), gcse.KindDocDB)}
 
 	log.Printf("Indexing to %v ...", idxSegm)
 
@@ -70,7 +70,7 @@ func doIndex(dbSegm gcse.Segment) bool {
 
 	log.Printf("Indexing success: %s (%d)", idxSegm, ts.DocCount())
 
-	docDB, ts = nil, nil
+	docDB.MemDB, ts = nil, nil
 	gcse.DumpMemStats()
 	runtime.GC()
 	gcse.DumpMemStats()
@@ -78,6 +78,6 @@ func doIndex(dbSegm gcse.Segment) bool {
 	if err := dbSegm.Remove(); err != nil {
 		log.Printf("Delete segment %v failed: %v", dbSegm, err)
 	}
-	
+
 	return true
 }

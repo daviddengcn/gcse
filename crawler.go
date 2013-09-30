@@ -2,6 +2,7 @@ package gcse
 
 import (
 	"crypto/tls"
+	"encoding/gob"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -348,8 +349,7 @@ func IsBadPackage(err error) bool {
 var githubProjectPat = regexp.MustCompile(`href="([^/]+/[^/]+)/stargazers"`)
 var githubUpdatedPat = regexp.MustCompile(`datetime="([^"]+)"`)
 
-const githubSearchURL =
-	"https://github.com/search?l=go&o=desc&q=stars%3A%3E%3D0&s=updated&type=Repositories&p="
+const githubSearchURL = "https://github.com/search?l=go&o=desc&q=stars%3A%3E%3D0&s=updated&type=Repositories&p="
 
 func GithubUpdates() (map[string]time.Time, error) {
 	updates := make(map[string]time.Time)
@@ -390,4 +390,53 @@ func GithubUpdates() (map[string]time.Time, error) {
 		return nil, errors.New("no updates found")
 	}
 	return updates, nil
+}
+
+type DocDB interface {
+	Sync() error
+	Export(root villa.Path, kind string) error
+
+	Get(key string, data interface{}) bool
+	Put(key string, data interface{})
+	Delete(key string)
+	Iterate(output func(key string, val interface{}) error) error
+}
+
+type PackedDocDB struct {
+	*MemDB
+}
+
+func (db PackedDocDB) Get(key string, data interface{}) bool {
+	var bs villa.ByteSlice
+	if ok := db.MemDB.Get(key, (*[]byte)(&bs)); !ok {
+		return false
+	}
+	dec := gob.NewDecoder(&bs)
+	if err := dec.Decode(data); err != nil {
+		log.Printf("Get %s failed: %v", key, err)
+		return false
+	}
+	return true
+}
+
+func (db PackedDocDB) Put(key string, data interface{}) {
+	var bs villa.ByteSlice
+	enc := gob.NewEncoder(&bs)
+	if err := enc.Encode(data); err != nil {
+		log.Printf("Put %s failed: %v", key, err)
+		return
+	}
+
+	db.MemDB.Put(key, []byte(bs))
+}
+
+func (db PackedDocDB) Iterate(output func(key string, val interface{}) error) error {
+	return db.MemDB.Iterate(func(key string, val interface{}) error {
+		dec := gob.NewDecoder(villa.NewPByteSlice(val.([]byte)))
+		var info DocInfo
+		if err := dec.Decode(&info); err != nil {
+			return err
+		}
+		return output(key, info)
+	})
 }
