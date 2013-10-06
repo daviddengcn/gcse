@@ -63,6 +63,7 @@ func dumpingStatusLoop() {
 }
 
 func loadDocDB(oldDocDBPath, docDBPath villa.Path) (docDB gcse.PackedDocDB) {
+	log.Printf("loadDocDB: old from %v, current from %v", oldDocDBPath, docDBPath)
 	oldDocDB := gcse.NewMemDB(oldDocDBPath, gcse.KindDocDB)
 	docDB = gcse.PackedDocDB{gcse.NewMemDB(docDBPath, gcse.KindDocDB)}
 	all, put := 0, 0
@@ -85,6 +86,7 @@ func loadDocDB(oldDocDBPath, docDBPath villa.Path) (docDB gcse.PackedDocDB) {
 	oldDocDB = nil
 	runtime.GC()
 	
+	
 	return docDB
 }
 
@@ -95,8 +97,11 @@ func main() {
 
 	docDB = loadDocDB(gcse.DataRoot.Join(fnOldDocDB), DocDBPath)
 
+	
 	cPackageDB = gcse.NewMemDB(CrawlerDBPath, kindPackage)
 	cPersonDB = gcse.NewMemDB(CrawlerDBPath, kindPerson)
+
+	syncDatabases()
 
 	go dumpingStatusLoop()
 
