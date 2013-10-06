@@ -93,7 +93,7 @@ func main() {
 
 	AppStopTime = time.Now().Add(30 * time.Minute)
 
-	docDB = loadDocDB(gcse.DataRoot.Join(fnDocDB), DocDBPath)
+	docDB = loadDocDB(gcse.DataRoot.Join(fnOldDocDB), DocDBPath)
 
 	cPackageDB = gcse.NewMemDB(CrawlerDBPath, kindPackage)
 	cPersonDB = gcse.NewMemDB(CrawlerDBPath, kindPerson)
