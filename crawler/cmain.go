@@ -80,7 +80,7 @@ func loadDocDB(oldDocDBPath, docDBPath villa.Path) (docDB gcse.PackedDocDB) {
 		log.Fatalf("oldDocDB.Iterate failed: %v", err)
 	}
 	
-	log.Printf("All %d entries in old DocDB, %d put!")
+	log.Printf("All %d entries in old DocDB, %d put!", all, put)
 	
 	oldDocDB = nil
 	runtime.GC()
