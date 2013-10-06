@@ -65,19 +65,27 @@ func dumpingStatusLoop() {
 func loadDocDB(oldDocDBPath, docDBPath villa.Path) (docDB gcse.PackedDocDB) {
 	oldDocDB := gcse.NewMemDB(oldDocDBPath, gcse.KindDocDB)
 	docDB = gcse.PackedDocDB{gcse.NewMemDB(docDBPath, gcse.KindDocDB)}
+	all, put := 0, 0
 	if err := oldDocDB.Iterate(func(pkg string, data interface{}) error {
+		all ++
 		var info gcse.DocInfo
 		if docDB.Get(pkg, &info) {
 			return nil
 		}
 		
 		docDB.Put(pkg, data.(gcse.DocInfo))
+		put ++
 		return nil
 	}); err != nil {
 		log.Fatalf("oldDocDB.Iterate failed: %v", err)
 	}
 	
-	return
+	log.Printf("All %d entries in old DocDB, %d put!")
+	
+	oldDocDB = nil
+	runtime.GC()
+	
+	return docDB
 }
 
 func main() {
