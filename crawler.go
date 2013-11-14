@@ -232,6 +232,13 @@ func fuseStars(a, b int) int {
 }
 
 func CrawlPackage(httpClient *http.Client, pkg string, etag string) (p *Package, err error) {
+	defer func() {
+		if err := recover(); err != nil {
+			p, err = nil, errors.New(fmt.Sprintf("Panic when crawling package %s: %v", pkg, err))
+			log.Printf("Panic when crawling package %s: %v", pkg, err)
+		}
+	}()
+	
 	pdoc, err := doc.Get(httpClient, pkg, etag)
 	if err == doc.ErrNotModified {
 		return nil, ErrPackageNotModifed

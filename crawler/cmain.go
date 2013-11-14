@@ -93,7 +93,7 @@ func loadDocDB(oldDocDBPath, docDBPath villa.Path) (docDB gcse.PackedDocDB) {
 func main() {
 	log.Println("crawler started...")
 
-	AppStopTime = time.Now().Add(30 * time.Minute)
+	AppStopTime = time.Now().Add(10 * time.Minute)
 
 	docDB = loadDocDB(gcse.DataRoot.Join(fnOldDocDB), DocDBPath)
 
