@@ -238,7 +238,7 @@ func CrawlPackage(httpClient *http.Client, pkg string, etag string) (p *Package,
 			log.Printf("Panic when crawling package %s: %v", pkg, err)
 		}
 	}()
-	
+
 	pdoc, err := doc.Get(httpClient, pkg, etag)
 	if err == doc.ErrNotModified {
 		return nil, ErrPackageNotModifed
@@ -442,6 +442,8 @@ func (db PackedDocDB) Iterate(output func(key string, val interface{}) error) er
 		dec := gob.NewDecoder(villa.NewPByteSlice(val.([]byte)))
 		var info DocInfo
 		if err := dec.Decode(&info); err != nil {
+			log.Printf("Decode %s failed: %v", key, err)
+			db.Get(key, &info)
 			return err
 		}
 		return output(key, info)

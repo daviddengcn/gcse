@@ -8,6 +8,7 @@ import (
 
 	"github.com/daviddengcn/gddo/doc"
 	"github.com/daviddengcn/go-assert"
+	"github.com/daviddengcn/go-villa"
 )
 
 func TestGithubUpdates(t *testing.T) {
@@ -27,7 +28,7 @@ func TestReadmeToText_Panic(t *testing.T) {
 	ReadmeToText("a.md", "* [[t]](/t)")
 }
 
-func _TestPlusone(t *testing.T) {
+func TestPlusone(t *testing.T) {
 	url := "http://www.google.com/"
 	cnt, err := Plusone(http.DefaultClient, url)
 	if err != nil {
@@ -40,7 +41,7 @@ func _TestPlusone(t *testing.T) {
 	}
 }
 
-func _TestLikeButton(t *testing.T) {
+func TestLikeButton(t *testing.T) {
 	url := "http://www.google.com/"
 	cnt, err := LikeButton(http.DefaultClient, url)
 	if err != nil {
@@ -87,11 +88,42 @@ func TestDocDB(t *testing.T) {
 		if !ok {
 			return errors.New("errNotDocInfo")
 		}
-		
+
 		assert.StringEquals(t, key, info3, info)
 		return nil
 	}); err != nil {
-		t.Error("db.Iterate failed: %v", err)
+		t.Errorf("db.Iterate failed: %v", err)
+	}
+}
+
+func TestDocDB_Export(t *testing.T) {
+	var db DocDB = PackedDocDB{NewMemDB("", "")}
+
+	info := DocInfo{
+		Name: "github.com/daviddengcn/gcse",
 	}
 
+	db.Put("go", info)
+
+	if err := db.Export(villa.Path("."), "testexport_db"); err != nil {
+		t.Errorf("db.Export failed: %v", err)
+		return
+	}
+
+	var newDB DocDB = PackedDocDB{NewMemDB(villa.Path("."), "testexport_db")}
+	count := 0
+	if err := newDB.Iterate(func(key string, val interface{}) error {
+		info, ok := val.(DocInfo)
+		if !ok {
+			return errors.New("Not a DocInfo object")
+		}
+		assert.StringEquals(t, "info.Name", info.Name,
+			"github.com/daviddengcn/gcse")
+		count++
+		return nil
+	}); err != nil {
+		t.Errorf("newDB.Iterate failed: %v", err)
+	}
+
+	assert.Equals(t, "count", count, 1)
 }
