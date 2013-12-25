@@ -30,83 +30,11 @@ type DocInfo struct {
 }
 
 func (d *DocInfo) WriteTo(w sophie.Writer) error {
-	if err := sophie.String(d.Name).WriteTo(w); err != nil {
-		return err
-	}
-	if err := sophie.String(d.Package).WriteTo(w); err != nil {
-		return err
-	}
-	if err := sophie.String(d.Author).WriteTo(w); err != nil {
-		return err
-	}
-	if err := sophie.Time(d.LastUpdated).WriteTo(w); err != nil {
-		return err
-	}
-	if err := sophie.VInt(d.StarCount).WriteTo(w); err != nil {
-		return err
-	}
-	if err := sophie.String(d.Synopsis).WriteTo(w); err != nil {
-		return err
-	}
-	if err := sophie.String(d.Description).WriteTo(w); err != nil {
-		return err
-	}
-	if err := sophie.String(d.ProjectURL).WriteTo(w); err != nil {
-		return err
-	}
-	if err := sophie.String(d.ReadmeFn).WriteTo(w); err != nil {
-		return err
-	}
-	if err := sophie.String(d.ReadmeData).WriteTo(w); err != nil {
-		return err
-	}
-	if err := sophie.WriteStringSlice(w, d.Imports); err != nil {
-		return err
-	}
-	if err := sophie.WriteStringSlice(w, d.Exported); err != nil {
-		return err
-	}
-	return nil
+	return gob.NewEncoder(w).Encode(d)
 }
 
 func (d *DocInfo) ReadFrom(r sophie.Reader, l int) error {
-	if err := (*sophie.String)(&d.Name).ReadFrom(r, -1); err != nil {
-		return nil
-	}
-	if err := (*sophie.String)(&d.Package).ReadFrom(r, -1); err != nil {
-		return nil
-	}
-	if err := (*sophie.String)(&d.Author).ReadFrom(r, -1); err != nil {
-		return nil
-	}
-	if err := (*sophie.Time)(&d.LastUpdated).ReadFrom(r, -1); err != nil {
-		return nil
-	}
-	if err := (*sophie.VInt)(&d.StarCount).ReadFrom(r, -1); err != nil {
-		return nil
-	}
-	if err := (*sophie.String)(&d.Synopsis).ReadFrom(r, -1); err != nil {
-		return nil
-	}
-	if err := (*sophie.String)(&d.Description).ReadFrom(r, -1); err != nil {
-		return nil
-	}
-	if err := (*sophie.String)(&d.ProjectURL).ReadFrom(r, -1); err != nil {
-		return nil
-	}
-	if err := (*sophie.String)(&d.ReadmeFn).ReadFrom(r, -1); err != nil {
-		return nil
-	}
-	if err := (*sophie.String)(&d.ReadmeData).ReadFrom(r, -1); err != nil {
-		return nil
-	}
-	if err := sophie.ReadStringSlice(r, &d.Imports); err != nil {
-		return err
-	}
-	if err := sophie.ReadStringSlice(r, &d.Exported); err != nil {
-		return err
-	}
-	return nil
+	return gob.NewDecoder(r).Decode(d)
 }
 
 // HitInfo is the information provided to frontend
