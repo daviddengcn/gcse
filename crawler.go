@@ -19,6 +19,7 @@ import (
 	"github.com/daviddengcn/gddo/doc"
 	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/go-villa"
+	"github.com/daviddengcn/sophie"
 	godoc "go/doc"
 )
 
@@ -448,4 +449,36 @@ func (db PackedDocDB) Iterate(output func(key string, val interface{}) error) er
 		}
 		return output(key, info)
 	})
+}
+
+type CrawlingEntry struct {
+	ScheduleTime time.Time
+	Version      sophie.VInt // if gcse.CrawlerVersion is different from this value, etag is ignored
+	Etag         sophie.String
+}
+
+func (ce *CrawlingEntry) WriteTo(w sophie.Writer) error {
+	if err := sophie.Time(ce.ScheduleTime).WriteTo(w); err != nil {
+		return err
+	}
+	if err := ce.Version.WriteTo(w); err != nil {
+		return err
+	}
+	if err := ce.Etag.WriteTo(w); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (ce *CrawlingEntry) ReadFrom(r sophie.Reader, l int) error {
+	if err := (*sophie.Time)(&ce.ScheduleTime).ReadFrom(r, -1); err != nil {
+		return err
+	}
+	if err := ce.Version.ReadFrom(r, -1); err != nil {
+		return err
+	}
+	if err := ce.Etag.ReadFrom(r, -1); err != nil {
+		return err
+	}
+	return nil
 }

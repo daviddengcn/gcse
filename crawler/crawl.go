@@ -4,8 +4,6 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"errors"
-	"github.com/daviddengcn/gcse"
-	"github.com/daviddengcn/gddo/doc"
 	"log"
 	"math/rand"
 	"net/http"
@@ -13,6 +11,10 @@ import (
 	"strings"
 	"sync"
 	"time"
+	
+	"github.com/daviddengcn/gcse"
+	"github.com/daviddengcn/gddo/doc"
+	"github.com/daviddengcn/sophie"
 )
 
 var (

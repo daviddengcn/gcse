@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/daviddengcn/gddo/doc"
 	"github.com/daviddengcn/go-assert"
@@ -126,4 +127,19 @@ func TestDocDB_Export(t *testing.T) {
 	}
 
 	assert.Equals(t, "count", count, 1)
+}
+
+func TestCrawlingEntry(t *testing.T) {
+	src := CrawlingEntry {
+		ScheduleTime: time.Now(),
+		Version: 1,
+		Etag: "tagtag",
+	}
+	var buf villa.ByteSlice
+	assert.NoErrorf(t, "src.WriteTo failed: %v", src.WriteTo(&buf))
+	
+	var dst CrawlingEntry
+	assert.NoErrorf(t, "dst.ReadFrom failed: %v", dst.ReadFrom(&buf, -1))
+	
+	assert.StringEquals(t, "dst", dst, src)
 }
