@@ -490,6 +490,9 @@ const (
 	NDA_DEL
 )
 
+/*
+ * If Action equals NDA_DEL, DocInfo is undefined.
+ */
 type NewDocAction struct {
 	Action sophie.VInt
 	DocInfo
@@ -499,12 +502,18 @@ func (nda *NewDocAction) WriteTo(w sophie.Writer) error {
 	if err := nda.Action.WriteTo(w); err != nil {
 		return err
 	}
+	if nda.Action == NDA_DEL {
+		return nil
+	}
 	return nda.DocInfo.WriteTo(w)
 }
 
 func (nda *NewDocAction) ReadFrom(r sophie.Reader, l int) error {
 	if err := nda.Action.ReadFrom(r, -1); err != nil {
 		return err
+	}
+	if nda.Action == NDA_DEL {
+		return nil
 	}
 	return nda.DocInfo.ReadFrom(r, -1)
 }

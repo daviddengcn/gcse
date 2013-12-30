@@ -5,6 +5,8 @@ import (
 	"log"
 )
 
+// TODO move this to tocrawl
+
 func hasImportsDones() bool {
 	dones, err := gcse.ImportSegments.ListDones()
 	if err != nil {

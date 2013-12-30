@@ -42,10 +42,13 @@ const (
 	FnCrawlerDB = "crawler"
 	KindPackage = "package"
 	KindPerson = "person"
+	KindToCheck = "tocheck"
 	
 	FnToCrawl = "tocrawl"
 	FnPackage = "package"
 	FnPerson  = "person"
+	// key: RawString, value: DocInfo
+	FnDocs = "docs"
 	FnNewDocs = "newdocs"
 )
 
