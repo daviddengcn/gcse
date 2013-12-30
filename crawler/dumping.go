@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/daviddengcn/gcse"
-	"log"
+//	"github.com/daviddengcn/gcse"
+//	"log"
 )
-
+/*
 func dumpDB() error {
 	segm, err := gcse.DBOutSegments.GenMaxSegment()
 	if err != nil {
@@ -22,3 +22,4 @@ func dumpDB() error {
 	log.Printf("Dumping docDB to %v success", segm)
 	return nil
 }
+*/

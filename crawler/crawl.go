@@ -1,20 +1,18 @@
 package main
 
 import (
-	"encoding/gob"
 	"encoding/json"
 	"errors"
 	"log"
 	"math/rand"
 	"net/http"
-	"runtime"
 	"strings"
-	"sync"
 	"time"
 	
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/gddo/doc"
-	"github.com/daviddengcn/sophie"
+	"github.com/daviddengcn/go-villa"
+	// "github.com/daviddengcn/sophie"
 )
 
 var (
@@ -30,22 +28,14 @@ const (
 	kindPerson  = "person"
 )
 
-type CrawlingEntry struct {
-	ScheduleTime time.Time
-	Version      int // if gcse.CrawlerVersion is different from this value, etag is ignored
-	Etag         string
-}
-
 func init() {
-	gob.Register(CrawlingEntry{})
-
 	doc.SetGithubCredentials("94446b37edb575accd8b",
 		"15f55815f0515a3f6ad057aaffa9ea83dceb220b")
 	doc.SetUserAgent("Go-Code-Search-Agent")
 }
 
 func schedulePackage(pkg string, sTime time.Time, etag string) error {
-	ent := CrawlingEntry{
+	ent := gcse.CrawlingEntry{
 		ScheduleTime: sTime,
 		Version:      gcse.CrawlerVersion,
 		Etag:         etag,
@@ -56,7 +46,7 @@ func schedulePackage(pkg string, sTime time.Time, etag string) error {
 	log.Printf("Schedule package %s to %v", pkg, sTime)
 	return nil
 }
-
+/*
 func appendPackage(pkg string) bool {
 	pkg = strings.TrimFunc(strings.TrimSpace(pkg), func(r rune) bool {
 		return r > rune(128)
@@ -66,7 +56,7 @@ func appendPackage(pkg string) bool {
 		return false
 	}
 
-	var ent CrawlingEntry
+	var ent gcse.CrawlingEntry
 	exists := cPackageDB.Get(pkg, &ent)
 	if exists {
 		var di gcse.DocInfo
@@ -81,7 +71,29 @@ func appendPackage(pkg string) bool {
 	// if the package doesn't exist in docDB, Etag is discarded
 	return schedulePackage(pkg, time.Now(), "") == nil
 }
+*/
 
+var toCheckPackages villa.StrSet
+
+func appendPackage(pkg string) bool {
+	pkg = strings.TrimFunc(strings.TrimSpace(pkg), func(r rune) bool {
+		return r > rune(128)
+	})
+	if !doc.IsValidRemotePath(pkg) {
+		//log.Printf("  [appendPackage] Not a valid remote path: %s", pkg)
+		return false
+	}
+
+	var ent gcse.CrawlingEntry
+	exists := cPackageDB.Get(pkg, &ent)
+	if exists {
+		toCheckPackages.Put(pkg)
+	}
+
+	// if the package doesn't exist in docDB, Etag is discarded
+	return schedulePackage(pkg, time.Now(), "") == nil
+}
+/*
 // reschedule if last crawl time is later than crawledBefore
 func touchPackage(pkg string, crawledBefore time.Time) bool {
 	pkg = strings.TrimSpace(pkg)
@@ -101,85 +113,21 @@ func touchPackage(pkg string, crawledBefore time.Time) bool {
 	// set Etag to "" to force updating
 	return schedulePackage(pkg, time.Now(), "") == nil
 }
-
+*/
 var errStop = errors.New("Stop")
 
-type EntryInfo struct {
-	ID   string
-	Etag string
-}
-
-func listCrawlEntriesByHost(db *gcse.MemDB, hostFromID func(id string) string,
-	maxHosts, numPerHost int) (groups map[string][]EntryInfo) {
-	now := time.Now()
-	groups = make(map[string][]EntryInfo)
-	fullGroups := 0
-	db.Iterate(func(id string, val interface{}) error {
-		ent, ok := val.(CrawlingEntry)
-		if !ok {
-			return nil
-		}
-
-		if ent.ScheduleTime.After(now) {
-			return nil
-		}
-
-		host := hostFromID(id)
-		entryInfos := groups[host]
-		if maxHosts > 0 {
-			// check host limit
-			if len(entryInfos) == 0 && len(groups) == maxHosts {
-				// no quota for new group
-				return nil
-			}
-		}
-		if numPerHost > 0 {
-			// check per host limit
-			if len(entryInfos) == numPerHost-1 {
-				// this group is about to be full, count it
-				fullGroups++
-			} else if len(entryInfos) == numPerHost {
-				// no quota for this group
-				return nil
-			}
-		}
-
-		etag := ent.Etag
-		if ent.Version != gcse.CrawlerVersion {
-			etag = ""
-		}
-		groups[host] = append(entryInfos, EntryInfo{
-			ID:   id,
-			Etag: etag,
-		})
-
-		if fullGroups == maxHosts {
-			return errStop
-		}
-		return nil
-	})
-
-	return groups
-}
-
-func listPackagesByHost(maxHosts, numPerHost int) (groups map[string][]EntryInfo) {
-	return listCrawlEntriesByHost(cPackageDB, gcse.HostOfPackage, maxHosts, numPerHost)
-}
-
-func listPersonsByHost(maxHosts, numPerHost int) (groups map[string][]EntryInfo) {
-	return listCrawlEntriesByHost(cPersonDB, func(id string) string {
-		site, _ := gcse.ParsePersonId(id)
-		return site
-	}, maxHosts, numPerHost)
-}
+var (
+	toDeletePackages villa.StrSet
+)
 
 func deletePackage(pkg string) {
 	cPackageDB.Delete(pkg)
-	docDB.Delete(pkg)
+	//docDB.Delete(pkg)
+	toDeletePackages.Put(pkg)
 }
 
 func schedulePerson(id string, sTime time.Time) error {
-	var ent CrawlingEntry
+	var ent gcse.CrawlingEntry
 	ent.ScheduleTime = sTime
 
 	cPersonDB.Put(id, ent)
@@ -191,7 +139,7 @@ func schedulePerson(id string, sTime time.Time) error {
 func appendPerson(site, username string) bool {
 	id := gcse.IdOfPerson(site, username)
 
-	var ent CrawlingEntry
+	var ent gcse.CrawlingEntry
 	exists := cPersonDB.Get(id, &ent)
 	if exists {
 		// already scheduled
@@ -321,7 +269,7 @@ const (
 var (
 	githubUpdatesCrawled time.Time
 )
-
+/*
 func touchByGithubUpdates() bool {
 	if time.Now().Before(githubUpdatesCrawled.Add(githubUpdatesGap)) {
 		return false
@@ -346,7 +294,8 @@ func touchByGithubUpdates() bool {
 
 	return res
 }
-
+*/
+/*
 func crawlEntriesLoop() {
 	httpClient := gcse.GenHttpClient("")
 
@@ -360,7 +309,6 @@ func crawlEntriesLoop() {
 		didSomething := false
 		var wg sync.WaitGroup
 
-		pkgGroups := listPackagesByHost(5, 50)
 		if len(pkgGroups) > 0 {
 			didSomething = true
 
@@ -475,9 +423,9 @@ func crawlEntriesLoop() {
 		syncDatabases()
 
 		if gcse.CrawlGithubUpdate {
-			if touchByGithubUpdates() {
-				didSomething = true
-			}
+//			if touchByGithubUpdates() {
+//				didSomething = true
+//			}
 		}
 
 		if !didSomething {
@@ -486,3 +434,4 @@ func crawlEntriesLoop() {
 		}
 	}
 }
+*/

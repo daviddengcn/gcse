@@ -1,20 +1,17 @@
 package main
 
 import (
-	"log"
+//	"log"
 
 	"github.com/daviddengcn/gcse"
+//	"github.com/daviddengcn/sophie"
 )
-
-/*
-	key string       package
-	val gcse.DocInfo
-*/
-var docDB gcse.DocDB
-
 func processDocument(d *gcse.DocInfo) error {
-	pkg := d.Package
-
+	return nil
+//	pkg := d.Package
+//	log.Printf("Package %s saved!", pkg)
+//	return kvfNewDocuments.Collect(sophie.RawString(pkg), d)
+/*
 	// fetch saved DocInfo
 	var savedD gcse.DocInfo
 	exists := docDB.Get(pkg, &savedD)
@@ -30,4 +27,5 @@ func processDocument(d *gcse.DocInfo) error {
 	docDB.Put(pkg, *d)
 
 	return nil
+*/	
 }

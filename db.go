@@ -208,6 +208,14 @@ func (mdb *MemDB) Iterate(output func(key string, val interface{}) error) error 
 	return nil
 }
 
+// Count returns the number of entries in the DB
+func (mdb *MemDB) Count() int {
+	mdb.RLock()
+	defer mdb.RUnlock()
+	
+	return len(mdb.db)
+}
+
 type TokenIndexer struct {
 	index.TokenIndexer
 	fn villa.Path

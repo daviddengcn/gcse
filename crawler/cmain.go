@@ -5,37 +5,34 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"runtime"
-	"sync"
 	"time"
 	
 	"github.com/daviddengcn/gcse"
+	"github.com/daviddengcn/gddo/doc"
 	"github.com/daviddengcn/go-villa"
+	"github.com/daviddengcn/sophie"
 )
 
 const (
-	fnOldDocDB  = "docdb"
-	fnDocDB     = "packed-docdb"
 	fnCrawlerDB = "crawler"
+	fnNewCrawled = "newcrawled"
 )
 
 var (
-	DocDBPath     villa.Path
 	CrawlerDBPath villa.Path
 	AppStopTime   time.Time
+	cNewDoc sophie.CollectCloser
 )
 
 func init() {
-	DocDBPath = gcse.DataRoot.Join(fnDocDB)
 	CrawlerDBPath = gcse.DataRoot.Join(fnCrawlerDB)
 }
 
 func syncDatabases() {
 	gcse.DumpMemStats()
 	log.Printf("Synchronizing databases to disk...")
-	if err := docDB.Sync(); err != nil {
-		log.Printf("docDB.Sync failed: %v", err)
-	}
 	if err := cPackageDB.Sync(); err != nil {
 		log.Printf("cPackageDB.Sync failed: %v", err)
 	}
@@ -47,14 +44,6 @@ func syncDatabases() {
 	gcse.DumpMemStats()
 }
 
-func syncLoop(wg *sync.WaitGroup) {
-	for AppStopTime.Sub(time.Now()) > gcse.CrawlerSyncGap {
-		time.Sleep(gcse.CrawlerSyncGap)
-		syncDatabases()
-	}
-	wg.Done()
-}
-
 func dumpingStatusLoop() {
 	for time.Now().Before(AppStopTime) {
 		gcse.DumpMemStats()
@@ -62,52 +51,162 @@ func dumpingStatusLoop() {
 	}
 }
 
-func loadDocDB(oldDocDBPath, docDBPath villa.Path) (docDB gcse.PackedDocDB) {
-	log.Printf("loadDocDB: old from %v, current from %v", oldDocDBPath, docDBPath)
-	oldDocDB := gcse.NewMemDB(oldDocDBPath, gcse.KindDocDB)
-	docDB = gcse.PackedDocDB{gcse.NewMemDB(docDBPath, gcse.KindDocDB)}
-	all, put := 0, 0
-	if err := oldDocDB.Iterate(func(pkg string, data interface{}) error {
-		all ++
-		var info gcse.DocInfo
-		if docDB.Get(pkg, &info) {
-			return nil
+type PackageCrawler struct {
+	part int
+	sophie.EmptyOnlyMapper
+	failCount int
+	httpClient *http.Client
+}
+
+// OnlyMapper.NewKey
+func (*PackageCrawler) NewKey() sophie.Sophier {
+	return new(sophie.RawString)
+}
+
+// OnlyMapper.NewVal
+func (*PackageCrawler) NewVal() sophie.Sophier {
+	return new(gcse.CrawlingEntry)
+}
+
+func packageToDoc(p *gcse.Package) gcse.DocInfo {
+	// copy Package as a DocInfo
+	d := gcse.DocInfo{
+		Package:     p.Package,
+		Name:        p.Name,
+		Synopsis:    p.Synopsis,
+		Description: p.Doc,
+		LastUpdated: time.Now(),
+		Author:      gcse.AuthorOfPackage(p.Package),
+		ProjectURL:  p.ProjectURL,
+		StarCount:   p.StarCount,
+		ReadmeFn:    p.ReadmeFn,
+		ReadmeData:  p.ReadmeData,
+		Exported:    p.Exported,
+	}
+
+	d.Imports = nil
+	for _, imp := range p.Imports {
+		if doc.IsValidRemotePath(imp) {
+			d.Imports = append(d.Imports, imp)
 		}
-		
-		docDB.Put(pkg, data.(gcse.DocInfo))
-		put ++
+	}
+
+	return d
+}
+
+// OnlyMapper.Map
+func (pc *PackageCrawler) Map(key, val sophie.SophieWriter,
+		c []sophie.Collector) error {
+	if time.Now().After(AppStopTime) {
+		log.Printf("Timeout(key = %v), part %d returns EOM", key, pc.part)
+		return sophie.EOM
+	}
+						
+	pkg := *key.(*sophie.RawString)
+	ent := val.(*gcse.CrawlingEntry)
+	log.Printf("Crawling %v\n", pkg)
+	p, err := gcse.CrawlPackage(pc.httpClient, pkg.String(), ent.Etag)
+	_ = p
+	if err != nil && err != gcse.ErrPackageNotModifed {
+		log.Printf("Crawling pkg %s failed: %v", pkg, err)
+/*	
+		if gcse.IsBadPackage(err) {
+			// a wrong path
+			deletePackage(ent.ID)
+			log.Printf("Remove wrong package %s", ent.ID)
+		} else {
+			failCount++
+	
+			schedulePackage(ent.ID, time.Now().Add(
+				12*time.Hour), ent.Etag)
+	
+			if failCount >= 10 {
+				durToSleep := 10 * time.Minute
+				if time.Now().Add(durToSleep).After(AppStopTime) {
+					break
+				}
+	
+				log.Printf("Last ten crawling %s packages failed, sleep for a while...",
+					host)
+				time.Sleep(durToSleep)
+				failCount = 0
+			}
+		}
+*/
 		return nil
-	}); err != nil {
-		log.Fatalf("oldDocDB.Iterate failed: %v", err)
 	}
 	
-	log.Printf("All %d entries in old DocDB, %d put!", all, put)
+	pc.failCount = 0
+	if err == gcse.ErrPackageNotModifed {
+		log.Printf("Package %s unchanged!", pkg)
+//		schedulePackageNextCrawl(ent.ID, ent.Etag)
+		return nil
+	}
 	
-	oldDocDB = nil
-	runtime.GC()
+	log.Printf("Crawled package %s success!", pkg)
 	
-	
-	return docDB
+	nda := gcse.NewDocAction {
+		Action: gcse.NDA_UPDATE,
+		DocInfo: packageToDoc(p),
+	}
+	c[0].Collect(pkg, &nda)
+	log.Printf("Package %s saved!", pkg)
+
+	return nil
+}
+
+type PackageCrawlerFactory struct {
+	httpClient *http.Client
+}
+
+func (pcf PackageCrawlerFactory) NewMapper(part int) sophie.OnlyMapper {
+	return &PackageCrawler{part: part, httpClient: pcf.httpClient}
 }
 
 func main() {
+	cPackageDB = gcse.NewMemDB(CrawlerDBPath, kindPackage)
+	
 	log.Println("crawler started...")
 
-	AppStopTime = time.Now().Add(10 * time.Minute)
-
-	docDB = loadDocDB(gcse.DataRoot.Join(fnOldDocDB), DocDBPath)
-
+	AppStopTime = time.Now().Add(10 * time.Second)
 	
-	cPackageDB = gcse.NewMemDB(CrawlerDBPath, kindPackage)
+	//pathToCrawl := gcse.DataRoot.Join(gcse.FnToCrawl)
+	fpDataRoot := sophie.FsPath {
+		Fs: sophie.LocalFS,
+		Path: gcse.DataRoot.S(),
+	}
+	fpToCrawl := fpDataRoot.Join(gcse.FnToCrawl)
+	fpCrawler := fpDataRoot.Join(gcse.FnCrawlerDB)
+	outNewDocs := sophie.KVDirOutput(fpCrawler.Join(gcse.FnNewDocs))
+	outNewDocs.Clean()
+	src := sophie.KVDirInput(fpToCrawl.Join(gcse.FnPackage))
+	job := sophie.MapOnlyJob{
+		MapFactory: PackageCrawlerFactory{
+			httpClient: gcse.GenHttpClient(""),
+		},
+		
+		Source: src,
+		Dest: []sophie.Output{
+			outNewDocs,
+		},
+	}
+	if err := job.Run(); err != nil {
+		log.Fatalf("job.Run failed: %v", err)
+	}
+/*
 	cPersonDB = gcse.NewMemDB(CrawlerDBPath, kindPerson)
-
-	syncDatabases()
+	
+	kvDirNewDoc := sophie.FsPath {
+		Fs: sophie.LocalFS,
+		Path: gcse.DataRoot.Join(fnNewCrawled).S(),
+	}
+	var err error
+	kvfNewDoc, err = kvDirNewDoc.Collector(0)
+	if err != nil {
+		log.Fatalf("kvDirNewDoc.Collector(0) failed: %v", err)
+	}
 
 	go dumpingStatusLoop()
-
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go syncLoop(&wg)
 
 	crawlEntriesLoop()
 
@@ -116,10 +215,9 @@ func main() {
 		log.Printf("DBOutSegments.ClearUndones failed: %v", err)
 	}
 
-	if err := dumpDB(); err != nil {
-		log.Printf("dumpDB failed: %v", err)
-	}
-
-	wg.Wait()
+//	if err := dumpDB(); err != nil {
+//		log.Printf("dumpDB failed: %v", err)
+//	}
+*/
 	log.Println("crawler stopped...")
 }
