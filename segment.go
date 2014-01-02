@@ -2,9 +2,11 @@ package gcse
 
 import (
 	"fmt"
+	"log"
+	"strconv"
+
 	"github.com/daviddengcn/go-villa"
 	"github.com/howeyc/fsnotify"
-	"strconv"
 )
 
 const (
@@ -210,6 +212,7 @@ func (s segments) GenMaxSegment() (Segment, error) {
 	return newSegment(villa.Path(s).Join(strconv.Itoa(num + 1))), nil
 }
 
+// Segments.ClearUndones
 func (s segments) ClearUndones() error {
 	segms, err := s.ListAll()
 	if err != nil {
@@ -220,6 +223,7 @@ func (s segments) ClearUndones() error {
 			if err := s.Remove(); err != nil {
 				return err
 			}
+			log.Printf("Undone segment %v is removed!", s)
 		}
 	}
 

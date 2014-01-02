@@ -35,18 +35,18 @@ func TestDocInfo(t *testing.T) {
 	assert.NoErrorf(t, "dst.ReadFrom failed: %v", dst.ReadFrom(&buf, -1))
 
 	assert.StringEquals(t, "dst", dst, src)
-	
+
 	// checking the bug introduced by reusing slice
 	dst2 := dst
 	assert.StringEquals(t, "dst2.Imports[0]", dst2.Imports[0],
 		"github.com/daviddengcn/go-villa")
-		
+
 	src.Imports[0] = "github.com/daviddengcn/go-assert"
 	buf = nil
 	assert.NoErrorf(t, "src.WriteTo failed: %v", src.WriteTo(&buf))
 	assert.NoErrorf(t, "dst.ReadFrom failed: %v", dst.ReadFrom(&buf, -1))
 	assert.StringEquals(t, "dst", dst, src)
-	
+
 	assert.StringEquals(t, "dst2.Imports[0]", dst2.Imports[0],
 		"github.com/daviddengcn/go-villa")
 }

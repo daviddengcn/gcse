@@ -13,11 +13,10 @@ func main() {
 		log.Printf("ClearUndones failed: %v", err)
 	}
 
+	if err := clearOutdatedIndex(); err != nil {
+		log.Printf("clearOutdatedIndex failed: %v", err)
+	}
 	doIndex()
-
-	// wait for a minute anyway in case the outer script does not sleep
-//	log.Println("Sleep for 1 min...")
-//	time.Sleep(1 * time.Minute)
 
 	log.Println("indexer exits...")
 }

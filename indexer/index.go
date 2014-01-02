@@ -27,7 +27,7 @@ func clearOutdatedIndex() error {
 		if err != nil {
 			return err
 		}
-		log.Printf("Segment %v deleted", s)
+		log.Printf("Outdated segment %v removed!", s)
 	}
 
 	return nil
