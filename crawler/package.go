@@ -180,26 +180,24 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter,
 	return nil
 }
 
-type PackageCrawlerFactory struct {
-	httpClient *http.Client
-}
-
-func (pcf PackageCrawlerFactory) NewMapper(part int) sophie.OnlyMapper {
-	return &PackageCrawler{part: part, httpClient: pcf.httpClient}
-}
-
-
 // crawl packages, send error back to end
 func crawlPackages(httpClient *http.Client, fpToCrawlPkg, fpOutNewDocs sophie.FsPath, end chan error) {
 	end <- func() error {
 		outNewDocs := sophie.KVDirOutput(fpOutNewDocs)
 		outNewDocs.Clean()
 		job := sophie.MapOnlyJob{
-			MapFactory: PackageCrawlerFactory{
-				httpClient: httpClient,
+			Source: []sophie.Input{
+				sophie.KVDirInput(fpToCrawlPkg),
 			},
 			
-			Source: sophie.KVDirInput(fpToCrawlPkg),
+			MapFactory: sophie.OnlyMapperFactoryFunc(
+			func(src, part int) sophie.OnlyMapper {
+				return &PackageCrawler{
+					part: part,
+					httpClient: httpClient,
+				}
+			}),
+			
 			Dest: []sophie.Output{
 				outNewDocs,
 			},

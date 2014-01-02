@@ -104,8 +104,11 @@ func main() {
 	
 	httpClient := gcse.GenHttpClient("")
 	
+	fpNewDocs := fpCrawler.Join(gcse.FnNewDocs)
+	fpNewDocs.Remove()
+	
 	pkgEnd := make(chan error, 1)
-	go crawlPackages(httpClient, fpToCrawl.Join(gcse.FnPackage), fpCrawler.Join(gcse.FnNewDocs), pkgEnd)
+	go crawlPackages(httpClient, fpToCrawl.Join(gcse.FnPackage), fpNewDocs, pkgEnd)
 	
 	psnEnd := make(chan error, 1)
 	go crawlPersons(httpClient, fpToCrawl.Join(gcse.FnPerson), psnEnd)
@@ -113,6 +116,10 @@ func main() {
 	errPkg, errPsn := <- pkgEnd, <- psnEnd
 	if errPkg != nil || errPsn != nil {
 		log.Fatalf("Some job may failed, package: %v, person: %v", errPkg, errPsn)
+	}
+	
+	if err := processImports(); err !=  nil {
+		log.Printf("processImports failed: %v", err)
 	}
 	
 	syncDatabases()

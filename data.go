@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 	"unicode"
-	
+
 	"github.com/agonopol/go-stem/stemmer"
 	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/go-villa"
@@ -191,4 +191,21 @@ func AppendTokens(tokens villa.StrSet, text []byte) villa.StrSet {
 		})
 
 	return tokens
+}
+
+const (
+	DOCS_PARTS = 128
+)
+
+func CalcPackagePartition(pkg string, totalParts int) int {
+	hash := 0
+	for i, l := 0, len(pkg); i < l; i++ {
+		b := pkg[i]
+		hash = hash*33 + int(b)
+		if hash > totalParts {
+			hash = hash % totalParts
+		}
+	}
+
+	return hash
 }

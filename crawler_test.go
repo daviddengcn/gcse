@@ -131,17 +131,17 @@ func TestDocDB_Export(t *testing.T) {
 }
 
 func TestCrawlingEntry(t *testing.T) {
-	src := CrawlingEntry {
+	src := CrawlingEntry{
 		ScheduleTime: time.Now(),
 		Version:      19,
 		Etag:         "Hello",
 	}
-	
+
 	var buf villa.ByteSlice
 	assert.NoErrorf(t, "src.WriteTo failed: %v", src.WriteTo(&buf))
-	
+
 	var dst CrawlingEntry
 	assert.NoErrorf(t, "dst.ReadFrom failed: %v", dst.ReadFrom(&buf, -1))
-	
+
 	assert.StringEquals(t, "dst", dst, src)
 }

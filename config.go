@@ -38,17 +38,17 @@ const (
 	IndexFn   = KindIndex + ".gob"
 
 	KindDocDB = "docdb"
-	
+
 	FnCrawlerDB = "crawler"
 	KindPackage = "package"
-	KindPerson = "person"
+	KindPerson  = "person"
 	KindToCheck = "tocheck"
-	
+
 	FnToCrawl = "tocrawl"
 	FnPackage = "package"
 	FnPerson  = "person"
 	// key: RawString, value: DocInfo
-	FnDocs = "docs"
+	FnDocs    = "docs"
 	FnNewDocs = "newdocs"
 )
 
@@ -56,8 +56,9 @@ var (
 	ServerAddr = ":8080"
 	ServerRoot = villa.Path("./server/")
 
-	DataRoot = villa.Path("./data/")
+	DataRoot      = villa.Path("./data/")
 	CrawlerDBPath = DataRoot.Join(FnCrawlerDB)
+	DocsDBPath    = DataRoot.Join(FnDocs)
 	// The cycle of outdb/index
 	UpdateCycle = 1 * time.Hour
 

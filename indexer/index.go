@@ -1,9 +1,11 @@
 package main
 
 import (
-	"github.com/daviddengcn/gcse"
 	"log"
 	"runtime"
+	
+	"github.com/daviddengcn/gcse"
+	"github.com/daviddengcn/sophie"
 )
 
 func clearOutdatedIndex() error {
@@ -31,7 +33,7 @@ func clearOutdatedIndex() error {
 	return nil
 }
 
-func doIndex(dbSegm gcse.Segment) bool {
+func doIndex() bool {
 	idxSegm, err := gcse.IndexSegments.GenMaxSegment()
 	if err != nil {
 		log.Printf("GenMaxSegment failed: %v", err)
@@ -40,13 +42,12 @@ func doIndex(dbSegm gcse.Segment) bool {
 
 	runtime.GC()
 	gcse.DumpMemStats()
-	log.Printf("Reading docDB from %v ...", dbSegm)
-	// read docDB
-	docDB := gcse.PackedDocDB{gcse.NewMemDB(dbSegm.Join(""), gcse.KindDocDB)}
-
+	
 	log.Printf("Indexing to %v ...", idxSegm)
 
-	ts, err := gcse.Index(docDB)
+	fpDocDB := sophie.LocalFsPath(gcse.DocsDBPath.S())
+	
+	ts, err := gcse.Index(fpDocDB)
 	if err != nil {
 		log.Printf("Indexing failed: %v", err)
 		return false
@@ -57,11 +58,16 @@ func doIndex(dbSegm gcse.Segment) bool {
 		log.Printf("Create index file failed: %v", err)
 		return false
 	}
-	defer f.Close()
+	//defer f.Close()
+	log.Printf("Saving index to %v ...", idxSegm)
 	if err := ts.Save(f); err != nil {
 		log.Printf("ts.Save failed: %v", err)
 		return false
 	}
+	f.Close()
+	f = nil
+	runtime.GC()
+	gcse.DumpMemStats()
 
 	if err := idxSegm.Done(); err != nil {
 		log.Printf("segm.Done failed: %v", err)
@@ -70,14 +76,10 @@ func doIndex(dbSegm gcse.Segment) bool {
 
 	log.Printf("Indexing success: %s (%d)", idxSegm, ts.DocCount())
 
-	docDB.MemDB, ts = nil, nil
+	ts = nil
 	gcse.DumpMemStats()
 	runtime.GC()
 	gcse.DumpMemStats()
-
-	if err := dbSegm.Remove(); err != nil {
-		log.Printf("Delete segment %v failed: %v", dbSegm, err)
-	}
 
 	return true
 }
