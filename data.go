@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 	"unicode"
-
+	
 	"github.com/agonopol/go-stem/stemmer"
 	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/go-villa"
@@ -34,6 +34,8 @@ func (d *DocInfo) WriteTo(w sophie.Writer) error {
 }
 
 func (d *DocInfo) ReadFrom(r sophie.Reader, l int) error {
+	// clear before decoding, otherwise some slice will be reused
+	*d = DocInfo{}
 	return gob.NewDecoder(r).Decode(d)
 }
 

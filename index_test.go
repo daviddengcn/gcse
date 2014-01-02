@@ -1,6 +1,7 @@
 package gcse
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/daviddengcn/go-assert"
@@ -62,4 +63,32 @@ func TestIndex(t *testing.T) {
 	}
 	assert.StringEquals(t, "all", pkgs,
 		"[github.com/daviddengcn/gcse github.com/daviddengcn/gcse/indexer]")
+	
+	var gcseInfo HitInfo
+	if err := ts.Search(map[string]villa.StrSet{
+		IndexPkgField: villa.NewStrSet("github.com/daviddengcn/gcse"),
+	}, func(docID int32, data interface{}) error {
+		gcseInfo = data.(HitInfo)
+		return nil
+	}); err != nil {
+		t.Errorf("ts.Search: %v", err)
+		return
+	}
+	assert.StringEquals(t, "gcseInfo.Imported",
+		fmt.Sprintf("%+v", gcseInfo.Imported),
+		"[github.com/daviddengcn/gcse/indexer]")
+		
+	var indexerInfo HitInfo
+	if err := ts.Search(map[string]villa.StrSet{
+		IndexPkgField: villa.NewStrSet("github.com/daviddengcn/gcse/indexer"),
+	}, func(docID int32, data interface{}) error {
+		gcseInfo = data.(HitInfo)
+		return nil
+	}); err != nil {
+		t.Errorf("ts.Search: %v", err)
+		return
+	}
+	assert.StringEquals(t, "indexerInfo.Imported",
+		fmt.Sprintf("%+v", indexerInfo.Imported),
+		"[]")
 }

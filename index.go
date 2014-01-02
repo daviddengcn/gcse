@@ -3,7 +3,7 @@ package gcse
 import (
 	"errors"
 	"log"
-
+	
 	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/go-villa"
 	"github.com/daviddengcn/sophie"
@@ -50,10 +50,10 @@ func Index(docDB sophie.Input) (*index.TokenSetSearcher, error) {
 
 		it.Close()
 	}
+	
 
 	DumpMemStats()
 	log.Printf("Making HitInfos ...")
-
 	hits := make([]HitInfo, 0, docCount)
 	for i := 0; i < docPartCnt; i++ {
 		it, err := docDB.Iterator(i)
