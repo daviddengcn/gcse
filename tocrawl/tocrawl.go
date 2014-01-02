@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"runtime"
 	"time"
 	
 	"github.com/daviddengcn/gcse"
@@ -13,6 +14,36 @@ var (
 	cPackageDB *gcse.MemDB
 	cPersonDB  *gcse.MemDB
 )
+
+func loadPackageUpdateTimes(fpDocs sophie.FsPath) (map[string]time.Time, error) {
+	dir := sophie.KVDirInput(fpDocs)
+	cnt, err := dir.PartCount()
+	if err != nil {
+		return nil, err
+	}
+	
+	pkgUTs := make(map[string]time.Time)
+	
+	var pkg sophie.RawString
+	var info gcse.DocInfo
+	for i := 0; i < cnt; i++ {
+		it, err := dir.Iterator(i)
+		if err != nil {
+			return nil, err
+		}
+		for {
+			if err := it.Next(&pkg, &info); err != nil {
+				if err == sophie.EOF {
+					break
+				}
+				return nil, err
+			}
+			
+			pkgUTs[string(pkg)] = info.LastUpdated
+		}
+	}
+	return pkgUTs, nil
+}
 
 func generateCrawlEntries(db *gcse.MemDB, hostFromID func(id string) string,
 	  out sophie.KVDirOutput) error {
@@ -56,20 +87,42 @@ func generateCrawlEntries(db *gcse.MemDB, hostFromID func(id string) string,
 	return nil
 }
 
+func syncDatabases() {
+	gcse.DumpMemStats()
+	log.Printf("Synchronizing databases to disk...")
+	if err := cPackageDB.Sync(); err != nil {
+		log.Fatalf("cPackageDB.Sync failed: %v", err)
+	}
+	if err := cPersonDB.Sync(); err != nil {
+		log.Fatalf("cPersonDB.Sync failed: %v", err)
+	}
+	gcse.DumpMemStats()
+	runtime.GC()
+	gcse.DumpMemStats()
+}
+
 func main() {
 	log.Println("Running tocrawl tool, to generate crawling list")
 	cPackageDB = gcse.NewMemDB(gcse.CrawlerDBPath, gcse.KindPackage)
 	cPersonDB = gcse.NewMemDB(gcse.CrawlerDBPath, gcse.KindPerson)
+	
+	var err error
+	pkgUTs, err = loadPackageUpdateTimes(
+		sophie.LocalFsPath(gcse.DocsDBPath.S()))
+	if err != nil {
+		log.Fatalf("loadPackageUpdateTimes failed: %v", err)
+	}
+	
+	touchByGithubUpdates()
+	syncDatabases()
 	
 	fmt.Printf("Package DB: %d entries\n", cPackageDB.Count())
 	fmt.Printf("Person DB: %d entries\n", cPersonDB.Count())
 	
 	pathToCrawl := gcse.DataRoot.Join(gcse.FnToCrawl)
 	
-	kvPackage := sophie.KVDirOutput {
-		Fs: sophie.LocalFS,
-		Path: pathToCrawl.Join(gcse.FnPackage).S(),
-	}
+	kvPackage := sophie.KVDirOutput(sophie.LocalFsPath(
+		pathToCrawl.Join(gcse.FnPackage).S()))
 	kvPackage.Clean()
 	if err := generateCrawlEntries(cPackageDB, gcse.HostOfPackage, kvPackage);
 			err != nil {

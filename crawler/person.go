@@ -113,11 +113,17 @@ func (pcf PeresonCrawlerFactory) NewMapper(part int) sophie.OnlyMapper {
 func crawlPersons(httpClient *http.Client, fpToCrawlPsn sophie.FsPath, end chan error) {
 	end <- func() error {
 		job := sophie.MapOnlyJob{
-			MapFactory: PeresonCrawlerFactory{
-				httpClient: httpClient,
+			Source: []sophie.Input{
+				sophie.KVDirInput(fpToCrawlPsn),
 			},
 			
-			Source: sophie.KVDirInput(fpToCrawlPsn),
+			MapFactory: sophie.OnlyMapperFactoryFunc(
+			func(src, part int) sophie.OnlyMapper {
+				return &PersonCrawler{
+					part: part,
+					httpClient: httpClient,
+				}
+			}),
 		}
 		
 		if err := job.Run(); err != nil {

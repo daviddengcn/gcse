@@ -454,8 +454,8 @@ func (db PackedDocDB) Iterate(output func(key string, val interface{}) error) er
 type CrawlingEntry struct {
 	ScheduleTime time.Time
 	// if gcse.CrawlerVersion is different from this value, etag is ignored
-	Version      int 
-	Etag         string
+	Version int
+	Etag    string
 }
 
 func (c *CrawlingEntry) WriteTo(w sophie.Writer) error {

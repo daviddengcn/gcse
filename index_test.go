@@ -5,20 +5,41 @@ import (
 
 	"github.com/daviddengcn/go-assert"
 	"github.com/daviddengcn/go-villa"
+	"github.com/daviddengcn/sophie"
 )
 
 func TestIndex(t *testing.T) {
-	docDB := NewMemDB("", "")
-	docDB.Put("github.com/daviddengcn/gcse", DocInfo{
-		Package: "github.com/daviddengcn/gcse",
-		Name:    "gcse",
+	docs := []DocInfo{
+		{
+			Package: "github.com/daviddengcn/gcse",
+			Name:    "gcse",
+		}, {
+			Package: "github.com/daviddengcn/gcse/indexer",
+			Name:    "main",
+			Imports: []string{"github.com/daviddengcn/gcse"},
+		},
+	}
+	ts, err := Index(&sophie.InputStruct{
+		PartCountFunc: func() (int, error) {
+			return 1, nil
+		},
+		IteratorFunc: func(int) (sophie.IterateCloser, error) {
+			index := 0
+			return &sophie.IterateCloserStruct{
+				NextFunc: func(key, val sophie.SophieReader) error {
+					if index >= len(docs) {
+						return sophie.EOF
+					}
+					*key.(*sophie.RawString) = sophie.RawString(
+						docs[index].Package)
+					*val.(*DocInfo) = docs[index]
+
+					index++
+					return nil
+				},
+			}, nil
+		},
 	})
-	docDB.Put("github.com/daviddengcn/gcse/indexer", DocInfo{
-		Package: "github.com/daviddengcn/gcse/indexer",
-		Name:    "main",
-		Imports: []string{"github.com/daviddengcn/gcse"},
-	})
-	ts, err := Index(docDB)
 	if err != nil {
 		t.Error(err)
 		return

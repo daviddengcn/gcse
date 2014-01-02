@@ -5,18 +5,6 @@ import (
 	"log"
 )
 
-// TODO move this to tocrawl
-
-func hasImportsDones() bool {
-	dones, err := gcse.ImportSegments.ListDones()
-	if err != nil {
-		log.Printf("ImportSegments.ListDones failed: %v", err)
-		return false
-	}
-
-	return len(dones) > 0
-}
-
 // processing sumitted packages (from go-search.org/add path)
 func processImports() error {
 	dones, err := gcse.ImportSegments.ListDones()
@@ -35,9 +23,6 @@ func processImports() error {
 			for _, pkg := range pkgs {
 				appendPackage(pkg)
 			}
-			if err := cPackageDB.Sync(); err != nil {
-				log.Printf("cPackageDB.Sync failed: %v", err)
-			}
 		}
 		if err := segm.Remove(); err != nil {
 			log.Printf("Remove %v failed: %v", segm, err)
@@ -45,14 +30,4 @@ func processImports() error {
 	}
 
 	return nil
-}
-
-func checkImports() {
-	for hasImportsDones() {
-		// process done folders
-		if err := processImports(); err != nil {
-			log.Printf("scanImports failed: %v", err)
-			break
-		}
-	}
 }

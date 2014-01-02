@@ -212,7 +212,7 @@ func (mdb *MemDB) Iterate(output func(key string, val interface{}) error) error 
 func (mdb *MemDB) Count() int {
 	mdb.RLock()
 	defer mdb.RUnlock()
-	
+
 	return len(mdb.db)
 }
 
