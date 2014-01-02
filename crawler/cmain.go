@@ -96,7 +96,7 @@ func main() {
 	log.Printf("%d docs loaded!", len(allDocsPkgs))
 	
 
-	AppStopTime = time.Now().Add(10 * time.Second)
+	AppStopTime = time.Now().Add(30 * time.Minute)
 	
 	//pathToCrawl := gcse.DataRoot.Join(gcse.FnToCrawl)
 	fpCrawler := fpDataRoot.Join(gcse.FnCrawlerDB)
