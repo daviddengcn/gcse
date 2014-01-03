@@ -6,11 +6,10 @@
     
     back: {
         // dbroot: "./data/"
-        // update_cycle: "1h"
     }
     
     crawler: {
-        // syncgap: "10m"
+        // due_per_run: "1h"
         // godoc: true
         // github_update: true
     }

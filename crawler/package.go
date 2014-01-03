@@ -85,6 +85,12 @@ func packageToDoc(p *gcse.Package) gcse.DocInfo {
 			d.Imports = append(d.Imports, imp)
 		}
 	}
+	d.TestImports = nil
+	for _, imp := range p.TestImports {
+		if doc.IsValidRemotePath(imp) {
+			d.TestImports = append(d.TestImports, imp)
+		}
+	}
 
 	// append new authors
 	if strings.HasPrefix(d.Package, "github.com/") {
@@ -94,6 +100,9 @@ func packageToDoc(p *gcse.Package) gcse.DocInfo {
 	}
 
 	for _, imp := range d.Imports {
+		appendPackage(imp)
+	}
+	for _, imp := range d.TestImports {
 		appendPackage(imp)
 	}
 	log.Printf("[pushPackage] References: %v", p.References)

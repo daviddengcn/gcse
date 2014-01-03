@@ -80,10 +80,14 @@ func statTops(N int) []StatList {
 	var topStaticScores []gcse.HitInfo
 	var tssProjects villa.StrSet
 
-
 	topImported := NewTopN(func(a, b interface{}) int {
 		return villa.IntValueCompare(len(a.(gcse.HitInfo).Imported),
 			len(b.(gcse.HitInfo).Imported))
+	}, N)
+
+	topTestStatic := NewTopN(func(a, b interface{}) int {
+		return villa.FloatValueCompare(a.(gcse.HitInfo).TestStaticScore,
+			b.(gcse.HitInfo).TestStaticScore)
 	}, N)
 
 	sites := make(map[string]int)
@@ -100,6 +104,9 @@ func statTops(N int) []StatList {
 			}
 		}
 		
+		if len(hit.TestImported) > 0 {
+			topTestStatic.Append(hit)
+		}
 		topImported.Append(hit)
 
 		host := strings.ToLower(gcse.HostOfPackage(hit.Package))
@@ -120,6 +127,21 @@ func statTops(N int) []StatList {
 			Name:    hit.Name,
 			Package: hit.Package,
 			Info:    fmt.Sprintf("%d %d", len(hit.Imported), hit.StarCount),
+		})
+	}
+
+	tlTestStatic := StatList{
+		Name:  "Hot Test",
+		Info:  "refs stars",
+		Items: make([]StatItem, 0, topTestStatic.Len()),
+	}
+	for _, item := range topTestStatic.PopAll() {
+		hit := item.(gcse.HitInfo)
+		tlTestStatic.Items = append(tlTestStatic.Items, StatItem{
+			Name:    hit.Name,
+			Package: hit.Package,
+			Info:    fmt.Sprintf("%.1f %d %d", hit.TestStaticScore, len(hit.TestImported),
+						hit.StarCount),
 		})
 	}
 
@@ -159,6 +181,6 @@ func statTops(N int) []StatList {
 	}
 
 	return []StatList{
-		tlStaticScore, tlImported, tlSites,
+		tlStaticScore, tlTestStatic, tlImported, tlSites,
 	}
 }

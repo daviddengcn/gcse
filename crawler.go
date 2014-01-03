@@ -27,8 +27,8 @@ const (
 	fnLinks = "links.json"
 )
 
-// AppendPackages appends a list packages to imports folder for crawler backend
-// to read
+// AppendPackages appends a list packages to imports folder for crawler
+// backend to read
 func AppendPackages(pkgs []string) bool {
 	segm, err := ImportSegments.GenNewSegment()
 	if err != nil {
@@ -132,16 +132,17 @@ func ProjectOfPackage(pkg string) string {
 
 // Package stores information from crawler
 type Package struct {
-	Package    string
-	Name       string
-	Synopsis   string
-	Doc        string
-	ProjectURL string
-	StarCount  int
-	ReadmeFn   string
-	ReadmeData string
-	Imports    []string
-	Exported   []string // exported tokens(funcs/types)
+	Package     string
+	Name        string
+	Synopsis    string
+	Doc         string
+	ProjectURL  string
+	StarCount   int
+	ReadmeFn    string
+	ReadmeData  string
+	Imports     []string
+	TestImports []string
+	Exported    []string // exported tokens(funcs/types)
 
 	References []string
 	Etag       string
@@ -172,8 +173,9 @@ func Plusone(httpClient *http.Client, url string) (int, error) {
 	resp, err := httpClient.Post(
 		"https://clients6.google.com/rpc?key=AIzaSyCKSbrvQasunBoV16zDH9R33D88CeLr9gQ",
 		"application/json",
-		villa.NewPByteSlice([]byte(`[{"method":"pos.plusones.get","id":"p","params":{"nolog":true,"id": "`+
-			url+`","source":"widget","userId":"@viewer","groupId":"@self"},"jsonrpc":"2.0","key":"p","apiVersion":"v1"}]`)))
+		villa.NewPByteSlice([]byte(
+			`[{"method":"pos.plusones.get","id":"p","params":{"nolog":true,"id": "`+
+				url+`","source":"widget","userId":"@viewer","groupId":"@self"},"jsonrpc":"2.0","key":"p","apiVersion":"v1"}]`)))
 	if err != nil {
 		return 0, err
 	}
@@ -221,8 +223,8 @@ func fuseStars(a, b int) int {
 
 	/*
 		Now, a <= b
-		Supposing half of the stargzers are shared ones. The numbers could be
-		a/2, or b/2. The mean is (a + b) / 4. Exclude this from a + b, and
+		Supposing half of the stargzers are shared ones. The numbers could
+		be a/2, or b/2. The mean is (a + b) / 4. Exclude this from a + b, an
 		assure it greater than b.
 	*/
 	if a <= b/3 {
@@ -232,10 +234,12 @@ func fuseStars(a, b int) int {
 	return (a + b) * 3 / 4
 }
 
-func CrawlPackage(httpClient *http.Client, pkg string, etag string) (p *Package, err error) {
+func CrawlPackage(httpClient *http.Client, pkg string,
+	etag string) (p *Package, err error) {
 	defer func() {
 		if err := recover(); err != nil {
-			p, err = nil, errors.New(fmt.Sprintf("Panic when crawling package %s: %v", pkg, err))
+			p, err = nil, errors.New(fmt.Sprintf(
+				"Panic when crawling package %s: %v", pkg, err))
 			log.Printf("Panic when crawling package %s: %v", pkg, err)
 		}
 	}()
@@ -249,7 +253,8 @@ func CrawlPackage(httpClient *http.Client, pkg string, etag string) (p *Package,
 	}
 
 	if pdoc.StarCount < 0 {
-		// if starcount is not fetched, choose fusion of Plusone and LikeButton
+		// if starcount is not fetched, choose fusion of Plusone and
+		// Like Button
 		plus, like := -1, -1
 		if starCount, err := Plusone(httpClient, pdoc.ProjectURL); err == nil {
 			plus = starCount
@@ -262,7 +267,8 @@ func CrawlPackage(httpClient *http.Client, pkg string, etag string) (p *Package,
 
 	readmeFn, readmeData := "", ""
 	for fn, data := range pdoc.ReadmeFiles {
-		readmeFn, readmeData = strings.TrimSpace(fn), strings.TrimSpace(string(data))
+		readmeFn, readmeData = strings.TrimSpace(fn),
+			strings.TrimSpace(string(data))
 		if len(readmeData) > 1 && utf8.ValidString(readmeData) {
 			break
 		} else {
@@ -279,9 +285,10 @@ func CrawlPackage(httpClient *http.Client, pkg string, etag string) (p *Package,
 		readmeData = readmeData[:100*1024]
 	}
 
-	imports := villa.NewStrSet(pdoc.Imports...)
-	imports.Put(pdoc.TestImports...)
-	imports.Put(pdoc.XTestImports...)
+	imports := villa.NewStrSet(pdoc.Imports...).Elements()
+	testImports := villa.NewStrSet(pdoc.TestImports...)
+	testImports.Put(pdoc.XTestImports...)
+	testImports.Delete(imports...)
 
 	var exported villa.StrSet
 	for _, f := range pdoc.Funcs {
@@ -298,10 +305,13 @@ func CrawlPackage(httpClient *http.Client, pkg string, etag string) (p *Package,
 		Doc:        pdoc.Doc,
 		ProjectURL: pdoc.ProjectURL,
 		StarCount:  pdoc.StarCount,
+
 		ReadmeFn:   readmeFn,
 		ReadmeData: readmeData,
-		Imports:    imports.Elements(),
-		Exported:   exported.Elements(),
+
+		Imports:     imports,
+		TestImports: testImports.Elements(),
+		Exported:    exported.Elements(),
 
 		References: pdoc.References,
 		Etag:       pdoc.Etag,
@@ -326,7 +336,8 @@ func CrawlPerson(httpClient *http.Client, id string) (*Person, error) {
 	site, username := ParsePersonId(id)
 	switch site {
 	case "github.com":
-		p, err := doc.GetGithubPerson(httpClient, map[string]string{"owner": username})
+		p, err := doc.GetGithubPerson(httpClient, map[string]string{
+			"owner": username})
 		if err != nil {
 			return nil, villa.NestErrorf(err, "CrawlPerson(%s)", id)
 		} else {
@@ -336,7 +347,8 @@ func CrawlPerson(httpClient *http.Client, id string) (*Person, error) {
 			}, nil
 		}
 	case "bitbucket.org":
-		p, err := doc.GetBitbucketPerson(httpClient, map[string]string{"owner": username})
+		p, err := doc.GetBitbucketPerson(httpClient, map[string]string{
+			"owner": username})
 		if err != nil {
 			return nil, villa.NestErrorf(err, "CrawlPerson(%s)", id)
 		} else {
@@ -386,7 +398,8 @@ func GithubUpdates() (map[string]time.Time, error) {
 			}
 
 			// Mon Jan 2 15:04:05 -0700 MST 2006
-			updated, _ := time.Parse("2006-01-02T15:04:05-07:00", string(p[m[2]:m[3]]))
+			updated, _ := time.Parse("2006-01-02T15:04:05-07:00",
+				string(p[m[2]:m[3]]))
 			p = p[m[1]:]
 
 			if _, found := updates[ownerRepo]; !found {
@@ -438,7 +451,8 @@ func (db PackedDocDB) Put(key string, data interface{}) {
 	db.MemDB.Put(key, []byte(bs))
 }
 
-func (db PackedDocDB) Iterate(output func(key string, val interface{}) error) error {
+func (db PackedDocDB) Iterate(
+	output func(key string, val interface{}) error) error {
 	return db.MemDB.Iterate(func(key string, val interface{}) error {
 		dec := gob.NewDecoder(villa.NewPByteSlice(val.([]byte)))
 		var info DocInfo

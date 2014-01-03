@@ -103,6 +103,45 @@ func CalcStaticScore(doc *HitInfo) float64 {
 	return s
 }
 
+func CalcTestStaticScore(doc *HitInfo) float64 {
+	s := float64(1)
+
+	author := doc.Author
+	if author == "" {
+		author = AuthorOfPackage(doc.Package)
+	}
+
+	project := ProjectOfPackage(doc.Package)
+
+	s += effectiveImported(doc.TestImported, author, project)
+
+	desc := strings.TrimSpace(doc.Description)
+	if len(desc) > 0 {
+		s += 1
+		if len(desc) > 100 {
+			s += 0.5
+		}
+
+		if strings.HasPrefix(desc, "Package "+doc.Name) || strings.HasPrefix(desc, doc.Name+" package") {
+			s += 0.5
+		} else if strings.HasPrefix(desc, "package "+doc.Name) {
+			s += 0.4
+		}
+	}
+
+	if doc.Name != "" && doc.Name != "main" {
+		s += 0.1
+	}
+
+	starCount := doc.StarCount - 3
+	if starCount < 0 {
+		starCount = 0
+	}
+	s += math.Sqrt(float64(starCount)) * 0.5
+
+	return s
+}
+
 func matchToken(token string, text string, tokens villa.StrSet) bool {
 	if strings.Index(text, token) >= 0 {
 		return true
