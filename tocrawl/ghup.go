@@ -9,10 +9,6 @@ import  (
 	"github.com/daviddengcn/gddo/doc"
 )
 
-var (
-	pkgUTs map[string]time.Time
-)
-
 func schedulePackage(pkg string, sTime time.Time, etag string) error {
 	ent := gcse.CrawlingEntry{
 		ScheduleTime: sTime,
@@ -26,7 +22,8 @@ func schedulePackage(pkg string, sTime time.Time, etag string) error {
 	return nil
 }
 
-func touchPackage(pkg string, crawledBefore time.Time) {
+func touchPackage(pkg string, crawledBefore time.Time,
+		pkgUTs map[string]time.Time) {
 	pkg = strings.TrimSpace(pkg)
 	if !doc.IsValidRemotePath(pkg) {
 		//log.Printf("  [touchPackage] Not a valid remote path: %s", pkg)
@@ -42,7 +39,7 @@ func touchPackage(pkg string, crawledBefore time.Time) {
 	schedulePackage(pkg, time.Now(), "")
 }
 
-func touchByGithubUpdates() {
+func touchByGithubUpdates(pkgUTs map[string]time.Time) {
 	log.Printf("touchByGithubUpdates ...")
 	
 	updates, err := gcse.GithubUpdates()
@@ -53,6 +50,6 @@ func touchByGithubUpdates() {
 	log.Printf("%d updates found!", len(updates))
 	
 	for pkg, ut := range updates {
-		touchPackage(pkg, ut)
+		touchPackage(pkg, ut, pkgUTs)
 	}
 }

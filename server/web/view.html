@@ -37,9 +37,22 @@
         {{end}}
     </ol>
 <div>
+<h4>Imported only in test by {{len .TestImported}} package(s) <a href="#testimported" id="testimported" class="anchor">¶</a></h4>
+    <ol>
+        {{range .TestImported}}
+            <li><a target="_blank" href="view?id={{.}}">{{.}}</a></li>
+        {{end}}
+    </ol>
+<div>
 <h4>Imports {{len .Imports}} package(s) <a href="#imports" id="imports" class="anchor">¶</a></h4>
     <ol>
         {{range .Imports}}
+            <li><a href="view?id={{.}}">{{.}}</a></li>
+        {{end}}
+    </ol>
+<h4>Test imports {{len .TestImports}} package(s) <a href="#testimports" id="testimports" class="anchor">¶</a></h4>
+    <ol>
+        {{range .TestImports}}
             <li><a href="view?id={{.}}">{{.}}</a></li>
         {{end}}
     </ol>

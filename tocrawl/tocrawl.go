@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"runtime"
 	"time"
@@ -106,18 +105,19 @@ func main() {
 	cPackageDB = gcse.NewMemDB(gcse.CrawlerDBPath, gcse.KindPackage)
 	cPersonDB = gcse.NewMemDB(gcse.CrawlerDBPath, gcse.KindPerson)
 	
-	var err error
-	pkgUTs, err = loadPackageUpdateTimes(
-		sophie.LocalFsPath(gcse.DocsDBPath.S()))
-	if err != nil {
-		log.Fatalf("loadPackageUpdateTimes failed: %v", err)
+	if gcse.CrawlGithubUpdate {
+		pkgUTs, err := loadPackageUpdateTimes(
+			sophie.LocalFsPath(gcse.DocsDBPath.S()))
+		if err != nil {
+			log.Fatalf("loadPackageUpdateTimes failed: %v", err)
+		}
+		
+		touchByGithubUpdates(pkgUTs)
+		syncDatabases()
 	}
 	
-	touchByGithubUpdates()
-	syncDatabases()
-	
-	fmt.Printf("Package DB: %d entries\n", cPackageDB.Count())
-	fmt.Printf("Person DB: %d entries\n", cPersonDB.Count())
+	log.Printf("Package DB: %d entries", cPackageDB.Count())
+	log.Printf("Person DB: %d entries", cPersonDB.Count())
 	
 	pathToCrawl := gcse.DataRoot.Join(gcse.FnToCrawl)
 	

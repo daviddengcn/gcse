@@ -27,6 +27,7 @@ func Index(docDB sophie.Input) (*index.TokenSetSearcher, error) {
 
 	log.Printf("Generating importsDB ...")
 	importsDB := NewTokenIndexer("", "")
+	testImportsDB := NewTokenIndexer("", "")
 	// generate importsDB
 	for i := 0; i < docPartCnt; i++ {
 		it, err := docDB.Iterator(i)
@@ -45,6 +46,8 @@ func Index(docDB sophie.Input) (*index.TokenSetSearcher, error) {
 				return nil, err
 			}
 			importsDB.Put(string(pkg), villa.NewStrSet(docInfo.Imports...))
+			testImportsDB.Put(string(pkg),
+				villa.NewStrSet(docInfo.TestImports...))
 			docCount++
 		}
 
@@ -72,6 +75,7 @@ func Index(docDB sophie.Input) (*index.TokenSetSearcher, error) {
 			}
 
 			hitInfo.Imported = importsDB.IdsOfToken(hitInfo.Package)
+			hitInfo.TestImported = testImportsDB.IdsOfToken(hitInfo.Package)
 
 			readme := ReadmeToText(hitInfo.ReadmeFn, hitInfo.ReadmeData)
 
@@ -80,6 +84,7 @@ func Index(docDB sophie.Input) (*index.TokenSetSearcher, error) {
 			// StaticScore is calculated after setting all other fields of
 			// hitInfo
 			hitInfo.StaticScore = CalcStaticScore(&hitInfo)
+			hitInfo.TestStaticScore = CalcTestStaticScore(&hitInfo)
 
 			hits = append(hits, hitInfo)
 		}

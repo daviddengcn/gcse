@@ -24,6 +24,9 @@ func TestDocInfo(t *testing.T) {
 			"github.com/daviddengcn/go-villa",
 			"github.com/daviddengcn/sophie",
 		},
+		TestImports: []string{
+			"github.com/daviddengcn/go-check",
+		},
 		Exported: []string{
 			"DocInfo", "CheckRuneType",
 		},

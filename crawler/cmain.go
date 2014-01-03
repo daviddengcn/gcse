@@ -20,7 +20,7 @@ var (
 func init() {
 	doc.SetGithubCredentials("94446b37edb575accd8b",
 		"15f55815f0515a3f6ad057aaffa9ea83dceb220b")
-	doc.SetUserAgent("Go-Code-Search-Agent")
+	doc.SetUserAgent("Go-Search")
 }
 
 func syncDatabases() {
@@ -96,7 +96,7 @@ func main() {
 	log.Printf("%d docs loaded!", len(allDocsPkgs))
 	
 
-	AppStopTime = time.Now().Add(30 * time.Minute)
+	AppStopTime = time.Now().Add(gcse.CrawlerDuePerRun)
 	
 	//pathToCrawl := gcse.DataRoot.Join(gcse.FnToCrawl)
 	fpCrawler := fpDataRoot.Join(gcse.FnCrawlerDB)
@@ -108,14 +108,16 @@ func main() {
 	fpNewDocs.Remove()
 	
 	pkgEnd := make(chan error, 1)
-	go crawlPackages(httpClient, fpToCrawl.Join(gcse.FnPackage), fpNewDocs, pkgEnd)
+	go crawlPackages(httpClient, fpToCrawl.Join(gcse.FnPackage), fpNewDocs,
+		pkgEnd)
 	
 	psnEnd := make(chan error, 1)
 	go crawlPersons(httpClient, fpToCrawl.Join(gcse.FnPerson), psnEnd)
 	
 	errPkg, errPsn := <- pkgEnd, <- psnEnd
 	if errPkg != nil || errPsn != nil {
-		log.Fatalf("Some job may failed, package: %v, person: %v", errPkg, errPsn)
+		log.Fatalf("Some job may failed, package: %v, person: %v",
+			errPkg, errPsn)
 	}
 	
 	if err := processImports(); err !=  nil {

@@ -59,8 +59,6 @@ var (
 	DataRoot      = villa.Path("./data/")
 	CrawlerDBPath = DataRoot.Join(FnCrawlerDB)
 	DocsDBPath    = DataRoot.Join(FnDocs)
-	// The cycle of outdb/index
-	UpdateCycle = 1 * time.Hour
 
 	// producer: server, consumer: crawler
 	ImportPath     villa.Path
@@ -78,7 +76,7 @@ var (
 	// configures of crawler
 	CrawlByGodocApi   = true
 	CrawlGithubUpdate = true
-	CrawlerSyncGap    = 10 * time.Minute
+	CrawlerDuePerRun = 1 * time.Hour
 
 	/*
 		Increase this to ignore etag of last versions to crawl and parse all
@@ -87,10 +85,12 @@ var (
 		ChangeLog:
 		    0    First version
 		    1    Add TestImports/XTestImports to Imports
-		    2    Parse markdown readme to text before selecting synopsis from it
+		    2    Parse markdown readme to text before selecting synopsis
+			     from it
 			3    Add exported tokens to indexes
+			4    Move TestImports/XTestImports out of Imports, to TestImports
 	*/
-	CrawlerVersion = 3
+	CrawlerVersion = 4
 )
 
 func init() {
@@ -102,7 +102,6 @@ func init() {
 	ServerRoot = conf.Path("web.root", ServerRoot)
 
 	DataRoot = conf.Path("back.dbroot", DataRoot)
-	UpdateCycle = conf.Duration("back.update_cycle", UpdateCycle)
 
 	ImportPath = DataRoot.Join("imports")
 	ImportPath.MkdirAll(0755)
@@ -118,5 +117,5 @@ func init() {
 
 	CrawlByGodocApi = conf.Bool("crawler.godoc", CrawlByGodocApi)
 	CrawlGithubUpdate = conf.Bool("crawler.github_update", CrawlGithubUpdate)
-	CrawlerSyncGap = conf.Duration("crawler.syncgap", CrawlerSyncGap)
+	CrawlerDuePerRun = conf.Duration("crawler.due_per_run", CrawlerDuePerRun)
 }

@@ -26,6 +26,7 @@ type DocInfo struct {
 	ReadmeFn    string
 	ReadmeData  string
 	Imports     []string
+	TestImports []string
 	Exported    []string // exported tokens(funcs/types)
 }
 
@@ -44,9 +45,11 @@ type HitInfo struct {
 	DocInfo
 
 	Imported           []string
+	TestImported       []string
 	ImportantSentences []string
 
 	StaticScore float64
+	TestStaticScore float64
 	StaticRank  int // zero-based
 }
 
