@@ -48,9 +48,9 @@ type HitInfo struct {
 	TestImported       []string
 	ImportantSentences []string
 
-	StaticScore     float64
+	StaticScore float64
 	TestStaticScore float64
-	StaticRank      int // zero-based
+	StaticRank  int // zero-based
 }
 
 func init() {
