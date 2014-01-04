@@ -140,7 +140,7 @@ func statTops(N int) []StatList {
 		tlTestStatic.Items = append(tlTestStatic.Items, StatItem{
 			Name:    hit.Name,
 			Package: hit.Package,
-			Info: fmt.Sprintf("%.1f %d %d", hit.TestStaticScore, len(hit.TestImported),
+			Info: fmt.Sprintf("%d %d", len(hit.TestImported),
 				hit.StarCount),
 		})
 	}
