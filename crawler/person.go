@@ -19,8 +19,10 @@ var (
 )
 
 func schedulePerson(id string, sTime time.Time) error {
-	var ent gcse.CrawlingEntry
-	ent.ScheduleTime = sTime
+	ent := gcse.CrawlingEntry{
+		ScheduleTime: sTime,
+		Version: gcse.CrawlerVersion,
+	}
 
 	cPersonDB.Put(id, ent)
 
