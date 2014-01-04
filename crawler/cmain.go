@@ -7,14 +7,14 @@ import (
 	"log"
 	"runtime"
 	"time"
-	
+
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/gddo/doc"
 	"github.com/daviddengcn/sophie"
 )
 
 var (
-	AppStopTime   time.Time
+	AppStopTime time.Time
 )
 
 func init() {
@@ -79,51 +79,50 @@ func (crawlerMapper) NewVal() sophie.Sophier {
 
 func main() {
 	log.Println("crawler started...")
-	
+
 	CrawlerDBPath := gcse.DataRoot.Join(gcse.FnCrawlerDB)
-	fpDataRoot := sophie.FsPath {
-		Fs: sophie.LocalFS,
+	fpDataRoot := sophie.FsPath{
+		Fs:   sophie.LocalFS,
 		Path: gcse.DataRoot.S(),
 	}
-	
+
 	cPackageDB = gcse.NewMemDB(CrawlerDBPath, gcse.KindPackage)
 	cPersonDB = gcse.NewMemDB(CrawlerDBPath, gcse.KindPerson)
-	
+
 	fpDocs := fpDataRoot.Join(gcse.FnDocs)
 	if err := loadAllDocsPkgs(sophie.KVDirInput(fpDocs)); err != nil {
 		log.Fatalf("loadAllDocsPkgs: %v", err)
 	}
 	log.Printf("%d docs loaded!", len(allDocsPkgs))
-	
 
 	AppStopTime = time.Now().Add(gcse.CrawlerDuePerRun)
-	
+
 	//pathToCrawl := gcse.DataRoot.Join(gcse.FnToCrawl)
 	fpCrawler := fpDataRoot.Join(gcse.FnCrawlerDB)
 	fpToCrawl := fpDataRoot.Join(gcse.FnToCrawl)
-	
+
 	httpClient := gcse.GenHttpClient("")
-	
+
 	fpNewDocs := fpCrawler.Join(gcse.FnNewDocs)
 	fpNewDocs.Remove()
-	
+
 	pkgEnd := make(chan error, 1)
 	go crawlPackages(httpClient, fpToCrawl.Join(gcse.FnPackage), fpNewDocs,
 		pkgEnd)
-	
+
 	psnEnd := make(chan error, 1)
 	go crawlPersons(httpClient, fpToCrawl.Join(gcse.FnPerson), psnEnd)
-	
-	errPkg, errPsn := <- pkgEnd, <- psnEnd
+
+	errPkg, errPsn := <-pkgEnd, <-psnEnd
 	if errPkg != nil || errPsn != nil {
 		log.Fatalf("Some job may failed, package: %v, person: %v",
 			errPkg, errPsn)
 	}
-	
-	if err := processImports(); err !=  nil {
+
+	if err := processImports(); err != nil {
 		log.Printf("processImports failed: %v", err)
 	}
-	
+
 	syncDatabases()
 	log.Println("crawler stopped...")
 }

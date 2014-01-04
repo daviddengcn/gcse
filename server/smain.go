@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	
+
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/go-villa"
@@ -29,11 +29,11 @@ func Markdown(templ string) template.HTML {
 
 func init() {
 	log.SetFlags(log.LstdFlags | log.Lmicroseconds)
-	
+
 	templates = template.Must(template.New("templates").Funcs(template.FuncMap{
 		"markdown": Markdown,
 	}).ParseGlob(gcse.ServerRoot.Join(`web/*`).S()))
-	
+
 	http.Handle("/css/", http.StripPrefix("/css/",
 		http.FileServer(http.Dir(gcse.ServerRoot.Join("css").S()))))
 	http.Handle("/images/", http.StripPrefix("/images/",
@@ -321,7 +321,7 @@ func pageSearch(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	
+
 	showResults := showSearchResults(results, tokens,
 		Range{(p - 1) * itemsPerPage, itemsPerPage})
 	totalPages := (showResults.TotalEntries + itemsPerPage - 1) / itemsPerPage
@@ -417,11 +417,11 @@ func pageView(w http.ResponseWriter, r *http.Request) {
 			StaticRank    int
 			ShowReadme    bool
 		}{
-			HitInfo:    doc,
-			DescHTML:   template.HTML(descHTML),
+			HitInfo:       doc,
+			DescHTML:      template.HTML(descHTML),
 			TotalDocCount: docCount,
-			StaticRank: doc.StaticRank + 1,
-			ShowReadme: showReadme,
+			StaticRank:    doc.StaticRank + 1,
+			ShowReadme:    showReadme,
 		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
@@ -448,7 +448,7 @@ func ApiContent(w http.ResponseWriter, code int, obj interface{}, callback strin
 		_, err := w.Write(JSon(obj))
 		return err
 	}
-	
+
 	w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
 	/*
 		<callback>(<code>, <obj(JSON)>);
@@ -480,24 +480,24 @@ func pageApi(w http.ResponseWriter, r *http.Request) {
 	switch action {
 	case "package":
 		id := r.FormValue("id")
-		
+
 		var doc gcse.HitInfo
 		if !findPackage(id, &doc) {
 			ApiContent(w, http.StatusNotFound,
 				fmt.Sprintf("Package %s not found!", id), callback)
 			return
 		}
-		
+
 		ApiContent(w, http.StatusOK, struct {
-			Package string
-			Name string
-			StarCount int
-			Synopsis string
+			Package     string
+			Name        string
+			StarCount   int
+			Synopsis    string
 			Description string
-			Imported []string
-			Imports []string
-			ProjectURL string
-			StaticRank int
+			Imported    []string
+			Imports     []string
+			ProjectURL  string
+			StaticRank  int
 		}{
 			doc.Package,
 			doc.Name,
@@ -509,7 +509,7 @@ func pageApi(w http.ResponseWriter, r *http.Request) {
 			doc.ProjectURL,
 			doc.StaticRank + 1,
 		}, callback)
-		
+
 	case "tops":
 		N, _ := strconv.Atoi(r.FormValue("len"))
 		if N < 20 {
@@ -518,7 +518,7 @@ func pageApi(w http.ResponseWriter, r *http.Request) {
 			N = 100
 		}
 		ApiContent(w, http.StatusOK, statTops(N), callback)
-		
+
 	case "packages":
 		indexDB := indexDBBox.Get().(*index.TokenSetSearcher)
 		var pkgs []string
@@ -527,12 +527,12 @@ func pageApi(w http.ResponseWriter, r *http.Request) {
 			indexDB.Search(nil, func(docID int32, data interface{}) error {
 				doc := data.(gcse.HitInfo)
 				pkgs = append(pkgs, doc.Package)
-				
+
 				return nil
 			})
 		}
 		ApiContent(w, http.StatusOK, pkgs, callback)
-		
+
 	default:
 		ApiContent(w, http.StatusBadRequest,
 			fmt.Sprintf("Unknown action: %s", action), callback)

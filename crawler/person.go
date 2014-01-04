@@ -5,17 +5,17 @@ import (
 	"math/rand"
 	"net/http"
 	"time"
-	
+
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/sophie"
 )
 
 const (
-	DefaultPersonAge  = 10 * 24 * time.Hour
+	DefaultPersonAge = 10 * 24 * time.Hour
 )
 
 var (
-	cPersonDB  *gcse.MemDB
+	cPersonDB *gcse.MemDB
 )
 
 func schedulePerson(id string, sTime time.Time) error {
@@ -27,7 +27,6 @@ func schedulePerson(id string, sTime time.Time) error {
 	log.Printf("Schedule person %s to %v", id, sTime)
 	return nil
 }
-
 
 func appendPerson(site, username string) bool {
 	id := gcse.IdOfPerson(site, username)
@@ -45,9 +44,9 @@ func appendPerson(site, username string) bool {
 
 type PersonCrawler struct {
 	crawlerMapper
-	
-	part int
-	failCount int
+
+	part       int
+	failCount  int
 	httpClient *http.Client
 }
 
@@ -62,16 +61,16 @@ func pushPerson(p *gcse.Person) {
 
 // OnlyMapper.Map
 func (pc *PersonCrawler) Map(key, val sophie.SophieWriter,
-		c []sophie.Collector) error {
+	c []sophie.Collector) error {
 	if time.Now().After(AppStopTime) {
 		log.Printf("Timeout(key = %v), PersonCrawler part %d returns EOM", key, pc.part)
 		return sophie.EOM
 	}
-	
+
 	id := string(*key.(*sophie.RawString))
 	// ent := val.(*gcse.CrawlingEntry)
 	log.Printf("Crawling person %v\n", id)
-	
+
 	p, err := gcse.CrawlPerson(pc.httpClient, id)
 	if err != nil {
 		pc.failCount++
@@ -116,16 +115,16 @@ func crawlPersons(httpClient *http.Client, fpToCrawlPsn sophie.FsPath, end chan 
 			Source: []sophie.Input{
 				sophie.KVDirInput(fpToCrawlPsn),
 			},
-			
+
 			MapFactory: sophie.OnlyMapperFactoryFunc(
-			func(src, part int) sophie.OnlyMapper {
-				return &PersonCrawler{
-					part: part,
-					httpClient: httpClient,
-				}
-			}),
+				func(src, part int) sophie.OnlyMapper {
+					return &PersonCrawler{
+						part:       part,
+						httpClient: httpClient,
+					}
+				}),
 		}
-		
+
 		if err := job.Run(); err != nil {
 			log.Printf("crawlPersons: job.Run failed: %v", err)
 			return err

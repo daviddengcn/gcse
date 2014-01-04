@@ -92,14 +92,14 @@ func search(q string) (*SearchResult, villa.StrSet, error) {
 	if indexDB == nil {
 		return &SearchResult{}, tokens, nil
 	}
-	
+
 	var hits []*Hit
-	
+
 	N := indexDB.DocCount()
 	Df := func(token string) int {
 		return len(indexDB.TokenDocList(gcse.IndexTextField, token))
 	}
-	
+
 	_, _ = N, Df
 
 	indexDB.Search(map[string]villa.StrSet{gcse.IndexTextField: tokens},

@@ -3,11 +3,11 @@ package main
 import (
 	"encoding/json"
 	"unicode/utf8"
-	
+
 	"github.com/daviddengcn/go-villa"
 )
 
-func JSon(o interface{})[]byte {
+func JSon(o interface{}) []byte {
 	bts, _ := json.Marshal(o)
 	return bts
 }
@@ -26,6 +26,6 @@ func FilterFunc(s string, f func(r rune) bool) string {
 			return string(buf)
 		}
 	}
-	
+
 	return s
 }

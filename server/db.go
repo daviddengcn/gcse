@@ -67,7 +67,7 @@ func inProjects(projs villa.StrSet, pkg string) bool {
 		}
 		pkg = pkg[:p]
 	}
-	
+
 	return false
 }
 
@@ -91,7 +91,7 @@ func statTops(N int) []StatList {
 	}, N)
 
 	sites := make(map[string]int)
-		
+
 	indexDB.Search(nil, func(docID int32, data interface{}) error {
 		hit := data.(gcse.HitInfo)
 		hit.Name = packageShowName(hit.Name, hit.Package)
@@ -103,7 +103,7 @@ func statTops(N int) []StatList {
 				tssProjects.Put(hit.Package)
 			}
 		}
-		
+
 		if len(hit.TestImported) > 0 {
 			topTestStatic.Append(hit)
 		}
@@ -140,8 +140,8 @@ func statTops(N int) []StatList {
 		tlTestStatic.Items = append(tlTestStatic.Items, StatItem{
 			Name:    hit.Name,
 			Package: hit.Package,
-			Info:    fmt.Sprintf("%.1f %d %d", hit.TestStaticScore, len(hit.TestImported),
-						hit.StarCount),
+			Info: fmt.Sprintf("%.1f %d %d", hit.TestStaticScore, len(hit.TestImported),
+				hit.StarCount),
 		})
 	}
 

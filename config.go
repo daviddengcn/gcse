@@ -76,7 +76,7 @@ var (
 	// configures of crawler
 	CrawlByGodocApi   = true
 	CrawlGithubUpdate = true
-	CrawlerDuePerRun = 1 * time.Hour
+	CrawlerDuePerRun  = 1 * time.Hour
 
 	/*
 		Increase this to ignore etag of last versions to crawl and parse all

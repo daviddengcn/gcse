@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 	"runtime"
-	
+
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/sophie"
 )
@@ -42,11 +42,11 @@ func doIndex() bool {
 
 	runtime.GC()
 	gcse.DumpMemStats()
-	
+
 	log.Printf("Indexing to %v ...", idxSegm)
 
 	fpDocDB := sophie.LocalFsPath(gcse.DocsDBPath.S())
-	
+
 	ts, err := gcse.Index(sophie.KVDirInput(fpDocDB))
 	if err != nil {
 		log.Printf("Indexing failed: %v", err)

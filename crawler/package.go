@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
-	
+
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/gddo/doc"
 	"github.com/daviddengcn/go-villa"
@@ -18,7 +18,7 @@ const (
 )
 
 var (
-	cPackageDB *gcse.MemDB
+	cPackageDB  *gcse.MemDB
 	allDocsPkgs villa.StrSet
 )
 
@@ -111,38 +111,37 @@ func packageToDoc(p *gcse.Package) gcse.DocInfo {
 	}
 
 	schedulePackageNextCrawl(d.Package, p.Etag)
-	
+
 	return d
 }
 
-
 type PackageCrawler struct {
 	crawlerMapper
-	
-	part int
-	failCount int
+
+	part       int
+	failCount  int
 	httpClient *http.Client
 }
 
 // OnlyMapper.Map
 func (pc *PackageCrawler) Map(key, val sophie.SophieWriter,
-		c []sophie.Collector) error {
+	c []sophie.Collector) error {
 	if time.Now().After(AppStopTime) {
 		log.Printf("Timeout(key = %v), PackageCrawler part %d returns EOM", key, pc.part)
 		return sophie.EOM
 	}
-						
+
 	pkg := string(*key.(*sophie.RawString))
 	ent := val.(*gcse.CrawlingEntry)
 	log.Printf("Crawling package %v\n", pkg)
-	
+
 	p, err := gcse.CrawlPackage(pc.httpClient, pkg, ent.Etag)
 	_ = p
 	if err != nil && err != gcse.ErrPackageNotModifed {
 		log.Printf("Crawling pkg %s failed: %v", pkg, err)
 		if gcse.IsBadPackage(err) {
 			// a wrong path
-			nda := gcse.NewDocAction {
+			nda := gcse.NewDocAction{
 				Action: gcse.NDA_DEL,
 			}
 			c[0].Collect(sophie.RawString(pkg), &nda)
@@ -150,16 +149,16 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter,
 			log.Printf("Remove wrong package %s", pkg)
 		} else {
 			pc.failCount++
-	
+
 			schedulePackage(pkg, time.Now().Add(12*time.Hour), ent.Etag)
-	
+
 			if pc.failCount >= 10 {
 				durToSleep := 10 * time.Minute
 				if time.Now().Add(durToSleep).After(AppStopTime) {
 					log.Printf("Timeout(key = %v), part %d returns EOM", key, pc.part)
 					return sophie.EOM
 				}
-	
+
 				log.Printf("Last ten crawling packages failed, sleep for a while...(current: %s)",
 					pkg)
 				time.Sleep(durToSleep)
@@ -168,7 +167,7 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter,
 		}
 		return nil
 	}
-	
+
 	pc.failCount = 0
 	if err == gcse.ErrPackageNotModifed {
 		// TODO crawling stars for unchanged project
@@ -176,11 +175,11 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter,
 		schedulePackageNextCrawl(pkg, ent.Etag)
 		return nil
 	}
-	
+
 	log.Printf("Crawled package %s success!", pkg)
-	
-	nda := gcse.NewDocAction {
-		Action: gcse.NDA_UPDATE,
+
+	nda := gcse.NewDocAction{
+		Action:  gcse.NDA_UPDATE,
 		DocInfo: packageToDoc(p),
 	}
 	c[0].Collect(sophie.RawString(pkg), &nda)
@@ -198,20 +197,20 @@ func crawlPackages(httpClient *http.Client, fpToCrawlPkg, fpOutNewDocs sophie.Fs
 			Source: []sophie.Input{
 				sophie.KVDirInput(fpToCrawlPkg),
 			},
-			
+
 			MapFactory: sophie.OnlyMapperFactoryFunc(
-			func(src, part int) sophie.OnlyMapper {
-				return &PackageCrawler{
-					part: part,
-					httpClient: httpClient,
-				}
-			}),
-			
+				func(src, part int) sophie.OnlyMapper {
+					return &PackageCrawler{
+						part:       part,
+						httpClient: httpClient,
+					}
+				}),
+
 			Dest: []sophie.Output{
 				outNewDocs,
 			},
 		}
-		
+
 		if err := job.Run(); err != nil {
 			log.Printf("crawlPackages: job.Run failed: %v", err)
 			return err
