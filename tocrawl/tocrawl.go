@@ -56,7 +56,8 @@ func generateCrawlEntries(db *gcse.MemDB, hostFromID func(id string) string,
 			return nil
 		}
 
-		if ent.ScheduleTime.After(now) {
+		if ent.Version == gcse.CrawlerVersion &&
+			ent.ScheduleTime.After(now) {
 			return nil
 		}
 
