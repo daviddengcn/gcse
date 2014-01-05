@@ -99,7 +99,8 @@ func statTops(N int) []StatList {
 
 		// assuming all packages has been sorted by static-scores.
 		if len(topStaticScores) < N {
-			if orgName != "" && orgName != "main" &&
+			if len(hit.Imported) > 0 &&
+				orgName != "" && orgName != "main" &&
 				!inProjects(tssProjects, hit.ProjectURL) {
 				topStaticScores = append(topStaticScores, hit)
 				tssProjects.Put(hit.ProjectURL)
