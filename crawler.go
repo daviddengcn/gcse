@@ -532,6 +532,36 @@ func (nda *NewDocAction) ReadFrom(r sophie.Reader, l int) error {
 	return nda.DocInfo.ReadFrom(r, -1)
 }
 
+const (
+	godocApiUrl = "http://api.godoc.org/packages"
+)
+
+// FetchAllPackagesInGodoc fetches the list of all packages on godoc.org
+func FetchAllPackagesInGodoc(httpClient *http.Client) ([]string, error) {
+	resp, err := httpClient.Get(godocApiUrl)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != 200 {
+		return nil, errors.New(fmt.Sprintf("StatusCode: %d", resp.StatusCode))
+	}
+	defer resp.Body.Close()
+
+	var results map[string][]map[string]string
+	dec := json.NewDecoder(resp.Body)
+
+	if err := dec.Decode(&results); err != nil {
+		return nil, err
+	}
+
+	list := make([]string, 0, len(results["results"]))
+	for _, res := range results["results"] {
+		list = append(list, res["path"])
+	}
+
+	return list, nil
+}
+
 func init() {
 	gob.RegisterName("main.CrawlingEntry", CrawlingEntry{})
 }

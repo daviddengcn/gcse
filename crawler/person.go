@@ -14,35 +14,6 @@ const (
 	DefaultPersonAge = 10 * 24 * time.Hour
 )
 
-var (
-	cPersonDB *gcse.MemDB
-)
-
-func schedulePerson(id string, sTime time.Time) error {
-	ent := gcse.CrawlingEntry{
-		ScheduleTime: sTime,
-		Version: gcse.CrawlerVersion,
-	}
-
-	cPersonDB.Put(id, ent)
-
-	log.Printf("Schedule person %s to %v", id, sTime)
-	return nil
-}
-
-func appendPerson(site, username string) bool {
-	id := gcse.IdOfPerson(site, username)
-
-	var ent gcse.CrawlingEntry
-	exists := cPersonDB.Get(id, &ent)
-	if exists {
-		// already scheduled
-		// log.Printf("  [appendPerson] Person %s was scheduled to %v", id, ent.ScheduleTime)
-		return false
-	}
-
-	return schedulePerson(id, time.Now()) == nil
-}
 
 type PersonCrawler struct {
 	crawlerMapper
@@ -57,7 +28,7 @@ func pushPerson(p *gcse.Person) {
 		appendPackage(pkg)
 	}
 
-	schedulePerson(p.Id, time.Now().Add(time.Duration(
+	cDB.SchedulePerson(p.Id, time.Now().Add(time.Duration(
 		float64(DefaultPersonAge)*(1+(rand.Float64()-0.5)*0.2))))
 }
 
@@ -78,7 +49,7 @@ func (pc *PersonCrawler) Map(key, val sophie.SophieWriter,
 		pc.failCount++
 		log.Printf("Crawling person %s failed: %v", id, err)
 
-		schedulePerson(id, time.Now().Add(12*time.Hour))
+		cDB.SchedulePerson(id, time.Now().Add(12*time.Hour))
 
 		if pc.failCount >= 10 {
 			durToSleep := 10 * time.Minute

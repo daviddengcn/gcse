@@ -10,8 +10,7 @@ import (
 )
 
 var (
-	cPackageDB *gcse.MemDB
-	cPersonDB  *gcse.MemDB
+	cDB *gcse.CrawlerDB
 )
 
 func loadPackageUpdateTimes(fpDocs sophie.FsPath) (map[string]time.Time, error) {
@@ -90,11 +89,8 @@ func generateCrawlEntries(db *gcse.MemDB, hostFromID func(id string) string,
 func syncDatabases() {
 	gcse.DumpMemStats()
 	log.Printf("Synchronizing databases to disk...")
-	if err := cPackageDB.Sync(); err != nil {
-		log.Fatalf("cPackageDB.Sync failed: %v", err)
-	}
-	if err := cPersonDB.Sync(); err != nil {
-		log.Fatalf("cPersonDB.Sync failed: %v", err)
+	if err := cDB.Sync(); err != nil {
+		log.Fatalf("cdb.Sync() failed: %v", err)
 	}
 	gcse.DumpMemStats()
 	runtime.GC()
@@ -103,29 +99,48 @@ func syncDatabases() {
 
 func main() {
 	log.Println("Running tocrawl tool, to generate crawling list")
-	cPackageDB = gcse.NewMemDB(gcse.CrawlerDBPath, gcse.KindPackage)
-	cPersonDB = gcse.NewMemDB(gcse.CrawlerDBPath, gcse.KindPerson)
+	// Load CrawlerDB
+	cDB = gcse.LoadCrawlerDB()
 
-	if gcse.CrawlGithubUpdate {
+	if gcse.CrawlGithubUpdate || gcse.CrawlByGodocApi {
+		// load pkgUTs
 		pkgUTs, err := loadPackageUpdateTimes(
 			sophie.LocalFsPath(gcse.DocsDBPath.S()))
 		if err != nil {
 			log.Fatalf("loadPackageUpdateTimes failed: %v", err)
 		}
-
-		touchByGithubUpdates(pkgUTs)
+		
+		if gcse.CrawlGithubUpdate {
+			touchByGithubUpdates(pkgUTs)
+		}
+		
+		if gcse.CrawlByGodocApi {
+			httpClient := gcse.GenHttpClient("")
+			pkgs, err := gcse.FetchAllPackagesInGodoc(httpClient)
+			if err != nil {
+				log.Fatalf("FetchAllPackagesInGodoc failed: %v", err)
+			}
+			log.Printf("FetchAllPackagesInGodoc returns %d entries", len(pkgs))
+			for _, pkg := range pkgs {
+				cDB.AppendPackage(pkg, func(pkg string) bool {
+					_, ok := pkgUTs[pkg]
+					return ok
+				})
+			}
+		}
 		syncDatabases()
 	}
+	
 
-	log.Printf("Package DB: %d entries", cPackageDB.Count())
-	log.Printf("Person DB: %d entries", cPersonDB.Count())
+	log.Printf("Package DB: %d entries", cDB.PackageDB.Count())
+	log.Printf("Person DB: %d entries", cDB.PersonDB.Count())
 
 	pathToCrawl := gcse.DataRoot.Join(gcse.FnToCrawl)
 
 	kvPackage := sophie.KVDirOutput(sophie.LocalFsPath(
 		pathToCrawl.Join(gcse.FnPackage).S()))
 	kvPackage.Clean()
-	if err := generateCrawlEntries(cPackageDB, gcse.HostOfPackage, kvPackage); err != nil {
+	if err := generateCrawlEntries(cDB.PackageDB, gcse.HostOfPackage, kvPackage); err != nil {
 		log.Fatalf("generateCrawlEntries %v failed: %v", kvPackage.Path, err)
 	}
 
@@ -134,7 +149,7 @@ func main() {
 		Path: pathToCrawl.Join(gcse.FnPerson).S(),
 	}
 	kvPerson.Clean()
-	if err := generateCrawlEntries(cPersonDB, func(id string) string {
+	if err := generateCrawlEntries(cDB.PersonDB, func(id string) string {
 		site, _ := gcse.ParsePersonId(id)
 		return site
 	}, kvPerson); err != nil {

@@ -226,7 +226,7 @@ func packageShowName(name, pkg string) string {
 
 	prj := gcse.ProjectOfPackage(pkg)
 
-	if prj == "main" {
+	if name == "main" {
 		return "main - " + prj
 	}
 

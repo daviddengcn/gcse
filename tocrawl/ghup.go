@@ -9,19 +9,8 @@ import (
 	"github.com/daviddengcn/gddo/doc"
 )
 
-func schedulePackage(pkg string, sTime time.Time, etag string) error {
-	ent := gcse.CrawlingEntry{
-		ScheduleTime: sTime,
-		Version:      gcse.CrawlerVersion,
-		Etag:         etag,
-	}
-
-	cPackageDB.Put(pkg, ent)
-
-	log.Printf("Schedule package %s to %v", pkg, sTime)
-	return nil
-}
-
+// touchPackage forces a package to update if it was not crawled before a
+// specific time.
 func touchPackage(pkg string, crawledBefore time.Time,
 	pkgUTs map[string]time.Time) {
 	pkg = strings.TrimSpace(pkg)
@@ -36,7 +25,7 @@ func touchPackage(pkg string, crawledBefore time.Time,
 	}
 
 	// set Etag to "" to force updating
-	schedulePackage(pkg, time.Now(), "")
+	cDB.SchedulePackage(pkg, time.Now(), "")
 }
 
 func touchByGithubUpdates(pkgUTs map[string]time.Time) {

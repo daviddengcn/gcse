@@ -94,13 +94,15 @@ func statTops(N int) []StatList {
 
 	indexDB.Search(nil, func(docID int32, data interface{}) error {
 		hit := data.(gcse.HitInfo)
+		orgName := hit.Name
 		hit.Name = packageShowName(hit.Name, hit.Package)
 
 		// assuming all packages has been sorted by static-scores.
 		if len(topStaticScores) < N {
-			if !inProjects(tssProjects, hit.Package) {
+			if orgName != "" && orgName != "main" &&
+				!inProjects(tssProjects, hit.ProjectURL) {
 				topStaticScores = append(topStaticScores, hit)
-				tssProjects.Put(hit.Package)
+				tssProjects.Put(hit.ProjectURL)
 			}
 		}
 

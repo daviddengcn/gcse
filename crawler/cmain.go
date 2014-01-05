@@ -15,6 +15,7 @@ import (
 
 var (
 	AppStopTime time.Time
+	cDB* gcse.CrawlerDB
 )
 
 func init() {
@@ -26,11 +27,8 @@ func init() {
 func syncDatabases() {
 	gcse.DumpMemStats()
 	log.Printf("Synchronizing databases to disk...")
-	if err := cPackageDB.Sync(); err != nil {
-		log.Fatalf("cPackageDB.Sync failed: %v", err)
-	}
-	if err := cPersonDB.Sync(); err != nil {
-		log.Fatalf("cPersonDB.Sync failed: %v", err)
+	if err := cDB.Sync(); err != nil {
+		log.Fatalf("cdb.Sync() failed: %v", err)
 	}
 	gcse.DumpMemStats()
 	runtime.GC()
@@ -79,15 +77,14 @@ func (crawlerMapper) NewVal() sophie.Sophier {
 
 func main() {
 	log.Println("crawler started...")
+	
+	// Load CrawlerDB
+	cDB = gcse.LoadCrawlerDB()
 
-	CrawlerDBPath := gcse.DataRoot.Join(gcse.FnCrawlerDB)
 	fpDataRoot := sophie.FsPath{
 		Fs:   sophie.LocalFS,
 		Path: gcse.DataRoot.S(),
 	}
-
-	cPackageDB = gcse.NewMemDB(CrawlerDBPath, gcse.KindPackage)
-	cPersonDB = gcse.NewMemDB(CrawlerDBPath, gcse.KindPerson)
 
 	fpDocs := fpDataRoot.Join(gcse.FnDocs)
 	if err := loadAllDocsPkgs(sophie.KVDirInput(fpDocs)); err != nil {

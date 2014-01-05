@@ -18,49 +18,18 @@ const (
 )
 
 var (
-	cPackageDB  *gcse.MemDB
 	allDocsPkgs villa.StrSet
 )
 
-func schedulePackage(pkg string, sTime time.Time, etag string) error {
-	ent := gcse.CrawlingEntry{
-		ScheduleTime: sTime,
-		Version:      gcse.CrawlerVersion,
-		Etag:         etag,
-	}
-
-	cPackageDB.Put(pkg, ent)
-
-	log.Printf("Schedule package %s to %v", pkg, sTime)
-	return nil
-}
-
 // schedule a package for next crawling cycle, commonly after a successful update.
 func schedulePackageNextCrawl(pkg string, etag string) {
-	schedulePackage(pkg, time.Now().Add(time.Duration(
+	cDB.SchedulePackage(pkg, time.Now().Add(time.Duration(
 		float64(DefaultPackageAge)*(1+(rand.Float64()-0.5)*0.2))), etag)
 
 }
 
 func appendPackage(pkg string) {
-	pkg = strings.TrimFunc(strings.TrimSpace(pkg), func(r rune) bool {
-		return r > rune(128)
-	})
-	if !doc.IsValidRemotePath(pkg) {
-		//log.Printf("  [appendPackage] Not a valid remote path: %s", pkg)
-		return
-	}
-
-	var ent gcse.CrawlingEntry
-	exists := cPackageDB.Get(pkg, &ent)
-	if exists {
-		if allDocsPkgs.In(pkg) {
-			return
-		}
-	}
-
-	// if the package doesn't exist in docDB, Etag is discarded
-	schedulePackage(pkg, time.Now(), "")
+	cDB.AppendPackage(pkg, allDocsPkgs.In)
 }
 
 func packageToDoc(p *gcse.Package) gcse.DocInfo {
@@ -94,9 +63,9 @@ func packageToDoc(p *gcse.Package) gcse.DocInfo {
 
 	// append new authors
 	if strings.HasPrefix(d.Package, "github.com/") {
-		appendPerson("github.com", d.Author)
+		cDB.AppendPerson("github.com", d.Author)
 	} else if strings.HasPrefix(d.Package, "bitbucket.org/") {
-		appendPerson("bitbucket.org", d.Author)
+		cDB.AppendPerson("bitbucket.org", d.Author)
 	}
 
 	for _, imp := range d.Imports {
@@ -149,12 +118,12 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter,
 				Action: gcse.NDA_DEL,
 			}
 			c[0].Collect(sophie.RawString(pkg), &nda)
-			cPackageDB.Delete(pkg)
+			cDB.PackageDB.Delete(pkg)
 			log.Printf("Remove wrong package %s", pkg)
 		} else {
 			pc.failCount++
 
-			schedulePackage(pkg, time.Now().Add(12*time.Hour), ent.Etag)
+			cDB.SchedulePackage(pkg, time.Now().Add(12*time.Hour), ent.Etag)
 
 			if pc.failCount >= 10 {
 				durToSleep := 10 * time.Minute
