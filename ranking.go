@@ -113,7 +113,7 @@ func CalcTestStaticScore(doc *HitInfo) float64 {
 
 	project := ProjectOfPackage(doc.Package)
 
-	s += effectiveImported(doc.TestImported, author, project)
+	s += effectiveImported(doc.TestImported, author, project)*5
 
 	desc := strings.TrimSpace(doc.Description)
 	if len(desc) > 0 {
