@@ -133,6 +133,10 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter,
 
 	pkg := string(*key.(*sophie.RawString))
 	ent := val.(*gcse.CrawlingEntry)
+	if ent.Version < gcse.CrawlerVersion {
+		// if gcse.CrawlerVersion is larger than Version, Etag is ignored.
+		ent.Etag = ""
+	}
 	log.Printf("Crawling package %v\n", pkg)
 
 	p, err := gcse.CrawlPackage(pc.httpClient, pkg, ent.Etag)
