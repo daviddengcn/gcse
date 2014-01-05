@@ -89,8 +89,9 @@ var (
 			     from it
 			3    Add exported tokens to indexes
 			4    Move TestImports/XTestImports out of Imports, to TestImports
+			4    A bug of checking CrawlerVersion is fixed
 	*/
-	CrawlerVersion = 4
+	CrawlerVersion = 5
 )
 
 func init() {
