@@ -98,7 +98,11 @@ func CalcStaticScore(doc *HitInfo) float64 {
 	if starCount < 0 {
 		starCount = 0
 	}
-	s += math.Sqrt(float64(starCount)) * 0.5
+	frac := 1.;
+	if len(doc.Imported) + len(doc.TestImported) > 0 {
+		frac = float64(len(doc.Imported)) / float64(len(doc.Imported) + len(doc.TestImported))
+	}
+	s += math.Sqrt(float64(starCount) * frac) * 0.5
 
 	return s
 }
@@ -137,7 +141,11 @@ func CalcTestStaticScore(doc *HitInfo) float64 {
 	if starCount < 0 {
 		starCount = 0
 	}
-	s += math.Sqrt(float64(starCount)) * 0.5
+	frac := 1.;
+	if len(doc.Imported) + len(doc.TestImported) > 0 {
+		frac = float64(len(doc.TestImported)) / float64(len(doc.Imported) + len(doc.TestImported))
+	}
+	s += math.Sqrt(float64(starCount) * frac) * 0.5
 
 	return s
 }
