@@ -117,7 +117,7 @@ func CalcTestStaticScore(doc *HitInfo) float64 {
 
 	project := ProjectOfPackage(doc.Package)
 
-	s += effectiveImported(doc.TestImported, author, project) * 5
+	s += effectiveImported(doc.TestImported, author, project)
 
 	desc := strings.TrimSpace(doc.Description)
 	if len(desc) > 0 {
@@ -168,7 +168,8 @@ func matchToken(token string, text string, tokens villa.StrSet) bool {
 	return false
 }
 
-func CalcMatchScore(doc *HitInfo, tokens villa.StrSet, N int, Df func(token string) int) float64 {
+func CalcMatchScore(doc *HitInfo, tokens villa.StrSet, N int,
+	Df func(token string) int) float64 {
 	if len(tokens) == 0 {
 		return 1.
 	}

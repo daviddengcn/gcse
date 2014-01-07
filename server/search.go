@@ -83,6 +83,13 @@ func loadIndexLoop() {
 	}
 }
 
+func maxF(a, b float64) float64 {
+	if a > b {
+		return a
+	}
+	return b
+}
+
 func search(q string) (*SearchResult, villa.StrSet, error) {
 	tokens := gcse.AppendTokens(nil, []byte(q))
 	log.Printf("tokens for query %s: %v", q, tokens)
@@ -110,7 +117,8 @@ func search(q string) (*SearchResult, villa.StrSet, error) {
 			}
 
 			hit.MatchScore = gcse.CalcMatchScore(&hitInfo, tokens, N, Df)
-			hit.Score = hit.StaticScore * hit.MatchScore
+			hit.Score = maxF(hit.StaticScore, hit.TestStaticScore) *
+				hit.MatchScore
 
 			hits = append(hits, hit)
 			return nil
