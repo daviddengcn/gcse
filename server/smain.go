@@ -40,6 +40,8 @@ func init() {
 		http.FileServer(http.Dir(gcse.ServerRoot.Join("images").S()))))
 	http.Handle("/robots.txt", http.FileServer(http.Dir(
 		gcse.ServerRoot.Join("static").S())))
+	http.Handle("/clippy.swf", http.FileServer(http.Dir(
+		gcse.ServerRoot.Join("static").S())))
 
 	http.HandleFunc("/add", pageAdd)
 	http.HandleFunc("/search", pageSearch)

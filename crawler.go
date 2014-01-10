@@ -99,6 +99,7 @@ func HostOfPackage(pkg string) string {
 	return u.Host
 }
 
+// core project of a packaage
 func ProjectOfPackage(pkg string) string {
 	parts := strings.Split(pkg, "/")
 	if len(parts) == 0 {
@@ -128,6 +129,41 @@ func ProjectOfPackage(pkg string) string {
 		return "tcgl"
 	}
 	return pkg
+}
+
+func FullProjectOfPackage(pkg string) string {
+	parts := strings.Split(pkg, "/")
+	if len(parts) == 0 {
+		return ""
+	}
+
+	switch parts[0] {
+	case "llamaslayers.net", "bazil.org":
+		if len(parts) > 2 {
+			parts = parts[:2]
+		}
+	case "github.com", "code.google.com", "bitbucket.org", "labix.org":
+		if len(parts) > 3 {
+			parts = parts[:3]
+		}
+	case "golanger.com":
+		return "golanger.com/golangers"
+
+	case "launchpad.net":
+		if len(parts) > 2 && strings.HasPrefix(parts[1], "~") {
+			parts = parts[:2]
+		}
+		if len(parts) > 1 {
+			parts = parts[:2]
+		}
+	case "cgl.tideland.biz":
+		return "cgl.tideland.biz/tcgl"
+	default:
+		if len(parts) > 3 {
+			parts = parts[:3]
+		}
+	}
+	return strings.Join(parts, "/")
 }
 
 // Package stores information from crawler

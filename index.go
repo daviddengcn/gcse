@@ -3,6 +3,7 @@ package gcse
 import (
 	"errors"
 	"log"
+	"time"
 
 	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/go-villa"
@@ -28,6 +29,12 @@ func Index(docDB sophie.Input) (*index.TokenSetSearcher, error) {
 	log.Printf("Generating importsDB ...")
 	importsDB := NewTokenIndexer("", "")
 	testImportsDB := NewTokenIndexer("", "")
+	// per project imported by projects
+	prjImportsDB := NewTokenIndexer("", "")
+	prjStars := make(map[string]struct {
+		StarCount   int
+		LastUpdated time.Time
+	})
 	// generate importsDB
 	for i := 0; i < docPartCnt; i++ {
 		it, err := docDB.Iterator(i)
@@ -48,6 +55,31 @@ func Index(docDB sophie.Input) (*index.TokenSetSearcher, error) {
 			importsDB.Put(string(pkg), villa.NewStrSet(docInfo.Imports...))
 			testImportsDB.Put(string(pkg),
 				villa.NewStrSet(docInfo.TestImports...))
+
+			var projects villa.StrSet
+			for _, imp := range docInfo.Imports {
+				projects.Put(FullProjectOfPackage(imp))
+			}
+			for _, imp := range docInfo.TestImports {
+				projects.Put(FullProjectOfPackage(imp))
+			}
+			prj := FullProjectOfPackage(string(pkg))
+			orgProjects := prjImportsDB.TokensOfId(prj)
+			projects.Put(orgProjects...)
+			prjImportsDB.Put(prj, projects)
+
+			// update stars
+			if cur, ok := prjStars[prj]; !ok ||
+				docInfo.LastUpdated.After(cur.LastUpdated) {
+				prjStars[prj] = struct {
+					StarCount   int
+					LastUpdated time.Time
+				}{
+					docInfo.StarCount,
+					docInfo.LastUpdated,
+				}
+			}
+
 			docCount++
 		}
 
@@ -76,6 +108,28 @@ func Index(docDB sophie.Input) (*index.TokenSetSearcher, error) {
 
 			hitInfo.Imported = importsDB.IdsOfToken(hitInfo.Package)
 			hitInfo.TestImported = testImportsDB.IdsOfToken(hitInfo.Package)
+			
+			prj := FullProjectOfPackage(hitInfo.Package)
+			impPrjsCnt := len(prjImportsDB.IdsOfToken(prj))
+			var assignedStarCount = float64(prjStars[prj].StarCount)
+			if impPrjsCnt == 0 {
+				if hitInfo.Package != prj {
+					assignedStarCount = 0
+				}
+			} else {
+				perStarCount :=
+					float64(prjStars[prj].StarCount) / float64(impPrjsCnt)
+					
+				var projects villa.StrSet
+				for _, imp := range hitInfo.Imported {
+					projects.Put(FullProjectOfPackage(imp))
+				}
+				for _, imp := range hitInfo.TestImported {
+					projects.Put(FullProjectOfPackage(imp))
+				}
+				assignedStarCount = perStarCount * float64(len(projects))
+			}
+			hitInfo.AssignedStarCount = assignedStarCount
 
 			readme := ReadmeToText(hitInfo.ReadmeFn, hitInfo.ReadmeData)
 
@@ -91,7 +145,11 @@ func Index(docDB sophie.Input) (*index.TokenSetSearcher, error) {
 
 		it.Close()
 	}
+	
+	log.Fatal("")
 
+	DumpMemStats()
+	importsDB = nil
 	DumpMemStats()
 	log.Printf("%d hits collected, sorting static-scores in descending order",
 		len(hits))
@@ -133,6 +191,5 @@ func Index(docDB sophie.Input) (*index.TokenSetSearcher, error) {
 	}
 
 	DumpMemStats()
-	importsDB = nil
 	return ts, nil
 }

@@ -146,3 +146,17 @@ func TestCrawlingEntry(t *testing.T) {
 
 	assert.StringEquals(t, "dst", dst, src)
 }
+
+func TestFullProjectOfPackage(t *testing.T) {
+	DATA := []string{
+		"github.com/daviddengcn/gcse", "github.com/daviddengcn/gcse",
+		"github.com/daviddengcn/gcse/index", "github.com/daviddengcn/gcse",
+		"code.google.com/p/go.net/websocket", "code.google.com/p/go.net",
+	}
+
+	for i := 0; i < len(DATA); i += 2 {
+		pkg, prj := DATA[i], DATA[i+1]
+		assert.Equals(t, "FullProjectOfPackage "+pkg,
+			FullProjectOfPackage(pkg), prj)
+	}
+}
