@@ -157,12 +157,15 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter,
 	}
 	c[0].Collect(sophie.RawString(pkg), &nda)
 	log.Printf("Package %s saved!", pkg)
+	
+	time.Sleep(time.Second)
 
 	return nil
 }
 
 // crawl packages, send error back to end
-func crawlPackages(httpClient *http.Client, fpToCrawlPkg, fpOutNewDocs sophie.FsPath, end chan error) {
+func crawlPackages(httpClient *http.Client, fpToCrawlPkg,
+	fpOutNewDocs sophie.FsPath, end chan error) {
 	end <- func() error {
 		outNewDocs := sophie.KVDirOutput(fpOutNewDocs)
 		outNewDocs.Clean()
