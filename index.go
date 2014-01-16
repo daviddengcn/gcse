@@ -146,8 +146,6 @@ func Index(docDB sophie.Input) (*index.TokenSetSearcher, error) {
 		it.Close()
 	}
 	
-	log.Fatal("")
-
 	DumpMemStats()
 	importsDB = nil
 	DumpMemStats()
