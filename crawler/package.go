@@ -125,7 +125,7 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter,
 
 			cDB.SchedulePackage(pkg, time.Now().Add(12*time.Hour), ent.Etag)
 
-			if pc.failCount >= 10 {
+			if pc.failCount >= 10 || strings.Contains(err.Error(), "403") {
 				durToSleep := 10 * time.Minute
 				if time.Now().Add(durToSleep).After(AppStopTime) {
 					log.Printf("Timeout(key = %v), part %d returns EOM", key, pc.part)
@@ -157,8 +157,8 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter,
 	}
 	c[0].Collect(sophie.RawString(pkg), &nda)
 	log.Printf("Package %s saved!", pkg)
-	
-	time.Sleep(time.Second)
+
+	time.Sleep(10 * time.Second)
 
 	return nil
 }

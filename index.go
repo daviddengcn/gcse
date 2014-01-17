@@ -108,7 +108,7 @@ func Index(docDB sophie.Input) (*index.TokenSetSearcher, error) {
 
 			hitInfo.Imported = importsDB.IdsOfToken(hitInfo.Package)
 			hitInfo.TestImported = testImportsDB.IdsOfToken(hitInfo.Package)
-			
+
 			prj := FullProjectOfPackage(hitInfo.Package)
 			impPrjsCnt := len(prjImportsDB.IdsOfToken(prj))
 			var assignedStarCount = float64(prjStars[prj].StarCount)
@@ -119,7 +119,7 @@ func Index(docDB sophie.Input) (*index.TokenSetSearcher, error) {
 			} else {
 				perStarCount :=
 					float64(prjStars[prj].StarCount) / float64(impPrjsCnt)
-					
+
 				var projects villa.StrSet
 				for _, imp := range hitInfo.Imported {
 					projects.Put(FullProjectOfPackage(imp))
@@ -145,7 +145,7 @@ func Index(docDB sophie.Input) (*index.TokenSetSearcher, error) {
 
 		it.Close()
 	}
-	
+
 	DumpMemStats()
 	importsDB = nil
 	DumpMemStats()

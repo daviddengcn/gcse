@@ -4,6 +4,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/daviddengcn/gcse"
@@ -13,7 +14,6 @@ import (
 const (
 	DefaultPersonAge = 10 * 24 * time.Hour
 )
-
 
 type PersonCrawler struct {
 	crawlerMapper
@@ -51,7 +51,7 @@ func (pc *PersonCrawler) Map(key, val sophie.SophieWriter,
 
 		cDB.SchedulePerson(id, time.Now().Add(12*time.Hour))
 
-		if pc.failCount >= 10 {
+		if pc.failCount >= 10 || strings.Contains(err.Error(), "403") {
 			durToSleep := 10 * time.Minute
 			if time.Now().Add(durToSleep).After(AppStopTime) {
 				log.Printf("Timeout(key = %v), PersonCrawler part %d returns EOM", key, pc.part)
@@ -70,6 +70,9 @@ func (pc *PersonCrawler) Map(key, val sophie.SophieWriter,
 	pushPerson(p)
 	log.Printf("Push person %s success", id)
 	pc.failCount = 0
+
+	time.Sleep(10 * time.Second)
+
 	return nil
 }
 

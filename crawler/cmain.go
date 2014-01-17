@@ -15,7 +15,7 @@ import (
 
 var (
 	AppStopTime time.Time
-	cDB* gcse.CrawlerDB
+	cDB         *gcse.CrawlerDB
 )
 
 func init() {
@@ -77,7 +77,7 @@ func (crawlerMapper) NewVal() sophie.Sophier {
 
 func main() {
 	log.Println("crawler started...")
-	
+
 	// Load CrawlerDB
 	cDB = gcse.LoadCrawlerDB()
 
