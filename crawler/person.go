@@ -3,10 +3,10 @@ package main
 import (
 	"log"
 	"math/rand"
-	"net/http"
 	"strings"
 	"time"
 
+	"github.com/daviddengcn/gddo/doc"
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/sophie"
 )
@@ -20,7 +20,7 @@ type PersonCrawler struct {
 
 	part       int
 	failCount  int
-	httpClient *http.Client
+	httpClient doc.HttpClient
 }
 
 func pushPerson(p *gcse.Person) {
@@ -77,7 +77,7 @@ func (pc *PersonCrawler) Map(key, val sophie.SophieWriter,
 }
 
 type PeresonCrawlerFactory struct {
-	httpClient *http.Client
+	httpClient doc.HttpClient
 }
 
 func (pcf PeresonCrawlerFactory) NewMapper(part int) sophie.OnlyMapper {
@@ -85,7 +85,7 @@ func (pcf PeresonCrawlerFactory) NewMapper(part int) sophie.OnlyMapper {
 }
 
 // crawl packages, send error back to end
-func crawlPersons(httpClient *http.Client, fpToCrawlPsn sophie.FsPath, end chan error) {
+func crawlPersons(httpClient doc.HttpClient, fpToCrawlPsn sophie.FsPath, end chan error) {
 	end <- func() error {
 		job := sophie.MapOnlyJob{
 			Source: []sophie.Input{

@@ -52,7 +52,36 @@ func ReadPackages(segm Segment) (pkgs []string, err error) {
 	return pkgs, err
 }
 
-func GenHttpClient(proxy string) *http.Client {
+type BlackRequest struct {
+	badUrls map[string]http.Response
+	client doc.HttpClient
+}
+
+func (br *BlackRequest) Do(req *http.Request) (*http.Response, error) {
+	if req.Method != "Get" {
+		return br.client.Do(req)
+	}
+	u := req.URL.String()
+	if resp, ok := br.badUrls[u]; ok {
+		log.Printf("%s was crawled with 500 error, return it directly", u)
+		r := resp
+		r.Body = villa.NewPByteSlice(nil)
+		return &resp, nil
+	}
+	resp, err := br.client.Do(req)
+	if err != nil {
+		return resp, err
+	}
+	
+	if resp.StatusCode == 500 {
+		r := *resp
+		r.Body = nil
+		br.badUrls[u] = r
+	}
+	return resp, nil
+}
+
+func GenHttpClient(proxy string) doc.HttpClient {
 	tp := &http.Transport{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true,
@@ -65,8 +94,10 @@ func GenHttpClient(proxy string) *http.Client {
 		}
 	}
 
-	return &http.Client{
-		Transport: tp,
+	return &BlackRequest {
+		client: &http.Client{
+			Transport: tp,
+		},
 	}
 }
 
@@ -205,13 +236,17 @@ func ReadmeToText(fn, data string) string {
 	return data
 }
 
-func Plusone(httpClient *http.Client, url string) (int, error) {
-	resp, err := httpClient.Post(
+func Plusone(httpClient doc.HttpClient, url string) (int, error) {
+	req, err := http.NewRequest("POST",
 		"https://clients6.google.com/rpc?key=AIzaSyCKSbrvQasunBoV16zDH9R33D88CeLr9gQ",
-		"application/json",
 		villa.NewPByteSlice([]byte(
 			`[{"method":"pos.plusones.get","id":"p","params":{"nolog":true,"id": "`+
 				url+`","source":"widget","userId":"@viewer","groupId":"@self"},"jsonrpc":"2.0","key":"p","apiVersion":"v1"}]`)))
+	if err != nil {
+		return 0, err
+	}
+    req.Header.Set("Content-Type", "application/json")
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return 0, err
 	}
@@ -234,9 +269,13 @@ func Plusone(httpClient *http.Client, url string) (int, error) {
 	return int(0.5 + v[0].Result.Metadata.GlobalCounts.Count), nil
 }
 
-func LikeButton(httpClient *http.Client, Url string) (int, error) {
-	resp, err := httpClient.Get("http://graph.facebook.com/?" +
-		url.Values{"ids": {Url}}.Encode())
+func LikeButton(httpClient doc.HttpClient, Url string) (int, error) {
+	req, err := http.NewRequest("GET", "http://graph.facebook.com/?" +
+		url.Values{"ids": {Url}}.Encode(), nil)
+	if err != nil {
+		return 0, err
+	}
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return 0, err
 	}
@@ -270,7 +309,7 @@ func fuseStars(a, b int) int {
 	return (a + b) * 3 / 4
 }
 
-func CrawlPackage(httpClient *http.Client, pkg string,
+func CrawlPackage(httpClient doc.HttpClient, pkg string,
 	etag string) (p *Package, err error) {
 	defer func() {
 		if err := recover(); err != nil {
@@ -368,7 +407,7 @@ type Person struct {
 	Packages []string
 }
 
-func CrawlPerson(httpClient *http.Client, id string) (*Person, error) {
+func CrawlPerson(httpClient doc.HttpClient, id string) (*Person, error) {
 	site, username := ParsePersonId(id)
 	switch site {
 	case "github.com":
@@ -573,15 +612,19 @@ const (
 )
 
 // FetchAllPackagesInGodoc fetches the list of all packages on godoc.org
-func FetchAllPackagesInGodoc(httpClient *http.Client) ([]string, error) {
-	resp, err := httpClient.Get(godocApiUrl)
+func FetchAllPackagesInGodoc(httpClient doc.HttpClient) ([]string, error) {
+	req, err := http.NewRequest("GET", godocApiUrl, nil)
 	if err != nil {
 		return nil, err
 	}
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
 		return nil, errors.New(fmt.Sprintf("StatusCode: %d", resp.StatusCode))
 	}
-	defer resp.Body.Close()
 
 	var results map[string][]map[string]string
 	dec := json.NewDecoder(resp.Body)

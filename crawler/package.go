@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"math/rand"
-	"net/http"
 	"strings"
 	"time"
 
@@ -21,7 +20,8 @@ var (
 	allDocsPkgs villa.StrSet
 )
 
-// schedule a package for next crawling cycle, commonly after a successful update.
+// Schedule a package for next crawling cycle, commonly after a successful
+// update.
 func schedulePackageNextCrawl(pkg string, etag string) {
 	cDB.SchedulePackage(pkg, time.Now().Add(time.Duration(
 		float64(DefaultPackageAge)*(1+(rand.Float64()-0.5)*0.2))), etag)
@@ -89,7 +89,7 @@ type PackageCrawler struct {
 
 	part       int
 	failCount  int
-	httpClient *http.Client
+	httpClient doc.HttpClient
 }
 
 // OnlyMapper.Map
@@ -164,7 +164,7 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter,
 }
 
 // crawl packages, send error back to end
-func crawlPackages(httpClient *http.Client, fpToCrawlPkg,
+func crawlPackages(httpClient doc.HttpClient, fpToCrawlPkg,
 	fpOutNewDocs sophie.FsPath, end chan error) {
 	end <- func() error {
 		outNewDocs := sophie.KVDirOutput(fpOutNewDocs)
