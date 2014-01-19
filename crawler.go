@@ -14,6 +14,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 	"unicode/utf8"
 
@@ -53,6 +54,7 @@ func ReadPackages(segm Segment) (pkgs []string, err error) {
 }
 
 type BlackRequest struct {
+	sync.RWMutex
 	badUrls map[string]http.Response
 	client doc.HttpClient
 }
@@ -62,11 +64,13 @@ func (br *BlackRequest) Do(req *http.Request) (*http.Response, error) {
 		return br.client.Do(req)
 	}
 	u := req.URL.String()
-	if resp, ok := br.badUrls[u]; ok {
-		log.Printf("%s was crawled with 500 error, return it directly", u)
-		r := resp
+	br.RLock()
+	r, ok := br.badUrls[u];
+	br.RUnlock()
+	if ok {
+		log.Printf("%s was found in 500 blacklist, return it directly", u)
 		r.Body = villa.NewPByteSlice(nil)
-		return &resp, nil
+		return &r, nil
 	}
 	resp, err := br.client.Do(req)
 	if err != nil {
@@ -74,9 +78,12 @@ func (br *BlackRequest) Do(req *http.Request) (*http.Response, error) {
 	}
 	
 	if resp.StatusCode == 500 {
+		log.Printf("Put %s into 500 blacklist", u)
 		r := *resp
 		r.Body = nil
+		br.Lock()
 		br.badUrls[u] = r
+		br.Unlock()
 	}
 	return resp, nil
 }
@@ -95,6 +102,7 @@ func GenHttpClient(proxy string) doc.HttpClient {
 	}
 
 	return &BlackRequest {
+		badUrls: make(map[string]http.Response),
 		client: &http.Client{
 			Transport: tp,
 		},
