@@ -81,8 +81,9 @@ func statTops(N int) []StatList {
 	var tssProjects villa.StrSet
 
 	topImported := NewTopN(func(a, b interface{}) int {
-		return villa.IntValueCompare(len(a.(gcse.HitInfo).Imported),
-			len(b.(gcse.HitInfo).Imported))
+		ia, ib := a.(gcse.HitInfo), b.(gcse.HitInfo)
+		return villa.IntValueCompare(len(ia.Imported) + len(ia.TestImported),
+			len(ib.Imported) + len(ib.TestImported))
 	}, N)
 
 	topTestStatic := NewTopN(func(a, b interface{}) int {
@@ -158,7 +159,7 @@ func statTops(N int) []StatList {
 		tlImported.Items = append(tlImported.Items, StatItem{
 			Name:    hit.Name,
 			Package: hit.Package,
-			Info:    fmt.Sprintf("%d", len(hit.Imported)),
+			Info:    fmt.Sprintf("%d", len(hit.Imported) + len(hit.TestImported)),
 		})
 	}
 
