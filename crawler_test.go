@@ -61,7 +61,8 @@ func TestGddo(t *testing.T) {
 	doc.SetUserAgent("Go-Code-Search-Agent")
 
 	pkg := "github.com/daviddengcn/gcse"
-	p, err := CrawlPackage(http.DefaultClient, pkg, "")
+	httpClient := GenHttpClient("")
+	p, err := CrawlPackage(httpClient, pkg, "")
 	if err != nil {
 		if strings.Index(err.Error(), "403") == -1 {
 			t.Error(err)
@@ -69,7 +70,6 @@ func TestGddo(t *testing.T) {
 	} else {
 		t.Logf("p: %+v", p.Exported)
 	}
-	//	t.Error(nil)
 }
 
 func TestDocDB(t *testing.T) {

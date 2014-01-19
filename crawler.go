@@ -60,10 +60,11 @@ type BlackRequest struct {
 }
 
 func (br *BlackRequest) Do(req *http.Request) (*http.Response, error) {
-	if req.Method != "Get" {
+	if req.Method != "GET" {
 		return br.client.Do(req)
 	}
 	u := req.URL.String()
+	log.Printf("BlackRequest.Do(GET(%v))", u)
 	br.RLock()
 	r, ok := br.badUrls[u];
 	br.RUnlock()
