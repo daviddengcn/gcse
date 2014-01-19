@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/daviddengcn/gddo/doc"
 	"github.com/daviddengcn/gcse"
+	"github.com/daviddengcn/gddo/doc"
 	"github.com/daviddengcn/sophie"
 )
 

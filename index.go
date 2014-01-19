@@ -12,6 +12,7 @@ import (
 
 const (
 	IndexTextField = "text"
+	IndexNameField = "name"
 	IndexPkgField  = "pkg"
 )
 
@@ -172,8 +173,11 @@ func Index(docDB sophie.Input) (*index.TokenSetSearcher, error) {
 		}
 		hit.StaticRank = rank
 
+		var nameTokens villa.StrSet
+		nameTokens = AppendTokens(nameTokens, []byte(hit.Name))
+
 		var tokens villa.StrSet
-		tokens = AppendTokens(tokens, []byte(hit.Name))
+		tokens.Put(nameTokens.Elements()...)
 		tokens = AppendTokens(tokens, []byte(hit.Package))
 		tokens = AppendTokens(tokens, []byte(hit.Description))
 		tokens = AppendTokens(tokens, []byte(hit.ReadmeData))
@@ -184,6 +188,7 @@ func Index(docDB sophie.Input) (*index.TokenSetSearcher, error) {
 
 		ts.AddDoc(map[string]villa.StrSet{
 			IndexTextField: tokens,
+			IndexNameField: nameTokens,
 			IndexPkgField:  villa.NewStrSet(hit.Package),
 		}, *hit)
 	}

@@ -2,9 +2,10 @@ package gcse
 
 import (
 	"bytes"
-	"github.com/daviddengcn/go-villa"
 	"math"
 	"strings"
+
+	"github.com/daviddengcn/go-villa"
 
 	//	"log"
 )
@@ -168,13 +169,22 @@ func matchToken(token string, text string, tokens villa.StrSet) bool {
 	return false
 }
 
-func CalcMatchScore(doc *HitInfo, tokens villa.StrSet, N int,
-	Df func(token string) int) float64 {
-	if len(tokens) == 0 {
+func removeHost(pkg string) string {
+	p := strings.Index(pkg, "/")
+	if p > 0 && p < len(pkg)-1 {
+		pkg = pkg[p+1:]
+	}
+	return pkg
+}
+
+func CalcMatchScore(doc *HitInfo, tokenList []string,
+	textIdfs, nameIdfs []float64) float64 {
+
+	if len(tokenList) == 0 {
 		return 1.
 	}
 
-	s := float64(0.02 * float64(len(tokens)))
+	s := float64(0.02 * float64(len(tokenList)))
 
 	filteredSyn := filterURLs([]byte(doc.Synopsis))
 	synopsis := string(bytes.ToLower(filteredSyn))
@@ -183,8 +193,9 @@ func CalcMatchScore(doc *HitInfo, tokens villa.StrSet, N int,
 	name := strings.ToLower(doc.Name)
 	nameTokens := AppendTokens(nil, []byte(name))
 
-	pkg := strings.ToLower(doc.Package)
-	pkgTokens := AppendTokens(nil, []byte(doc.Package))
+	pkgStr := removeHost(doc.Package)
+	pkg := strings.ToLower(pkgStr)
+	pkgTokens := AppendTokens(nil, []byte(pkgStr))
 
 	var isTokens villa.StrSet
 	isText := ""
@@ -193,27 +204,24 @@ func CalcMatchScore(doc *HitInfo, tokens villa.StrSet, N int,
 		isText += strings.ToLower(sent) + " "
 	}
 
-	for token := range tokens {
-		df := Df(token)
-		if df < 1 {
-			df = 1
-		}
-		idf := math.Log(float64(N) / float64(df))
+	for i, token := range tokenList {
+		textIdf := textIdfs[i]
+		nameIdf := nameIdfs[i]
 
 		if matchToken(token, synopsis, synTokens) {
-			s += 0.25 * idf
+			s += 0.25 * textIdf
 		}
 
 		if matchToken(token, isText, isTokens) {
-			s += 0.25 * idf
+			s += 0.25 * textIdf
 		}
 
 		if matchToken(token, name, nameTokens) {
-			s += 0.4 * idf
+			s += 0.25 * nameIdf
 		}
 
 		if matchToken(token, pkg, pkgTokens) {
-			s += 0.1 * idf
+			s += 0.1 * textIdf
 		}
 	}
 

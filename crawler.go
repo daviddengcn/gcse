@@ -56,7 +56,7 @@ func ReadPackages(segm Segment) (pkgs []string, err error) {
 type BlackRequest struct {
 	sync.RWMutex
 	badUrls map[string]http.Response
-	client doc.HttpClient
+	client  doc.HttpClient
 }
 
 func (br *BlackRequest) Do(req *http.Request) (*http.Response, error) {
@@ -66,7 +66,7 @@ func (br *BlackRequest) Do(req *http.Request) (*http.Response, error) {
 	u := req.URL.String()
 	log.Printf("BlackRequest.Do(GET(%v))", u)
 	br.RLock()
-	r, ok := br.badUrls[u];
+	r, ok := br.badUrls[u]
 	br.RUnlock()
 	if ok {
 		log.Printf("%s was found in 500 blacklist, return it directly", u)
@@ -77,7 +77,7 @@ func (br *BlackRequest) Do(req *http.Request) (*http.Response, error) {
 	if err != nil {
 		return resp, err
 	}
-	
+
 	if resp.StatusCode == 500 {
 		log.Printf("Put %s into 500 blacklist", u)
 		r := *resp
@@ -102,7 +102,7 @@ func GenHttpClient(proxy string) doc.HttpClient {
 		}
 	}
 
-	return &BlackRequest {
+	return &BlackRequest{
 		badUrls: make(map[string]http.Response),
 		client: &http.Client{
 			Transport: tp,
@@ -254,7 +254,7 @@ func Plusone(httpClient doc.HttpClient, url string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-    req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", "application/json")
 	resp, err := httpClient.Do(req)
 	if err != nil {
 		return 0, err
@@ -279,7 +279,7 @@ func Plusone(httpClient doc.HttpClient, url string) (int, error) {
 }
 
 func LikeButton(httpClient doc.HttpClient, Url string) (int, error) {
-	req, err := http.NewRequest("GET", "http://graph.facebook.com/?" +
+	req, err := http.NewRequest("GET", "http://graph.facebook.com/?"+
 		url.Values{"ids": {Url}}.Encode(), nil)
 	if err != nil {
 		return 0, err

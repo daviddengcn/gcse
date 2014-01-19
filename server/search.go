@@ -1,13 +1,15 @@
 package main
 
 import (
-	"github.com/daviddengcn/gcse"
-	"github.com/daviddengcn/go-index"
-	"github.com/daviddengcn/go-villa"
 	"log"
+	"math"
 	"runtime"
 	"strings"
 	"time"
+
+	"github.com/daviddengcn/gcse"
+	"github.com/daviddengcn/go-index"
+	"github.com/daviddengcn/go-villa"
 )
 
 type Hit struct {
@@ -21,9 +23,9 @@ type SearchResult struct {
 	Hits         []*Hit
 }
 
-var stopWords = villa.NewStrSet([]string{
+var stopWords = villa.NewStrSet(
 	"the", "on", "in", "as",
-}...)
+)
 
 var (
 	indexDBBox   villa.AtomicBox
@@ -90,8 +92,20 @@ func maxF(a, b float64) float64 {
 	return b
 }
 
+func idf(df, N int) float64 {
+	if df < 1 {
+		df = 1
+	}
+	idf := math.Log(float64(N) / float64(df))
+	if idf > 1 {
+		idf = math.Sqrt(idf)
+	}
+	return idf
+}
+
 func search(q string) (*SearchResult, villa.StrSet, error) {
 	tokens := gcse.AppendTokens(nil, []byte(q))
+	tokenList := tokens.Elements()
 	log.Printf("tokens for query %s: %v", q, tokens)
 
 	indexDB := indexDBBox.Get().(*index.TokenSetSearcher)
@@ -103,11 +117,19 @@ func search(q string) (*SearchResult, villa.StrSet, error) {
 	var hits []*Hit
 
 	N := indexDB.DocCount()
-	Df := func(token string) int {
+	TextDf := func(token string) int {
 		return len(indexDB.TokenDocList(gcse.IndexTextField, token))
 	}
+	NameDf := func(token string) int {
+		return len(indexDB.TokenDocList(gcse.IndexNameField, token))
+	}
 
-	_, _ = N, Df
+	textIdfs := make([]float64, len(tokenList))
+	nameIdfs := make([]float64, len(tokenList))
+	for i := range textIdfs {
+		textIdfs[i] = idf(TextDf(tokenList[i]), N)
+		nameIdfs[i] = idf(NameDf(tokenList[i]), N)
+	}
 
 	indexDB.Search(map[string]villa.StrSet{gcse.IndexTextField: tokens},
 		func(docID int32, data interface{}) error {
@@ -116,7 +138,8 @@ func search(q string) (*SearchResult, villa.StrSet, error) {
 				HitInfo: hitInfo,
 			}
 
-			hit.MatchScore = gcse.CalcMatchScore(&hitInfo, tokens, N, Df)
+			hit.MatchScore = gcse.CalcMatchScore(&hitInfo, tokenList,
+				textIdfs, nameIdfs)
 			hit.Score = maxF(hit.StaticScore, hit.TestStaticScore) *
 				hit.MatchScore
 

@@ -82,8 +82,8 @@ func statTops(N int) []StatList {
 
 	topImported := NewTopN(func(a, b interface{}) int {
 		ia, ib := a.(gcse.HitInfo), b.(gcse.HitInfo)
-		return villa.IntValueCompare(len(ia.Imported) + len(ia.TestImported),
-			len(ib.Imported) + len(ib.TestImported))
+		return villa.IntValueCompare(len(ia.Imported)+len(ia.TestImported),
+			len(ib.Imported)+len(ib.TestImported))
 	}, N)
 
 	topTestStatic := NewTopN(func(a, b interface{}) int {
@@ -159,7 +159,7 @@ func statTops(N int) []StatList {
 		tlImported.Items = append(tlImported.Items, StatItem{
 			Name:    hit.Name,
 			Package: hit.Package,
-			Info:    fmt.Sprintf("%d", len(hit.Imported) + len(hit.TestImported)),
+			Info:    fmt.Sprintf("%d", len(hit.Imported)+len(hit.TestImported)),
 		})
 	}
 
