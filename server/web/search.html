@@ -20,7 +20,7 @@
             <li>
                 <div class="title">
                     <div class="num">{{.Index}}.</div><a target="_blank" href="/view?id={{.Package}}">{{if .MarkedName}}{{.MarkedName}}{{else}}({{.MarkedPackage}}){{end}}</a>
-                    - {{len .Imported}},{{len .TestImported}} refs
+                    - {{len .Imported}}+{{len .TestImported}} refs
                     - {{.StarCount}} stars
                 </div>
                 <div class="summary">{{.Summary}}</div>
