@@ -6,6 +6,7 @@ import (
 
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/sophie"
+	"github.com/daviddengcn/sophie/kv"
 )
 
 func clearOutdatedIndex() error {
@@ -47,7 +48,7 @@ func doIndex() bool {
 
 	fpDocDB := sophie.LocalFsPath(gcse.DocsDBPath.S())
 
-	ts, err := gcse.Index(sophie.KVDirInput(fpDocDB))
+	ts, err := gcse.Index(kv.DirInput(fpDocDB))
 	if err != nil {
 		log.Printf("Indexing failed: %v", err)
 		return false

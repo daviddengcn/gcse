@@ -7,6 +7,7 @@ import (
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/go-villa"
 	"github.com/daviddengcn/sophie"
+	"github.com/daviddengcn/sophie/kv"
 )
 
 var (
@@ -24,10 +25,7 @@ func init() {
 
 func main() {
 	fmt.Println("Data conversion tool")
-	fpRoot := sophie.FsPath {
-		Fs: sophie.LocalFS,
-		Path: "./data",
-	}
+	fpRoot := sophie.LocalFsPath("./data")
 	/*
 	 * Doc db
 	 */
@@ -44,7 +42,7 @@ func main() {
 			}
 			
 			fpDocs := fpRoot.Join(fnNewDocDB)
-			dstDB := sophie.KVDirOutput(fpDocs)
+			dstDB := kv.DirOutput(fpDocs)
 			c, err := dstDB.Collector(0)
 			if err != nil {
 				log.Fatalf("dstDB.Collector: %v", err)

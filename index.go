@@ -8,6 +8,7 @@ import (
 	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/go-villa"
 	"github.com/daviddengcn/sophie"
+	"github.com/daviddengcn/sophie/mr"
 )
 
 const (
@@ -18,7 +19,7 @@ const (
 
 var errNotDocInfo = errors.New("Value is not DocInfo")
 
-func Index(docDB sophie.Input) (*index.TokenSetSearcher, error) {
+func Index(docDB mr.Input) (*index.TokenSetSearcher, error) {
 	DumpMemStats()
 
 	docPartCnt, err := docDB.PartCount()

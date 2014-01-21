@@ -7,6 +7,7 @@ import (
 
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/sophie"
+	"github.com/daviddengcn/sophie/kv"
 )
 
 var (
@@ -14,7 +15,7 @@ var (
 )
 
 func loadPackageUpdateTimes(fpDocs sophie.FsPath) (map[string]time.Time, error) {
-	dir := sophie.KVDirInput(fpDocs)
+	dir := kv.DirInput(fpDocs)
 	cnt, err := dir.PartCount()
 	if err != nil {
 		return nil, err
@@ -44,7 +45,7 @@ func loadPackageUpdateTimes(fpDocs sophie.FsPath) (map[string]time.Time, error) 
 }
 
 func generateCrawlEntries(db *gcse.MemDB, hostFromID func(id string) string,
-	out sophie.KVDirOutput) error {
+	out kv.DirOutput) error {
 	now := time.Now()
 	groups := make(map[string]sophie.CollectCloser)
 	count := 0
@@ -109,11 +110,11 @@ func main() {
 		if err != nil {
 			log.Fatalf("loadPackageUpdateTimes failed: %v", err)
 		}
-		
+
 		if gcse.CrawlGithubUpdate {
 			touchByGithubUpdates(pkgUTs)
 		}
-		
+
 		if gcse.CrawlByGodocApi {
 			httpClient := gcse.GenHttpClient("")
 			pkgs, err := gcse.FetchAllPackagesInGodoc(httpClient)
@@ -130,24 +131,22 @@ func main() {
 		}
 		syncDatabases()
 	}
-	
 
 	log.Printf("Package DB: %d entries", cDB.PackageDB.Count())
 	log.Printf("Person DB: %d entries", cDB.PersonDB.Count())
 
 	pathToCrawl := gcse.DataRoot.Join(gcse.FnToCrawl)
 
-	kvPackage := sophie.KVDirOutput(sophie.LocalFsPath(
+	kvPackage := kv.DirOutput(sophie.LocalFsPath(
 		pathToCrawl.Join(gcse.FnPackage).S()))
 	kvPackage.Clean()
 	if err := generateCrawlEntries(cDB.PackageDB, gcse.HostOfPackage, kvPackage); err != nil {
 		log.Fatalf("generateCrawlEntries %v failed: %v", kvPackage.Path, err)
 	}
 
-	kvPerson := sophie.KVDirOutput{
-		Fs:   sophie.LocalFS,
-		Path: pathToCrawl.Join(gcse.FnPerson).S(),
-	}
+	kvPerson := kv.DirOutput(sophie.LocalFsPath(
+		pathToCrawl.Join(gcse.FnPerson).S()))
+
 	kvPerson.Clean()
 	if err := generateCrawlEntries(cDB.PersonDB, func(id string) string {
 		site, _ := gcse.ParsePersonId(id)

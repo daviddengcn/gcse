@@ -9,6 +9,8 @@ import (
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/gddo/doc"
 	"github.com/daviddengcn/sophie"
+	"github.com/daviddengcn/sophie/kv"
+	"github.com/daviddengcn/sophie/mr"
 )
 
 const (
@@ -37,7 +39,7 @@ func (pc *PersonCrawler) Map(key, val sophie.SophieWriter,
 	c []sophie.Collector) error {
 	if time.Now().After(AppStopTime) {
 		log.Printf("Timeout(key = %v), PersonCrawler part %d returns EOM", key, pc.part)
-		return sophie.EOM
+		return mr.EOM
 	}
 
 	id := string(*key.(*sophie.RawString))
@@ -55,7 +57,7 @@ func (pc *PersonCrawler) Map(key, val sophie.SophieWriter,
 			durToSleep := 10 * time.Minute
 			if time.Now().Add(durToSleep).After(AppStopTime) {
 				log.Printf("Timeout(key = %v), PersonCrawler part %d returns EOM", key, pc.part)
-				return sophie.EOM
+				return mr.EOM
 			}
 
 			log.Printf("Last ten crawling persons failed, sleep for a while...(current: %s)",
@@ -80,20 +82,20 @@ type PeresonCrawlerFactory struct {
 	httpClient doc.HttpClient
 }
 
-func (pcf PeresonCrawlerFactory) NewMapper(part int) sophie.OnlyMapper {
+func (pcf PeresonCrawlerFactory) NewMapper(part int) mr.OnlyMapper {
 	return &PersonCrawler{part: part, httpClient: pcf.httpClient}
 }
 
 // crawl packages, send error back to end
 func crawlPersons(httpClient doc.HttpClient, fpToCrawlPsn sophie.FsPath, end chan error) {
 	end <- func() error {
-		job := sophie.MapOnlyJob{
-			Source: []sophie.Input{
-				sophie.KVDirInput(fpToCrawlPsn),
+		job := mr.MapOnlyJob{
+			Source: []mr.Input{
+				kv.DirInput(fpToCrawlPsn),
 			},
 
-			MapFactory: sophie.OnlyMapperFactoryFunc(
-				func(src, part int) sophie.OnlyMapper {
+			MapFactory: mr.OnlyMapperFactoryFunc(
+				func(src, part int) mr.OnlyMapper {
 					return &PersonCrawler{
 						part:       part,
 						httpClient: httpClient,

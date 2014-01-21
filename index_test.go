@@ -7,6 +7,7 @@ import (
 	"github.com/daviddengcn/go-assert"
 	"github.com/daviddengcn/go-villa"
 	"github.com/daviddengcn/sophie"
+	"github.com/daviddengcn/sophie/mr"
 )
 
 func TestIndex(t *testing.T) {
@@ -20,14 +21,14 @@ func TestIndex(t *testing.T) {
 			Imports: []string{"github.com/daviddengcn/gcse"},
 		},
 	}
-	ts, err := Index(&sophie.InputStruct{
-		PartCountFunc: func() (int, error) {
+	ts, err := Index(&mr.InputStruct{
+		PartCountF: func() (int, error) {
 			return 1, nil
 		},
-		IteratorFunc: func(int) (sophie.IterateCloser, error) {
+		IteratorF: func(int) (sophie.IterateCloser, error) {
 			index := 0
 			return &sophie.IterateCloserStruct{
-				NextFunc: func(key, val sophie.SophieReader) error {
+				NextF: func(key, val sophie.SophieReader) error {
 					if index >= len(docs) {
 						return sophie.EOF
 					}

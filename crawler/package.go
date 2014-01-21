@@ -10,6 +10,8 @@ import (
 	"github.com/daviddengcn/gddo/doc"
 	"github.com/daviddengcn/go-villa"
 	"github.com/daviddengcn/sophie"
+	"github.com/daviddengcn/sophie/mr"
+	"github.com/daviddengcn/sophie/kv"
 )
 
 const (
@@ -97,7 +99,7 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter,
 	c []sophie.Collector) error {
 	if time.Now().After(AppStopTime) {
 		log.Printf("Timeout(key = %v), PackageCrawler part %d returns EOM", key, pc.part)
-		return sophie.EOM
+		return mr.EOM
 	}
 
 	pkg := string(*key.(*sophie.RawString))
@@ -129,7 +131,7 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter,
 				durToSleep := 10 * time.Minute
 				if time.Now().Add(durToSleep).After(AppStopTime) {
 					log.Printf("Timeout(key = %v), part %d returns EOM", key, pc.part)
-					return sophie.EOM
+					return mr.EOM
 				}
 
 				log.Printf("Last ten crawling packages failed, sleep for a while...(current: %s)",
@@ -167,22 +169,22 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter,
 func crawlPackages(httpClient doc.HttpClient, fpToCrawlPkg,
 	fpOutNewDocs sophie.FsPath, end chan error) {
 	end <- func() error {
-		outNewDocs := sophie.KVDirOutput(fpOutNewDocs)
+		outNewDocs := kv.DirOutput(fpOutNewDocs)
 		outNewDocs.Clean()
-		job := sophie.MapOnlyJob{
-			Source: []sophie.Input{
-				sophie.KVDirInput(fpToCrawlPkg),
+		job := mr.MapOnlyJob{
+			Source: []mr.Input{
+				kv.DirInput(fpToCrawlPkg),
 			},
 
-			MapFactory: sophie.OnlyMapperFactoryFunc(
-				func(src, part int) sophie.OnlyMapper {
+			MapFactory: mr.OnlyMapperFactoryFunc(
+				func(src, part int) mr.OnlyMapper {
 					return &PackageCrawler{
 						part:       part,
 						httpClient: httpClient,
 					}
 				}),
 
-			Dest: []sophie.Output{
+			Dest: []mr.Output{
 				outNewDocs,
 			},
 		}

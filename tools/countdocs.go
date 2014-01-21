@@ -6,15 +6,13 @@ import (
 	
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/sophie"
+	"github.com/daviddengcn/sophie/kv"
 )
 
 func main() {
 //	path := "data/docs"
 	path := "data/docs-updated"
-	kvDir := sophie.KVDirInput{
-		Fs: sophie.LocalFS,
-		Path: path,
-	}
+	kvDir := kv.DirInput(sophie.LocalFsPath(path))
 	
 	cnt, err := kvDir.PartCount()
 	if err != nil {

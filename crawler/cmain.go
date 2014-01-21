@@ -11,6 +11,7 @@ import (
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/gddo/doc"
 	"github.com/daviddengcn/sophie"
+	"github.com/daviddengcn/sophie/kv"
 )
 
 var (
@@ -35,7 +36,7 @@ func syncDatabases() {
 	gcse.DumpMemStats()
 }
 
-func loadAllDocsPkgs(in sophie.KVDirInput) error {
+func loadAllDocsPkgs(in kv.DirInput) error {
 	cnt, err := in.PartCount()
 	if err != nil {
 		return err
@@ -62,17 +63,21 @@ func loadAllDocsPkgs(in sophie.KVDirInput) error {
 }
 
 type crawlerMapper struct {
-	sophie.EmptyOnlyMapper
 }
 
-// OnlyMapper.NewKey
+// Mapper interface
 func (crawlerMapper) NewKey() sophie.Sophier {
 	return new(sophie.RawString)
 }
 
-// OnlyMapper.NewVal
+// Mapper interface
 func (crawlerMapper) NewVal() sophie.Sophier {
 	return new(gcse.CrawlingEntry)
+}
+
+// Mapper interface
+func (crawlerMapper) MapEnd(c []sophie.Collector) error {
+	return nil
 }
 
 func main() {
@@ -87,7 +92,7 @@ func main() {
 	}
 
 	fpDocs := fpDataRoot.Join(gcse.FnDocs)
-	if err := loadAllDocsPkgs(sophie.KVDirInput(fpDocs)); err != nil {
+	if err := loadAllDocsPkgs(kv.DirInput(fpDocs)); err != nil {
 		log.Fatalf("loadAllDocsPkgs: %v", err)
 	}
 	log.Printf("%d docs loaded!", len(allDocsPkgs))
