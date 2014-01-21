@@ -94,13 +94,12 @@ func crawlPersons(httpClient doc.HttpClient, fpToCrawlPsn sophie.FsPath, end cha
 				kv.DirInput(fpToCrawlPsn),
 			},
 
-			MapFactory: mr.OnlyMapperFactoryFunc(
-				func(src, part int) mr.OnlyMapper {
-					return &PersonCrawler{
-						part:       part,
-						httpClient: httpClient,
-					}
-				}),
+			NewMapperF: func(src, part int) mr.OnlyMapper {
+				return &PersonCrawler{
+					part:       part,
+					httpClient: httpClient,
+				}
+			},
 		}
 
 		if err := job.Run(); err != nil {

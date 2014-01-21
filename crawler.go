@@ -596,6 +596,11 @@ type NewDocAction struct {
 	DocInfo
 }
 
+// Returns a new instance of *NewDocAction as a Sophier
+func NewNewDocAction() sophie.Sophier {
+	return new(NewDocAction)
+}
+
 func (nda *NewDocAction) WriteTo(w sophie.Writer) error {
 	if err := nda.Action.WriteTo(w); err != nil {
 		return err

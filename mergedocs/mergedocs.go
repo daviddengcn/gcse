@@ -7,144 +7,114 @@ import (
 
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/sophie"
+	"github.com/daviddengcn/sophie/kv"
+	"github.com/daviddengcn/sophie/mr"
 )
-
-type RawStringKey struct{}
-
-func (RawStringKey) NewKey() sophie.Sophier {
-	return new(sophie.RawString)
-}
-
-type docsMapper struct {
-	sophie.EmptyMapper
-	RawStringKey
-}
-
-func (*docsMapper) NewVal() sophie.Sophier {
-	return new(gcse.DocInfo)
-}
-
-func (*docsMapper) Map(key, val sophie.SophieWriter, c sophie.PartCollector) error {
-	pkg := string(*key.(*sophie.RawString))
-	di := val.(*gcse.DocInfo)
-	act := gcse.NewDocAction{
-		Action:  gcse.NDA_UPDATE,
-		DocInfo: *di,
-	}
-
-	part := gcse.CalcPackagePartition(pkg, gcse.DOCS_PARTS)
-	return c.CollectTo(part, key, &act)
-}
-
-type newdocsMapper struct {
-	sophie.EmptyMapper
-	RawStringKey
-}
-
-func (*newdocsMapper) NewVal() sophie.Sophier {
-	return new(gcse.NewDocAction)
-}
-
-func (*newdocsMapper) Map(key, val sophie.SophieWriter, c sophie.PartCollector) error {
-	pkg := string(*key.(*sophie.RawString))
-	part := gcse.CalcPackagePartition(pkg, gcse.DOCS_PARTS)
-	return c.CollectTo(part, key, val)
-}
-
-type mergedocsReducer struct {
-	sophie.EmptyReducer
-	RawStringKey
-}
-
-func (mergedocsReducer) NewVal() sophie.Sophier {
-	return new(gcse.NewDocAction)
-}
-
-var (
-	cntDeleted     int64
-	cntUpdated     int64
-	cntNewUnchange int64
-)
-
-func (mergedocsReducer) Reduce(key sophie.SophieWriter,
-	nextVal sophie.SophierIterator, c []sophie.Collector) error {
-	var act gcse.DocInfo
-	isSet := false
-	isUpdated := false
-	for {
-		val, err := nextVal()
-		if err == sophie.EOF {
-			break
-		}
-		if err != nil {
-			return err
-		}
-
-		cur := val.(*gcse.NewDocAction)
-		if cur.Action == gcse.NDA_DEL {
-			// not collect out to delete it
-			atomic.AddInt64(&cntDeleted, 1)
-			return nil
-		}
-		if !isSet {
-			isSet = true
-			act = cur.DocInfo
-			//			fmt.Printf("First %v - %v vs %v, %p\n", key, cur.LastUpdated, act.LastUpdated, cur)
-		} else {
-			//			fmt.Printf("Later %v - %v vs %v, %p\n", key, cur.LastUpdated, act.LastUpdated, cur)
-			if cur.LastUpdated.After(act.LastUpdated) {
-				isUpdated = true
-				act = cur.DocInfo
-			}
-		}
-	}
-
-	if isSet {
-		if isUpdated {
-			atomic.AddInt64(&cntUpdated, 1)
-		} else {
-			atomic.AddInt64(&cntNewUnchange, 1)
-		}
-		return c[0].Collect(key, &act)
-	} else {
-		return nil
-	}
-}
 
 func main() {
 	log.Println("Merging new crawled docs back...")
 
-	fpDataRoot := sophie.FsPath{
-		Fs:   sophie.LocalFS,
-		Path: gcse.DataRoot.S(),
-	}
+	fpDataRoot := sophie.LocalFsPath(gcse.DataRoot.S())
 
 	fpCrawler := fpDataRoot.Join(gcse.FnCrawlerDB)
-	outDocsUpdated := sophie.KVDirOutput(fpDataRoot.Join("docs-updated"))
+	outDocsUpdated := kv.DirOutput(fpDataRoot.Join("docs-updated"))
 	outDocsUpdated.Clean()
-
-	job := sophie.MrJob{
-		Source: []sophie.Input{
-			sophie.KVDirInput(fpDataRoot.Join(gcse.FnDocs)),   // 0
-			sophie.KVDirInput(fpCrawler.Join(gcse.FnNewDocs)), // 1
+	
+	var cntDeleted, cntUpdated, cntNewUnchange int64
+	
+	job := mr.MrJob{
+		Source: []mr.Input{
+			kv.DirInput(fpDataRoot.Join(gcse.FnDocs)),   // 0
+			kv.DirInput(fpCrawler.Join(gcse.FnNewDocs)), // 1
 		},
 
-		MapFactory: sophie.MapperFactoryFunc(
-			func(src, part int) sophie.Mapper {
-				if src == 0 {
-					return &docsMapper{}
+		NewMapperF: func(src, part int) mr.Mapper {
+			if src == 0 {
+				return &mr.MapperStruct{
+					NewKeyF: sophie.NewRawString,
+					NewValF: gcse.NewDocInfo,
+					MapF: func(key, val sophie.SophieWriter,
+						c mr.PartCollector) error {
+							
+						pkg := key.(*sophie.RawString).String()
+						di := val.(*gcse.DocInfo)
+						act := gcse.NewDocAction{
+							Action:  gcse.NDA_UPDATE,
+							DocInfo: *di,
+						}
+					
+						part := gcse.CalcPackagePartition(pkg, gcse.DOCS_PARTS)
+						return c.CollectTo(part, key, &act)
+					},
 				}
+			}
 
-				return &newdocsMapper{}
-			}),
+			return &mr.MapperStruct{
+				NewKeyF: sophie.NewRawString,
+				NewValF: gcse.NewNewDocAction,
+				MapF: func(key, val sophie.SophieWriter,
+					c mr.PartCollector) error {
 
-		Sorter: sophie.NewFileSorter(fpDataRoot.Join("tmp")),
+					pkg := string(*key.(*sophie.RawString))
+					part := gcse.CalcPackagePartition(pkg, gcse.DOCS_PARTS)
+					return c.CollectTo(part, key, val)
+				},
+			}
+		},
 
-		RedFactory: sophie.ReducerFactoryFunc(func(part int) sophie.Reducer {
-			return mergedocsReducer{}
-		}),
+		Sorter: mr.NewFileSorter(fpDataRoot.Join("tmp")),
 
-		Dest: []sophie.Output{
+		NewReducerF: func(part int) mr.Reducer {
+			return &mr.ReducerStruct {
+				NewKeyF: sophie.NewRawString,
+				NewValF: gcse.NewNewDocAction,
+				ReduceF: func (key sophie.SophieWriter,
+					nextVal mr.SophierIterator, c []sophie.Collector) error {
+
+					var act gcse.DocInfo
+					isSet := false
+					isUpdated := false
+					for {
+						val, err := nextVal()
+						if err == sophie.EOF {
+							break
+						}
+						if err != nil {
+							return err
+						}
+				
+						cur := val.(*gcse.NewDocAction)
+						if cur.Action == gcse.NDA_DEL {
+							// not collect out to delete it
+							atomic.AddInt64(&cntDeleted, 1)
+							return nil
+						}
+						if !isSet {
+							isSet = true
+							act = cur.DocInfo
+						} else {
+							if cur.LastUpdated.After(act.LastUpdated) {
+								isUpdated = true
+								act = cur.DocInfo
+							}
+						}
+					}
+				
+					if isSet {
+						if isUpdated {
+							atomic.AddInt64(&cntUpdated, 1)
+						} else {
+							atomic.AddInt64(&cntNewUnchange, 1)
+						}
+						return c[0].Collect(key, &act)
+					} else {
+						return nil
+					}
+				},
+			}
+		},
+
+		Dest: []mr.Output{
 			outDocsUpdated,
 		},
 	}

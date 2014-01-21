@@ -98,7 +98,8 @@ type PackageCrawler struct {
 func (pc *PackageCrawler) Map(key, val sophie.SophieWriter,
 	c []sophie.Collector) error {
 	if time.Now().After(AppStopTime) {
-		log.Printf("Timeout(key = %v), PackageCrawler part %d returns EOM", key, pc.part)
+		log.Printf("Timeout(key = %v), PackageCrawler part %d returns EOM",
+			key, pc.part)
 		return mr.EOM
 	}
 
@@ -130,7 +131,8 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter,
 			if pc.failCount >= 10 || strings.Contains(err.Error(), "403") {
 				durToSleep := 10 * time.Minute
 				if time.Now().Add(durToSleep).After(AppStopTime) {
-					log.Printf("Timeout(key = %v), part %d returns EOM", key, pc.part)
+					log.Printf("Timeout(key = %v), part %d returns EOM",
+						key, pc.part)
 					return mr.EOM
 				}
 
@@ -176,13 +178,12 @@ func crawlPackages(httpClient doc.HttpClient, fpToCrawlPkg,
 				kv.DirInput(fpToCrawlPkg),
 			},
 
-			MapFactory: mr.OnlyMapperFactoryFunc(
-				func(src, part int) mr.OnlyMapper {
-					return &PackageCrawler{
-						part:       part,
-						httpClient: httpClient,
-					}
-				}),
+			NewMapperF: func(src, part int) mr.OnlyMapper {
+				return &PackageCrawler{
+					part:       part,
+					httpClient: httpClient,
+				}
+			},
 
 			Dest: []mr.Output{
 				outNewDocs,

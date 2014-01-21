@@ -30,6 +30,11 @@ type DocInfo struct {
 	Exported    []string // exported tokens(funcs/types)
 }
 
+// Returns a new instance of DocInfo as a sophie.Sophier
+func NewDocInfo() sophie.Sophier {
+	return new(DocInfo)
+}
+
 func (d *DocInfo) WriteTo(w sophie.Writer) error {
 	return gob.NewEncoder(w).Encode(d)
 }
