@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/daviddengcn/go-assert"
+	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/go-villa"
 )
 
@@ -52,4 +53,10 @@ func TestDocInfo(t *testing.T) {
 
 	assert.StringEquals(t, "dst2.Imports[0]", dst2.Imports[0],
 		"github.com/daviddengcn/go-villa")
+}
+
+
+func TestCheckRuneType_BOM(t *testing.T) {
+	tp := CheckRuneType('A', 0xfeff)
+	assert.Equals(t, "CheckRuneType(0, 0xfeff)", tp, index.TokenSep)
 }

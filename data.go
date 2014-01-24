@@ -71,7 +71,7 @@ func filterURLs(text []byte) []byte {
 }
 
 func isTermSep(r rune) bool {
-	return unicode.IsPunct(r) || unicode.IsSymbol(r)
+	return unicode.IsPunct(r) || unicode.IsSymbol(r) || r == 0xfeff
 }
 
 var stemBlackList = map[string]string{
