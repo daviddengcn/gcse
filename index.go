@@ -114,22 +114,22 @@ func Index(docDB mr.Input) (*index.TokenSetSearcher, error) {
 			prj := FullProjectOfPackage(hitInfo.Package)
 			impPrjsCnt := len(prjImportsDB.IdsOfToken(prj))
 			var assignedStarCount = float64(prjStars[prj].StarCount)
-			if impPrjsCnt == 0 {
-				if hitInfo.Package != prj {
+			if prj != hitInfo.Package {
+				if impPrjsCnt == 0 {
 					assignedStarCount = 0
+				} else {
+					perStarCount :=
+						float64(prjStars[prj].StarCount) / float64(impPrjsCnt)
+	
+					var projects villa.StrSet
+					for _, imp := range hitInfo.Imported {
+						projects.Put(FullProjectOfPackage(imp))
+					}
+					for _, imp := range hitInfo.TestImported {
+						projects.Put(FullProjectOfPackage(imp))
+					}
+					assignedStarCount = perStarCount * float64(len(projects))
 				}
-			} else {
-				perStarCount :=
-					float64(prjStars[prj].StarCount) / float64(impPrjsCnt)
-
-				var projects villa.StrSet
-				for _, imp := range hitInfo.Imported {
-					projects.Put(FullProjectOfPackage(imp))
-				}
-				for _, imp := range hitInfo.TestImported {
-					projects.Put(FullProjectOfPackage(imp))
-				}
-				assignedStarCount = perStarCount * float64(len(projects))
 			}
 			hitInfo.AssignedStarCount = assignedStarCount
 
