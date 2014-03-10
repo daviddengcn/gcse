@@ -27,10 +27,11 @@ server  IndexSegments
 package gcse
 
 import (
-	"github.com/daviddengcn/go-ljson-conf"
-	"github.com/daviddengcn/go-villa"
 	"log"
 	"time"
+
+	"github.com/daviddengcn/go-ljson-conf"
+	"github.com/daviddengcn/go-villa"
 )
 
 const (
@@ -115,6 +116,8 @@ func init() {
 	IndexPath = DataRoot.Join("index")
 	IndexPath.MkdirAll(0755)
 	IndexSegments = segments(IndexPath)
+
+	DataRoot.Join("docs").MkdirAll(0755)
 
 	CrawlByGodocApi = conf.Bool("crawler.godoc", CrawlByGodocApi)
 	CrawlGithubUpdate = conf.Bool("crawler.github_update", CrawlGithubUpdate)
