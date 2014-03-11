@@ -117,7 +117,7 @@ func init() {
 	IndexPath.MkdirAll(0755)
 	IndexSegments = segments(IndexPath)
 
-	DataRoot.Join("docs").MkdirAll(0755)
+	DocsDBPath.MkdirAll(0755)
 
 	CrawlByGodocApi = conf.Bool("crawler.godoc", CrawlByGodocApi)
 	CrawlGithubUpdate = conf.Bool("crawler.github_update", CrawlGithubUpdate)
