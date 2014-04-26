@@ -55,7 +55,6 @@ func TestDocInfo(t *testing.T) {
 		"github.com/daviddengcn/go-villa")
 }
 
-
 func TestCheckRuneType_BOM(t *testing.T) {
 	tp := CheckRuneType('A', 0xfeff)
 	assert.Equals(t, "CheckRuneType(0, 0xfeff)", tp, index.TokenSep)

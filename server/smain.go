@@ -534,6 +534,15 @@ func pageApi(w http.ResponseWriter, r *http.Request) {
 			})
 		}
 		ApiContent(w, http.StatusOK, pkgs, callback)
+		
+	case "search":
+		q := strings.TrimSpace(r.FormValue("q"))
+		results, _, err := search(q)
+		if err != nil {
+			ApiContent(w, http.StatusInternalServerError, err.Error(), callback)
+			return
+		}
+		ApiContent(w, http.StatusOK, SearchResultToApi(q, results), callback)
 
 	default:
 		ApiContent(w, http.StatusBadRequest,

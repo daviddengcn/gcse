@@ -74,6 +74,25 @@ Returns the ID array of all packages. [link](/api?action=packages)
 An array of strings, each of which is the ID (or import path) of a package.
 
 
+### "search" Action
+
+Returns the search result. [example](/api?action=search&q=gcse)
+
+* Parameters
+
+    Key      | Value
+    ---------|------------------------------------------------------------------
+    `action` | `packages`
+    `q`      | the query
+
+* Return values
+
+    Field   | Type       | Value
+    --------|------------|-----------------------------------------------
+    `query` | `string`   | the search query
+    `hits`  | `[]`       | Hit entries. For each item:<br> `name` is the name of the project,<br> `package` is the package import path,<br> `projecturl` is the URL if the item is not a package,<br> `author` is the author name of the project, <br> `synopsis` is the brief introduction of the project, <br> `description` is the detailed introduction of the project.
+
+
 {{end}}
 <div class="markdown">
 {{markdown "apibody"}}

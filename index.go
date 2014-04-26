@@ -120,7 +120,7 @@ func Index(docDB mr.Input) (*index.TokenSetSearcher, error) {
 				} else {
 					perStarCount :=
 						float64(prjStars[prj].StarCount) / float64(impPrjsCnt)
-	
+
 					var projects villa.StrSet
 					for _, imp := range hitInfo.Imported {
 						projects.Put(FullProjectOfPackage(imp))

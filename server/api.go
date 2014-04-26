@@ -29,3 +29,41 @@ func FilterFunc(s string, f func(r rune) bool) string {
 
 	return s
 }
+
+type SearchApiHit struct {
+	Name        string `json:"name"`
+	Package     string `json:"package"`
+	Author      string `json:"author"`
+	Synopsis    string `json:"synopsis"`
+	Description string `json:"description"`
+	ProjectURL  string `json:"projecturl"`
+}
+
+type SearchApiStruct struct {
+	Q    string         `json:"query"`
+	Hits []*SearchApiHit `json:"hits"`
+}
+
+const MAX_API_SEARCH_HITS = 100
+
+func SearchResultToApi(q string, res *SearchResult) *SearchApiStruct {
+	apiRes := SearchApiStruct {
+		Q: q,
+	}
+	for i, hit := range res.Hits	{
+		if i >= MAX_API_SEARCH_HITS {
+			break
+		}
+		
+		apiHit := &SearchApiHit{
+			Name: hit.Name,
+			Package: hit.Package,
+			Author: hit.Author,
+			Synopsis: hit.Synopsis,
+			Description: hit.Description,
+			ProjectURL: hit.ProjectURL,
+		}
+		apiRes.Hits = append(apiRes.Hits, apiHit)
+	}
+	return &apiRes
+}
