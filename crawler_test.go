@@ -55,7 +55,7 @@ func TestLikeButton(t *testing.T) {
 	}
 }
 
-func TestGddo(t *testing.T) {
+func TestCrawlPackage(t *testing.T) {
 	doc.SetGithubCredentials("94446b37edb575accd8b",
 		"15f55815f0515a3f6ad057aaffa9ea83dceb220b")
 	doc.SetUserAgent("Go-Code-Search-Agent")
@@ -69,6 +69,17 @@ func TestGddo(t *testing.T) {
 		}
 	} else {
 		t.Logf("p: %+v", p.Exported)
+	}
+	
+	pkg = "code.google.com/p/go.net/websocket"
+	p, err = CrawlPackage(httpClient, pkg, "")
+	if err != nil {
+		if strings.Index(err.Error(), "403") == -1 {
+			t.Error(err)
+		}
+	} else {
+		t.Logf("p: %+v", p.Exported)
+		assert.Equals(t, "pkg", p.Package, pkg)
 	}
 }
 

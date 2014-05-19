@@ -22,6 +22,8 @@ import (
 	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/go-villa"
 	"github.com/daviddengcn/sophie"
+	glgddo "github.com/golang/gddo/doc"
+	"github.com/golang/gddo/gosrc"
 )
 
 const (
@@ -301,6 +303,13 @@ func LikeButton(httpClient doc.HttpClient, Url string) (int, error) {
 }
 
 func fuseStars(a, b int) int {
+	if a < 0 {
+		return b
+	}
+	if b < 0 {
+		return a
+	}
+	
 	if a > b {
 		a, b = b, a
 	}
@@ -308,14 +317,69 @@ func fuseStars(a, b int) int {
 	/*
 		Now, a <= b
 		Supposing half of the stargzers are shared ones. The numbers could
-		be a/2, or b/2. The mean is (a + b) / 4. Exclude this from a + b, an
-		assure it greater than b.
+		be a/2, or b/2. The mean is (a + b) / 4. Exclude this from a + b,
+		and assure it greater than b.
 	*/
 	if a <= b/3 {
 		return b
 	}
 
 	return (a + b) * 3 / 4
+}
+
+func newDocGet(httpClient doc.HttpClient, pkg string,
+	etag string) (p *doc.Package, err error) {
+	gp, err := glgddo.Get(httpClient.(*BlackRequest).client.(*http.Client),
+		pkg, etag);
+	if err != nil {
+		if err == gosrc.ErrNotModified {
+			err = doc.ErrNotModified
+		}
+		return nil, err
+	}
+	return &doc.Package {
+		ImportPath: gp.ImportPath,
+		ProjectRoot: gp.ProjectRoot,
+	
+		ProjectName: gp.ProjectName,
+	
+		ProjectURL: gp.ProjectURL,
+	
+		Errors: gp.Errors,
+	
+		References: gp.References,
+			
+		VCS: gp.VCS,
+	
+		Updated: gp.Updated,
+	
+		Etag: gp.Etag,
+	
+		Name: gp.Name,
+	
+		Synopsis: gp.Synopsis,
+		Doc: gp.Doc,
+	
+		IsCmd: gp.IsCmd,
+	
+		Truncated: gp.Truncated,
+	
+		GOOS: gp.GOOS,
+		GOARCH: gp.GOARCH,
+	
+		LineFmt: gp.LineFmt,
+		BrowseURL: gp.BrowseURL,
+	
+		SourceSize: gp.SourceSize,
+		TestSourceSize: gp.TestSourceSize,
+	
+		Imports: gp.Imports,
+		TestImports: gp.TestImports,
+		XTestImports: gp.XTestImports,
+		
+		StarCount: -1,
+	}, nil
+//	return nil, nil
 }
 
 func CrawlPackage(httpClient doc.HttpClient, pkg string,
@@ -328,7 +392,13 @@ func CrawlPackage(httpClient doc.HttpClient, pkg string,
 		}
 	}()
 
-	pdoc, err := doc.Get(httpClient, pkg, etag)
+	var pdoc *doc.Package
+
+	if (strings.HasPrefix(pkg, "github.com/")) {
+		pdoc, err = doc.Get(httpClient, pkg, etag)
+	} else {
+		pdoc, err = newDocGet(httpClient, pkg, etag)
+	}
 	if err == doc.ErrNotModified {
 		return nil, ErrPackageNotModifed
 	}
