@@ -228,6 +228,7 @@ type Package struct {
 
 var (
 	ErrPackageNotModifed = errors.New("package not modified")
+	ErrInvalidPackage = errors.New("invalid package")
 )
 
 var patSingleReturn = regexp.MustCompile(`\b\n\b`)
@@ -394,7 +395,9 @@ func CrawlPackage(httpClient doc.HttpClient, pkg string,
 
 	var pdoc *doc.Package
 
-	if (strings.HasPrefix(pkg, "github.com/")) {
+	if strings.HasPrefix(pkg, "thezombie.net") {
+		return nil, ErrInvalidPackage
+	} else if strings.HasPrefix(pkg, "github.com/") {
 		pdoc, err = doc.Get(httpClient, pkg, etag)
 	} else {
 		pdoc, err = newDocGet(httpClient, pkg, etag)
@@ -517,7 +520,8 @@ func CrawlPerson(httpClient doc.HttpClient, id string) (*Person, error) {
 }
 
 func IsBadPackage(err error) bool {
-	return doc.IsNotFound(villa.DeepestNested(err))
+	err = villa.DeepestNested(err)
+	return doc.IsNotFound(err) || err == ErrInvalidPackage
 }
 
 var githubProjectPat = regexp.MustCompile(`href="([^/]+/[^/]+)/stargazers"`)

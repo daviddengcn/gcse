@@ -68,18 +68,27 @@ func TestCrawlPackage(t *testing.T) {
 			t.Error(err)
 		}
 	} else {
-		t.Logf("p: %+v", p.Exported)
+		assert.Equals(t, "pkg", p.Package, pkg)
 	}
 	
-	pkg = "code.google.com/p/go.net/websocket"
+	pkg = "git.gitorious.org/go-pkg/epubgo.git"
 	p, err = CrawlPackage(httpClient, pkg, "")
 	if err != nil {
 		if strings.Index(err.Error(), "403") == -1 {
 			t.Error(err)
 		}
 	} else {
-		t.Logf("p: %+v", p.Exported)
 		assert.Equals(t, "pkg", p.Package, pkg)
+	}
+	
+	pkg = "thezombie.net/libgojira"
+	p, err = CrawlPackage(httpClient, pkg, "")
+	if err != nil {
+		if !IsBadPackage(err) {
+			t.Errorf("%s should be an invalid package", pkg)
+		}
+	} else {
+		t.Errorf("%s should be an invalid package", pkg)
 	}
 }
 
