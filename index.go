@@ -107,7 +107,6 @@ func Index(docDB mr.Input) (*index.TokenSetSearcher, error) {
 				it.Close()
 				return nil, err
 			}
-
 			hitInfo.Imported = importsDB.IdsOfToken(hitInfo.Package)
 			hitInfo.TestImported = testImportsDB.IdsOfToken(hitInfo.Package)
 
@@ -141,7 +140,6 @@ func Index(docDB mr.Input) (*index.TokenSetSearcher, error) {
 			// hitInfo
 			hitInfo.StaticScore = CalcStaticScore(&hitInfo)
 			hitInfo.TestStaticScore = CalcTestStaticScore(&hitInfo)
-
 			hits = append(hits, hitInfo)
 		}
 

@@ -7,7 +7,7 @@ import (
 
 	"github.com/daviddengcn/go-villa"
 
-	//	"log"
+	"log"
 )
 
 func scoreOfPkgByProject(n int, sameProj bool) float64 {
@@ -118,7 +118,8 @@ func CalcTestStaticScore(doc *HitInfo) float64 {
 
 	project := ProjectOfPackage(doc.Package)
 
-	s += effectiveImported(doc.TestImported, author, project)
+	importedScore := effectiveImported(doc.TestImported, author, project)
+	s += importedScore
 
 	desc := strings.TrimSpace(doc.Description)
 	if len(desc) > 0 {
@@ -146,8 +147,64 @@ func CalcTestStaticScore(doc *HitInfo) float64 {
 	if len(doc.Imported)+len(doc.TestImported) > 0 {
 		frac = float64(len(doc.TestImported)) / float64(len(doc.Imported)+len(doc.TestImported))
 	}
-	s += math.Sqrt(starCount) * 0.5 * frac
+	starScore := math.Sqrt(starCount) * 0.5 * frac
+	if starScore > importedScore {
+		starScore = importedScore
+	}
+	s += starScore
 
+	return s
+}
+
+func dbgCalcTestStaticScore(doc *HitInfo) float64 {
+	s := float64(1)
+
+	author := doc.Author
+	if author == "" {
+		author = AuthorOfPackage(doc.Package)
+	}
+
+	project := ProjectOfPackage(doc.Package)
+
+	log.Printf("author: %v, project: %v", author, project)
+	importedScore := effectiveImported(doc.TestImported, author, project)
+	s += importedScore
+	log.Printf("TestImported: %v, importedScore: %v", len(doc.TestImported), importedScore)
+
+	desc := strings.TrimSpace(doc.Description)
+	if len(desc) > 0 {
+		s += 1
+		if len(desc) > 100 {
+			s += 0.5
+		}
+
+		if strings.HasPrefix(desc, "Package "+doc.Name) || strings.HasPrefix(desc, doc.Name+" package") {
+			s += 0.5
+		} else if strings.HasPrefix(desc, "package "+doc.Name) {
+			s += 0.4
+		}
+	}
+
+	if doc.Name != "" && doc.Name != "main" {
+		s += 0.1
+	}
+
+	starCount := doc.AssignedStarCount - 3
+	if starCount < 0 {
+		starCount = 0
+	}
+	frac := 1.
+	if len(doc.Imported)+len(doc.TestImported) > 0 {
+		frac = float64(len(doc.TestImported)) / float64(len(doc.Imported)+len(doc.TestImported))
+	}
+	starScore := math.Sqrt(starCount) * 0.5 * frac
+	if starScore > importedScore {
+		starScore = importedScore
+	}
+	s += starScore
+
+	log.Printf("starCount: %v, frac: %v, starScore: %v", starCount, frac, starScore)
+	
 	return s
 }
 
