@@ -19,6 +19,22 @@ const (
 
 var errNotDocInfo = errors.New("Value is not DocInfo")
 
+// Excludes packages in src which has same full-project with any elements in excl.
+func excludeImports(src, excl []string) (dst []string) {
+	exclPrjsSets := villa.NewStrSet()
+	for _, pkg := range excl {
+		exclPrjsSets.Put(FullProjectOfPackage(pkg))
+	}
+	
+	for _, pkg := range src {
+		prj := FullProjectOfPackage(string(pkg))
+		if !exclPrjsSets.In(prj) {
+			dst = append(dst, pkg)
+		}
+	}
+	return dst
+}
+
 func Index(docDB mr.Input) (*index.TokenSetSearcher, error) {
 	DumpMemStats()
 
@@ -107,8 +123,10 @@ func Index(docDB mr.Input) (*index.TokenSetSearcher, error) {
 				it.Close()
 				return nil, err
 			}
+			
 			hitInfo.Imported = importsDB.IdsOfToken(hitInfo.Package)
 			hitInfo.TestImported = testImportsDB.IdsOfToken(hitInfo.Package)
+			realTestImported := excludeImports(testImportsDB.IdsOfToken(hitInfo.Package), hitInfo.Imported)
 
 			prj := FullProjectOfPackage(hitInfo.Package)
 			impPrjsCnt := len(prjImportsDB.IdsOfToken(prj))
@@ -139,7 +157,7 @@ func Index(docDB mr.Input) (*index.TokenSetSearcher, error) {
 			// StaticScore is calculated after setting all other fields of
 			// hitInfo
 			hitInfo.StaticScore = CalcStaticScore(&hitInfo)
-			hitInfo.TestStaticScore = CalcTestStaticScore(&hitInfo)
+			hitInfo.TestStaticScore = CalcTestStaticScore(&hitInfo, realTestImported)
 			hits = append(hits, hitInfo)
 		}
 

@@ -216,6 +216,7 @@ func (mdb *MemDB) Count() int {
 	return len(mdb.db)
 }
 
+// TokenIndexer is thread-safe.
 type TokenIndexer struct {
 	index.TokenIndexer
 	fn villa.Path

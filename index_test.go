@@ -15,10 +15,17 @@ func TestIndex(t *testing.T) {
 		{
 			Package: "github.com/daviddengcn/gcse",
 			Name:    "gcse",
+			TestImports: []string{"github.com/daviddengcn/go-villa"},
 		}, {
 			Package: "github.com/daviddengcn/gcse/indexer",
 			Name:    "main",
-			Imports: []string{"github.com/daviddengcn/gcse"},
+			Imports: []string{
+				"github.com/daviddengcn/gcse",
+				"github.com/daviddengcn/go-villa",
+			},
+		}, {
+			Package: "github.com/daviddengcn/go-villa",
+			Name: "villa",
 		},
 	}
 	ts, err := Index(&mr.InputStruct{
@@ -48,22 +55,25 @@ func TestIndex(t *testing.T) {
 	}
 
 	numDocs := ts.DocCount()
-	assert.Equals(t, "DocCount", numDocs, 2)
+	assert.Equals(t, "DocCount", numDocs, 3)
 
 	var pkgs []string
 	if err := ts.Search(map[string]villa.StrSet{IndexTextField: nil},
 		func(docID int32, data interface{}) error {
 			hit := data.(HitInfo)
 			pkgs = append(pkgs, hit.Package)
-			t.Logf("%s: %v", hit.Package, hit)
 			return nil
 		},
 	); err != nil {
 		t.Error(err)
 		return
 	}
-	assert.StringEquals(t, "all", pkgs,
-		"[github.com/daviddengcn/gcse github.com/daviddengcn/gcse/indexer]")
+	assert.LinesEqual(t, "all", pkgs,
+		[]string {
+			"github.com/daviddengcn/gcse",
+			"github.com/daviddengcn/go-villa",
+			"github.com/daviddengcn/gcse/indexer",
+		})
 
 	var gcseInfo HitInfo
 	if err := ts.Search(map[string]villa.StrSet{
@@ -92,4 +102,20 @@ func TestIndex(t *testing.T) {
 	assert.StringEquals(t, "indexerInfo.Imported",
 		fmt.Sprintf("%+v", indexerInfo.Imported),
 		"[]")
+
+	if err := ts.Search(map[string]villa.StrSet{
+		IndexPkgField: villa.NewStrSet("github.com/daviddengcn/go-villa"),
+	}, func(docID int32, data interface{}) error {
+		gcseInfo = data.(HitInfo)
+		return nil
+	}); err != nil {
+		t.Errorf("ts.Search: %v", err)
+		return
+	}
+	assert.StringEquals(t, "indexerInfo.Imported",
+		fmt.Sprintf("%+v", indexerInfo.Imported),
+		"[]")
+	assert.LinesEqual(t, "gcseInfo.TestImported",
+		gcseInfo.TestImported,
+		[]string{ "github.com/daviddengcn/gcse" })
 }

@@ -108,7 +108,7 @@ func CalcStaticScore(doc *HitInfo) float64 {
 	return s
 }
 
-func CalcTestStaticScore(doc *HitInfo) float64 {
+func CalcTestStaticScore(doc *HitInfo, realImported []string) float64 {
 	s := float64(1)
 
 	author := doc.Author
@@ -118,7 +118,7 @@ func CalcTestStaticScore(doc *HitInfo) float64 {
 
 	project := ProjectOfPackage(doc.Package)
 
-	importedScore := effectiveImported(doc.TestImported, author, project)
+	importedScore := effectiveImported(realImported, author, project)
 	s += importedScore
 
 	desc := strings.TrimSpace(doc.Description)
@@ -144,8 +144,8 @@ func CalcTestStaticScore(doc *HitInfo) float64 {
 		starCount = 0
 	}
 	frac := 1.
-	if len(doc.Imported)+len(doc.TestImported) > 0 {
-		frac = float64(len(doc.TestImported)) / float64(len(doc.Imported)+len(doc.TestImported))
+	if len(doc.Imported)+len(realImported) > 0 {
+		frac = float64(len(realImported)) / float64(len(doc.Imported)+len(realImported))
 	}
 	starScore := math.Sqrt(starCount) * 0.5 * frac
 	if starScore > importedScore {
