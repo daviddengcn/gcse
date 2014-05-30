@@ -35,6 +35,21 @@ func excludeImports(src, excl []string) (dst []string) {
 	return dst
 }
 
+func filterDocInfo(docInfo *DocInfo) {
+	for i, imp := range docInfo.Imports {
+		if imp == docInfo.Package {
+			(*villa.StringSlice)(&docInfo.Imports).Remove(i)
+			break
+		}
+	}
+	for i, imp := range docInfo.TestImports {
+		if imp == docInfo.Package {
+			(*villa.StringSlice)(&docInfo.TestImports).Remove(i)
+			break
+		}
+	}
+}
+
 func Index(docDB mr.Input) (*index.TokenSetSearcher, error) {
 	DumpMemStats()
 
@@ -70,6 +85,8 @@ func Index(docDB mr.Input) (*index.TokenSetSearcher, error) {
 				it.Close()
 				return nil, err
 			}
+			filterDocInfo(&docInfo)
+			
 			importsDB.Put(string(pkg), villa.NewStrSet(docInfo.Imports...))
 			testImportsDB.Put(string(pkg),
 				villa.NewStrSet(docInfo.TestImports...))
@@ -123,6 +140,7 @@ func Index(docDB mr.Input) (*index.TokenSetSearcher, error) {
 				it.Close()
 				return nil, err
 			}
+			filterDocInfo(&hitInfo.DocInfo)
 			
 			hitInfo.Imported = importsDB.IdsOfToken(hitInfo.Package)
 			hitInfo.TestImported = testImportsDB.IdsOfToken(hitInfo.Package)

@@ -442,10 +442,13 @@ func CrawlPackage(httpClient doc.HttpClient, pkg string,
 		readmeData = readmeData[:100*1024]
 	}
 
-	imports := villa.NewStrSet(pdoc.Imports...).Elements()
+	importsSet := villa.NewStrSet(pdoc.Imports...)
+	importsSet.Delete(pdoc.ImportPath)
+	imports := importsSet.Elements()
 	testImports := villa.NewStrSet(pdoc.TestImports...)
 	testImports.Put(pdoc.XTestImports...)
 	testImports.Delete(imports...)
+	testImports.Delete(pdoc.ImportPath)
 
 	var exported villa.StrSet
 	for _, f := range pdoc.Funcs {
