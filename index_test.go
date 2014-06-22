@@ -29,7 +29,7 @@ func TestIndex(t *testing.T) {
 			},
 		}, {
 			Package: "github.com/daviddengcn/go-villa",
-			Name: "villa",
+			Name:    "villa",
 		},
 	}
 	ts, err := Index(&mr.InputStruct{
@@ -75,7 +75,7 @@ func TestIndex(t *testing.T) {
 		return
 	}
 	assert.LinesEqual(t, "all", pkgs,
-		[]string {
+		[]string{
 			"github.com/daviddengcn/gcse",
 			"github.com/daviddengcn/go-villa",
 			"github.com/daviddengcn/gcse/indexer",
@@ -131,5 +131,5 @@ func TestIndex(t *testing.T) {
 		"[]")
 	assert.LinesEqual(t, "gcseInfo.TestImported",
 		gcseInfo.TestImported,
-		[]string{ "github.com/daviddengcn/gcse" })
+		[]string{"github.com/daviddengcn/gcse"})
 }

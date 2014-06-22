@@ -25,7 +25,7 @@ func excludeImports(src, excl []string) (dst []string) {
 	for _, pkg := range excl {
 		exclPrjsSets.Put(FullProjectOfPackage(pkg))
 	}
-	
+
 	for _, pkg := range src {
 		prj := FullProjectOfPackage(string(pkg))
 		if !exclPrjsSets.In(prj) {
@@ -86,7 +86,7 @@ func Index(docDB mr.Input) (*index.TokenSetSearcher, error) {
 				return nil, err
 			}
 			filterDocInfo(&docInfo)
-			
+
 			importsDB.Put(string(pkg), villa.NewStrSet(docInfo.Imports...))
 			testImportsDB.Put(string(pkg),
 				villa.NewStrSet(docInfo.TestImports...))
@@ -141,7 +141,7 @@ func Index(docDB mr.Input) (*index.TokenSetSearcher, error) {
 				return nil, err
 			}
 			filterDocInfo(&hitInfo.DocInfo)
-			
+
 			hitInfo.Imported = importsDB.IdsOfToken(hitInfo.Package)
 			hitInfo.TestImported = testImportsDB.IdsOfToken(hitInfo.Package)
 			realTestImported := excludeImports(testImportsDB.IdsOfToken(hitInfo.Package), hitInfo.Imported)
@@ -199,7 +199,7 @@ func Index(docDB mr.Input) (*index.TokenSetSearcher, error) {
 	ts := &index.TokenSetSearcher{}
 
 	DumpMemStats()
-	log.Printf("Indexing to TokenSetSearcher ...")
+	log.Printf("Indexing %d packages to TokenSetSearcher ...", len(idxs))
 	rank := 0
 	for i := range idxs {
 		hit := &hits[idxs[i]]

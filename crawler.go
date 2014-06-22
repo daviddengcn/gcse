@@ -228,7 +228,7 @@ type Package struct {
 
 var (
 	ErrPackageNotModifed = errors.New("package not modified")
-	ErrInvalidPackage = errors.New("invalid package")
+	ErrInvalidPackage    = errors.New("invalid package")
 )
 
 var patSingleReturn = regexp.MustCompile(`\b\n\b`)
@@ -310,7 +310,7 @@ func fuseStars(a, b int) int {
 	if b < 0 {
 		return a
 	}
-	
+
 	if a > b {
 		a, b = b, a
 	}
@@ -331,56 +331,56 @@ func fuseStars(a, b int) int {
 func newDocGet(httpClient doc.HttpClient, pkg string,
 	etag string) (p *doc.Package, err error) {
 	gp, err := glgddo.Get(httpClient.(*BlackRequest).client.(*http.Client),
-		pkg, etag);
+		pkg, etag)
 	if err != nil {
 		if err == gosrc.ErrNotModified {
 			err = doc.ErrNotModified
 		}
 		return nil, err
 	}
-	return &doc.Package {
-		ImportPath: gp.ImportPath,
+	return &doc.Package{
+		ImportPath:  gp.ImportPath,
 		ProjectRoot: gp.ProjectRoot,
-	
+
 		ProjectName: gp.ProjectName,
-	
+
 		ProjectURL: gp.ProjectURL,
-	
+
 		Errors: gp.Errors,
-	
+
 		References: gp.References,
-			
+
 		VCS: gp.VCS,
-	
+
 		Updated: gp.Updated,
-	
+
 		Etag: gp.Etag,
-	
+
 		Name: gp.Name,
-	
+
 		Synopsis: gp.Synopsis,
-		Doc: gp.Doc,
-	
+		Doc:      gp.Doc,
+
 		IsCmd: gp.IsCmd,
-	
+
 		Truncated: gp.Truncated,
-	
-		GOOS: gp.GOOS,
+
+		GOOS:   gp.GOOS,
 		GOARCH: gp.GOARCH,
-	
-		LineFmt: gp.LineFmt,
+
+		LineFmt:   gp.LineFmt,
 		BrowseURL: gp.BrowseURL,
-	
-		SourceSize: gp.SourceSize,
+
+		SourceSize:     gp.SourceSize,
 		TestSourceSize: gp.TestSourceSize,
-	
-		Imports: gp.Imports,
-		TestImports: gp.TestImports,
+
+		Imports:      gp.Imports,
+		TestImports:  gp.TestImports,
 		XTestImports: gp.XTestImports,
-		
+
 		StarCount: -1,
 	}, nil
-//	return nil, nil
+	//	return nil, nil
 }
 
 func CrawlPackage(httpClient doc.HttpClient, pkg string,

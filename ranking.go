@@ -204,7 +204,7 @@ func dbgCalcTestStaticScore(doc *HitInfo) float64 {
 	s += starScore
 
 	log.Printf("starCount: %v, frac: %v, starScore: %v", starCount, frac, starScore)
-	
+
 	return s
 }
 

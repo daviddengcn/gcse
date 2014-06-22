@@ -90,9 +90,9 @@ func NormWord(word string) string {
 	return word
 }
 
-var stopWords = villa.NewStrSet([]string{
+var stopWords = villa.NewStrSet(
 	"the", "on", "in", "as",
-}...)
+)
 
 func CheckRuneType(last, current rune) index.RuneType {
 	if isTermSep(current) {

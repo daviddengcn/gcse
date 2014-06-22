@@ -70,17 +70,17 @@ func TestCrawlPackage(t *testing.T) {
 	} else {
 		assert.Equals(t, "pkg", p.Package, pkg)
 	}
-	
-//	pkg = "git.gitorious.org/go-pkg/epubgo.git"
-//	p, err = CrawlPackage(httpClient, pkg, "")
-//	if err != nil {
-//		if strings.Index(err.Error(), "403") == -1 {
-//			t.Error(err)
-//		}
-//	} else {
-//		assert.Equals(t, "pkg", p.Package, pkg)
-//	}
-	
+
+	//	pkg = "git.gitorious.org/go-pkg/epubgo.git"
+	//	p, err = CrawlPackage(httpClient, pkg, "")
+	//	if err != nil {
+	//		if strings.Index(err.Error(), "403") == -1 {
+	//			t.Error(err)
+	//		}
+	//	} else {
+	//		assert.Equals(t, "pkg", p.Package, pkg)
+	//	}
+
 	pkg = "thezombie.net/libgojira"
 	p, err = CrawlPackage(httpClient, pkg, "")
 	if err != nil {
