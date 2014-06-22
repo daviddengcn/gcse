@@ -124,13 +124,15 @@ func pageRoot(w http.ResponseWriter, r *http.Request) {
 		docCount = indexDB.DocCount()
 	}
 	if err := templates.ExecuteTemplate(w, "index.html", struct {
-		TotalDocs   int
-		LastUpdated time.Time
-		IndexAge    SimpleDuration
+		TotalDocs     int
+		TotalProjects int
+		LastUpdated   time.Time
+		IndexAge      SimpleDuration
 	}{
-		TotalDocs:   docCount,
-		LastUpdated: indexUpdated,
-		IndexAge:    SimpleDuration(time.Since(indexUpdated)),
+		TotalDocs:     docCount,
+		TotalProjects: gProjectCount,
+		LastUpdated:   gIndexUpdated,
+		IndexAge:      SimpleDuration(time.Since(gIndexUpdated)),
 	}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -534,7 +536,7 @@ func pageApi(w http.ResponseWriter, r *http.Request) {
 			})
 		}
 		ApiContent(w, http.StatusOK, pkgs, callback)
-		
+
 	case "search":
 		q := strings.TrimSpace(r.FormValue("q"))
 		results, _, err := search(q)

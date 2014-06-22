@@ -40,28 +40,28 @@ type SearchApiHit struct {
 }
 
 type SearchApiStruct struct {
-	Q    string         `json:"query"`
+	Q    string          `json:"query"`
 	Hits []*SearchApiHit `json:"hits"`
 }
 
 const MAX_API_SEARCH_HITS = 100
 
 func SearchResultToApi(q string, res *SearchResult) *SearchApiStruct {
-	apiRes := SearchApiStruct {
+	apiRes := SearchApiStruct{
 		Q: q,
 	}
-	for i, hit := range res.Hits	{
+	for i, hit := range res.Hits {
 		if i >= MAX_API_SEARCH_HITS {
 			break
 		}
-		
+
 		apiHit := &SearchApiHit{
-			Name: hit.Name,
-			Package: hit.Package,
-			Author: hit.Author,
-			Synopsis: hit.Synopsis,
+			Name:        hit.Name,
+			Package:     hit.Package,
+			Author:      hit.Author,
+			Synopsis:    hit.Synopsis,
 			Description: hit.Description,
-			ProjectURL: hit.ProjectURL,
+			ProjectURL:  hit.ProjectURL,
 		}
 		apiRes.Hits = append(apiRes.Hits, apiHit)
 	}

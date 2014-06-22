@@ -28,9 +28,10 @@ var stopWords = villa.NewStrSet(
 )
 
 var (
-	indexDBBox   villa.AtomicBox
-	indexSegment gcse.Segment
-	indexUpdated time.Time
+	indexDBBox    villa.AtomicBox
+	indexSegment  gcse.Segment
+	gIndexUpdated  time.Time
+	gProjectCount int
 )
 
 func loadIndex() error {
@@ -65,7 +66,15 @@ func loadIndex() error {
 		updateTime = st.ModTime()
 	}
 
-	indexUpdated = updateTime
+	gIndexUpdated = updateTime
+
+	var projects villa.StrSet
+	db.Search(nil, func(docID int32, data interface{}) error {
+		hit := data.(gcse.HitInfo)
+		projects.Put(hit.ProjectURL)
+		return nil
+	})
+	gProjectCount = len(projects)
 
 	db = nil
 	gcse.DumpMemStats()
