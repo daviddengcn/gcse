@@ -9,6 +9,7 @@ import (
 )
 
 type StatItem struct {
+	Index   int
 	Name    string
 	Package string
 	Link    string // no package, specify a link
@@ -126,8 +127,9 @@ func statTops(N int) []StatList {
 		Info:  "refs stars",
 		Items: make([]StatItem, 0, len(topStaticScores)),
 	}
-	for _, hit := range topStaticScores {
+	for idx, hit := range topStaticScores {
 		tlStaticScore.Items = append(tlStaticScore.Items, StatItem{
+			Index:   idx + 1,
 			Name:    hit.Name,
 			Package: hit.Package,
 			Info:    fmt.Sprintf("%d %d", len(hit.Imported), hit.StarCount),
@@ -139,9 +141,10 @@ func statTops(N int) []StatList {
 		Info:  "refs stars",
 		Items: make([]StatItem, 0, topTestStatic.Len()),
 	}
-	for _, item := range topTestStatic.PopAll() {
+	for idx, item := range topTestStatic.PopAll() {
 		hit := item.(gcse.HitInfo)
 		tlTestStatic.Items = append(tlTestStatic.Items, StatItem{
+			Index:   idx + 1,
 			Name:    hit.Name,
 			Package: hit.Package,
 			Info: fmt.Sprintf("%d %d", len(hit.TestImported),
@@ -154,9 +157,10 @@ func statTops(N int) []StatList {
 		Info:  "refs",
 		Items: make([]StatItem, 0, topImported.Len()),
 	}
-	for _, item := range topImported.PopAll() {
+	for idx, item := range topImported.PopAll() {
 		hit := item.(gcse.HitInfo)
 		tlImported.Items = append(tlImported.Items, StatItem{
+			Index:   idx + 1,
 			Name:    hit.Name,
 			Package: hit.Package,
 			Info:    fmt.Sprintf("%d", len(hit.Imported)+len(hit.TestImported)),
@@ -174,10 +178,11 @@ func statTops(N int) []StatList {
 		Info:  "packages",
 		Items: make([]StatItem, 0, topSites.Len()),
 	}
-	for _, st := range topSites.PopAll() {
+	for idx, st := range topSites.PopAll() {
 		site := st.(string)
 		cnt := sites[site]
 		tlSites.Items = append(tlSites.Items, StatItem{
+			Index: idx + 1,
 			Name: site,
 			Link: "http://" + site,
 			Info: fmt.Sprintf("%d", cnt),

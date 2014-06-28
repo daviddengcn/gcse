@@ -1,13 +1,7 @@
-{{template "header.html" (printf "%s - Search" .Q)}}
-<div>
-    <form>
-        <label for="q">Go Search</label>
-        <input class="query-box" id="q" type="search" name="q" value="{{.Q}}">
-        <button>search</button>
-    </form>
-</div>
+{{template "header.html" .UIUtils.Slice (.Q) ("search") }}
+{{template "searchbox.html" .UIUtils.Slice .Q false}}
 <div class="content">
-    <div>
+    <div class="info">
         {{if .Results.TotalResults}}
             Total {{.Results.TotalResults}} packages{{if .Results.Folded}} ({{.Results.Folded}} folded){{end}}
         {{else}}
@@ -15,7 +9,7 @@
         {{end}}
         related to "{{.Q}}", {{.SearchTime}}
     </div>
-    <ol class="schres">
+    <ol class="list-group schres">
         {{range .Results.Docs}}
             <li>
                 <div class="title">
@@ -43,26 +37,20 @@
     </ol>
 </div>
 {{if .TotalPages}}
-<div class="pages">{{$q := .Q}}
-    <span class="prevpage">{{with .PrevPage}}<a href="?q={{$q}}&p={{.}}"> « </a>{{end}}</span>
+<ul class="pagination">{{$q := .Q}}
+    <li>{{with .PrevPage}}<a href="?q={{$q}}&p={{.}}"> &laquo; </a>{{end}}</li>
     {{range .BeforePages}}
-    <a  class="page" href="?q={{$q}}&p={{.}}">{{.}}</a>
+    <li><a href="?q={{$q}}&p={{.}}">{{.}}</a></li>
     {{end}}
-    <span class="page">{{.CurrentPage}}</span>
+	<li class="active"><a href="#">{{.CurrentPage}} <span class="sr-only">(current)</span></a></li>
     {{range .AfterPages}}
-    <a  class="page" href="?q={{$q}}&p={{.}}">{{.}}</a>
+    <li><a class="page" href="?q={{$q}}&p={{.}}">{{.}}</a></li>
     {{end}}
-    <span class="prevpage">{{with .NextPage}}<a href="?q={{$q}}&p={{.}}"> » </a>{{end}}</span>
-</div>
+    <li>{{with .NextPage}}<a href="?q={{$q}}&p={{.}}"> &raquo; </a>{{end}}</li>
+</ul>
 {{end}}
 {{if .BottomQ}}
-<div>
-    <form>
-        <label for="q">Go Search</label>
-        <input class="query-box" id="q" type="search" name="q" value="{{.Q}}">
-        <button>search</button>
-    </form>
-</div>
+{{template "searchbox.html" .UIUtils.Slice .Q false}}
 {{end}}
 <script>
 window.onload = function() {

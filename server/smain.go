@@ -19,6 +19,19 @@ import (
 	"github.com/russross/blackfriday"
 )
 
+//const debugMode = false
+const debugMode = true
+
+type UIUtils struct{}
+
+func (UIUtils) Slice(els ...interface{}) interface{} {
+	return append([]interface{}(nil), els...)
+}
+
+func (UIUtils) Add(vl, delta int) int {
+	return vl + delta
+}
+
 var templates *template.Template
 
 func Markdown(templ string) template.HTML {
@@ -27,12 +40,22 @@ func Markdown(templ string) template.HTML {
 	return template.HTML(blackfriday.MarkdownCommon(out))
 }
 
-func init() {
-	log.SetFlags(log.LstdFlags | log.Lmicroseconds)
-
+func loadTemplates() {
 	templates = template.Must(template.New("templates").Funcs(template.FuncMap{
 		"markdown": Markdown,
 	}).ParseGlob(gcse.ServerRoot.Join(`web/*`).S()))
+}
+
+func reloadTemplates() {
+	if (debugMode) {
+		loadTemplates()
+	}
+}
+
+func init() {
+	log.SetFlags(log.LstdFlags | log.Lmicroseconds)
+
+	loadTemplates()
 
 	http.Handle("/css/", http.StripPrefix("/css/",
 		http.FileServer(http.Dir(gcse.ServerRoot.Join("css").S()))))
@@ -59,6 +82,8 @@ func init() {
 type LogHandler struct{}
 
 func (hdl LogHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	reloadTemplates()
+	
 	log.Printf("[B] %s %v %s %v", r.Method, r.RequestURI, r.RemoteAddr, r.Header.Get("X-Forwarded-For"))
 	http.DefaultServeMux.ServeHTTP(w, r)
 	log.Printf("[E] %s %v %s %v", r.Method, r.RequestURI, r.RemoteAddr, r.Header.Get("X-Forwarded-For"))
@@ -124,6 +149,7 @@ func pageRoot(w http.ResponseWriter, r *http.Request) {
 		docCount = indexDB.DocCount()
 	}
 	if err := templates.ExecuteTemplate(w, "index.html", struct {
+		UIUtils
 		TotalDocs     int
 		TotalProjects int
 		LastUpdated   time.Time
@@ -141,7 +167,9 @@ func pageRoot(w http.ResponseWriter, r *http.Request) {
 
 func staticPage(tempName string) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if err := templates.ExecuteTemplate(w, tempName, nil); err != nil {
+		if err := templates.ExecuteTemplate(w, tempName, struct {
+			UIUtils
+		}{}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -149,6 +177,10 @@ func staticPage(tempName string) func(http.ResponseWriter, *http.Request) {
 }
 
 func pageAdd(w http.ResponseWriter, r *http.Request) {
+	templates = template.Must(template.New("templates").Funcs(template.FuncMap{
+		"markdown": Markdown,
+	}).ParseGlob(gcse.ServerRoot.Join(`web/*`).S()))
+	
 	pkgsStr := r.FormValue("pkg")
 	if pkgsStr != "" {
 		pkgs := strings.Split(pkgsStr, "\n")
@@ -156,7 +188,9 @@ func pageAdd(w http.ResponseWriter, r *http.Request) {
 		gcse.AppendPackages(pkgs)
 	}
 
-	err := templates.ExecuteTemplate(w, "add.html", nil)
+	err := templates.ExecuteTemplate(w, "add.html", struct {
+		UIUtils
+	} {})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -348,6 +382,7 @@ func pageSearch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := struct {
+		UIUtils
 		Q           string
 		Results     *ShowResults
 		SearchTime  SimpleDuration
@@ -415,6 +450,7 @@ func pageView(w http.ResponseWriter, r *http.Request) {
 			docCount = indexDB.DocCount()
 		}
 		if err := templates.ExecuteTemplate(w, "view.html", struct {
+			UIUtils
 			gcse.HitInfo
 			DescHTML      template.HTML
 			TotalDocCount int
@@ -439,8 +475,12 @@ func pageTops(w http.ResponseWriter, r *http.Request) {
 	} else if N > 100 {
 		N = 100
 	}
-	err := templates.ExecuteTemplate(w, "tops.html", statTops(N))
-	if err != nil {
+	if err := templates.ExecuteTemplate(w, "tops.html", struct {
+				UIUtils
+				Lists   []StatList
+			} {
+				Lists: statTops(N),
+			}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }

@@ -1,13 +1,15 @@
-{{template "header.html" "Add Packages"}}
+{{template "header.html" .UIUtils.Slice "Add Packages" "add"}}
 <div>
     <form method="post" action="add">
-        <div><label for="pkg">Packages:</label></div>
-        <div class="taframe">
-            <textarea id="pkg" type="text" name="pkg" value="" placeholder="Import path to the packages to add..." autofocus></textarea>
-        </div>
-        <div>
-            <button>add</button>
-        </div>
+		<div class="input-group">
+	        <h4><label for="pkg">Packages:</label></h4>
+	        <div>
+	            <textarea id="pkg" class="form-control" name="pkg" value="" placeholder="Import path to the packages to add..." autofocus></textarea>
+	        </div>
+	        <div>
+	            <button class="btn btn-default"> <span class="glyphicon glyphicon-plus"></span> add</button>
+	        </div>
+		</div>
     </form>
 </div>
 <script>

@@ -1,4 +1,4 @@
-{{template "header.html" (printf "%s - Package" .Name)}}
+{{template "header.html" .UIUtils.Slice (printf "%s - Package" .Name) "view"}}
 <div id="fb-root"></div>
 <script>(function(d, s, id) {
   var js, fjs = d.getElementsByTagName(s)[0];
@@ -8,19 +8,32 @@
   fjs.parentNode.insertBefore(js, fjs);
 }(document, 'script', 'facebook-jssdk'));</script>
 <div itemscope itemtype="http://schema.org/Code">
-<h2>Package <span itemprop="name">{{.Name}}</span> - {{.StarCount}} stars
-    <div style="vertical-align: middle" class="fb-like" data-href="{{.ProjectURL}}" data-send="false" data-layout="button_count" data-width="450" data-show-faces="true"></div>
-    <div class="g-plusone" data-size="small" data-href="{{.ProjectURL}}" data-callback="plusonecallback"></div>
-</h2>
-<div class="view-bottom">
-    <a href="http://godoc.org/{{.Package}}">GoDoc</a>
-    <a href="{{.ProjectURL}}" itemprop="url">Project</a>
-    <a href="/api?action=package&id={{.Package}}">JSON</a>
-    Last crawled: {{.LastUpdated.UTC.Format "2006-01-02 15:04:05 (MST)"}}
-    {{printf "%.2f" .StaticScore}}
-    {{.StaticRank}}/{{.TotalDocCount}}
+<div class="page-header">
+	<h1>Package <span itemprop="name">{{.Name}}</span> - {{.StarCount}} stars
+	    <div style="vertical-align: middle" class="fb-like" data-href="{{.ProjectURL}}" data-send="false" data-layout="button_count" data-width="450" data-show-faces="true"></div>
+	    <div class="g-plusone" data-size="small" data-href="{{.ProjectURL}}" data-callback="plusonecallback"></div>
+	</h1>
 </div>
-<div class="code">
+
+<nav class="navbar navbar-default" role="navigation">
+  <div class="container-fluid">
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+      <ul class="nav navbar-nav">
+	    <li><a href="http://godoc.org/{{.Package}}">GoDoc</a></li>
+	    <li><a href="{{.ProjectURL}}" itemprop="url">Project</a></li>
+	    <li><a href="/api?action=package&id={{.Package}}">JSON</a></li>
+      </ul>
+      <p class="navbar-text navbar-right">
+        Last crawled: {{.LastUpdated.UTC.Format "2006-01-02 15:04:05 (MST)"}},
+        {{printf "%.2f" .StaticScore}},
+        {{.StaticRank}}/{{.TotalDocCount}}
+      </p>
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container-fluid -->
+</nav>
+
+<h3>
     import "{{.Package}}"
 	<object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000"
 	            id="clippy" >
@@ -29,7 +42,7 @@
 	    <param name="quality" value="high" />
 	    <param name="scale" value="noscale" />
 	    <param NAME="FlashVars" value="text={{.Package}}">
-	    <param name="bgcolor" value="#eeeeee">
+	    <param name="bgcolor" value="#fff">
 	    <embed src="/clippy.swf"
 	           width="100"
 	           height="14"
@@ -39,61 +52,66 @@
 	           type="application/x-shockwave-flash"
 	           pluginspage="http://www.macromedia.com/go/getflashplayer"
 	           FlashVars="text={{.Package}}"
-	           bgcolor="#eeeeee"
+	           bgcolor="#fff"
 	    />
     </object>
-</div>
+</h3>
+
 {{if .Description}}
-<div class="desc" itemprop="description">
+<div class="panel panel-default">
+  <div class="panel-body">
     {{.DescHTML}}
+  </div>
 </div>
 {{end}}{{if .ShowReadme}}<pre class="readme" itemprop="description">({{.ReadmeFn}})
 {{.ReadmeData}}
 </pre>{{end}}
-<h4>Imported by {{len .Imported}} package(s) <a href="#imported" id="imported" class="anchor">¶</a></h4>
-    <ol>
-        {{range .Imported}}
-            <li><a target="_blank" href="view?id={{.}}">{{.}}</a></li>
-        {{end}}
-    </ol>
-<div>
-<h4>Imported only in test by {{len .TestImported}} package(s) <a href="#testimported" id="testimported" class="anchor">¶</a></h4>
-    <ol>
-        {{range .TestImported}}
-            <li><a target="_blank" href="view?id={{.}}">{{.}}</a></li>
-        {{end}}
-    </ol>
-<div>
-<h4>Imports {{len .Imports}} package(s) <a href="#imports" id="imports" class="anchor">¶</a></h4>
+
+{{if len .Imported}}
+<h3>Imported by {{len .Imported}} package(s) <a href="#imported" id="imported" class="anchor">¶</a></h3>
+<ol>
+    {{range .Imported}}
+        <li><a target="_blank" href="view?id={{.}}">{{.}}</a></li>
+    {{end}}
+</ol>
+{{end}}
+{{if len .TestImported}}
+<h3>Imported only in test by {{len .TestImported}} package(s) <a href="#testimported" id="testimported" class="anchor">¶</a></h3>
+<ol>
+    {{range .TestImported}}
+        <li><a target="_blank" href="view?id={{.}}">{{.}}</a></li>
+    {{end}}
+</ol>
+{{end}}
+{{if len .Imports}}
+<h3>Imports {{len .Imports}} package(s) <a href="#imports" id="imports" class="anchor">¶</a></h3>
     <ol>
         {{range .Imports}}
             <li><a href="view?id={{.}}">{{.}}</a></li>
         {{end}}
     </ol>
-<h4>Test imports {{len .TestImports}} package(s) <a href="#testimports" id="testimports" class="anchor">¶</a></h4>
+{{end}}
+{{if len .TestImports}}
+<h3>Test imports {{len .TestImports}} package(s) <a href="#testimports" id="testimports" class="anchor">¶</a></h3>
     <ol>
         {{range .TestImports}}
             <li><a href="view?id={{.}}">{{.}}</a></li>
         {{end}}
     </ol>
+{{end}}
 <div itemprop="programmingLanguage" itemscope itemtype="http://schema.org/Thing">
     <meta itemprop="name" content="Go"></meta>
 </div>
-<div class="bottom-search">
-    <form action="/search">
-        <label for="q">Go Search</label>
-        <input class="query-box" id="q" type="search" name="q" value="">
-        <button>search</button>
-    </form>
-</div>
-</div>
+{{template "searchbox.html" .UIUtils.Slice "" false}}
+
 <script type="text/javascript">
   (function() {
     var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
     po.src = 'https://apis.google.com/js/plusone.js';
     var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
   })();
-</script>    
+</script>
+
 <script>
 function plusonecallback(e) {
     ga('send', 'event', 'plusone', 'callback', e.state);

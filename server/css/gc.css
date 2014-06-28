@@ -1,9 +1,74 @@
 body {
-    margin: 0px auto;
-    max-width: 1024px;
-    text-align: left;
-    background: #eee;
+    padding-top: 50px;
 }
+
+div.info {
+    margin-top: 10px;
+	margin-bottom: 10px;
+}
+
+div.schblock {
+	margin-top: 10px;
+}
+
+div.toplist {
+    float: left;
+    width: 280px;
+    margin-right: 5px;
+    margin-bottom: 5px;
+}
+
+div.toplist div.pkg {
+    width: 175px;
+}
+
+div.toplist div.pkg {
+    width: 160px;
+    height: 20px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: bottom;
+}
+
+div.toplist div.tableinfo {
+	float: right;
+    height: 18px;
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 90%;
+}
+
+div.toplist div.topnum {
+	margin-top: 2px;
+	margin-left: -18px;
+	margin-right: 5px;
+	float: left;
+	width: 30px;
+	text-align: right;
+	font-size: 90%;
+}
+
+div.toplist a:visited {
+    color: #12c;
+}
+
+
+ol.schres div.title {
+	margin-bottom: 5px;
+}
+
+ol.schres div.summary {
+	line-height: 1.3em;
+}
+
+ol.schres div.info {
+    margin-top: 5px;
+	margin-bottom: 10px;
+}
+
+
+
 
 img.logo {
     vertical-align: bottom;
@@ -205,14 +270,6 @@ pre.readme {
     font-size: 13px;
 }
 
-div.toplist {
-    float: left;
-    width: 240px;
-    background: #ddd;
-    padding: 5px;
-    margin-right: 5px;
-    margin-bottom: 5px;
-}
 
 div.toplist div.listname {
     border-bottom: 1px solid gray;
@@ -229,43 +286,8 @@ div.toplist li.line {
     vertical-align: bottom;
 }
 
-div.toplist div.pkg {
-    display: inline-block;
-    
-    width: 150px;
-    height: 20px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    vertical-align: bottom;
-}
-
-div.toplist div.listname div.pkg {
-    width: 175px;
-}
-
-div.toplist div.pkg span {
-    display: inline-block;
-    width: 400px;
-    height: 20px;
-}
-
-div.toplist div.info {
-    display: inline-block;
-    width: 60px;
-    height: 18px;
-    text-align: right;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-size: 90%;
-    vertical-align: bottom;
-}
-
 .clearboth {
     clear: both;
-}
-
-div.info {
-    margin-top: 5px;
 }
 
 div.view-bottom {
@@ -322,12 +344,12 @@ div.hdsch input[type="search"]:focus {
     background: white;
     width: 150px;
 }
-h1 {
+__h1 {
     font-size: 1em;
     padding-left: 2px;
 }
 
-h1 img {
+__h1 img {
     height: 16px;
 }
 

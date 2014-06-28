@@ -1,4 +1,4 @@
-{{template "header.html"}}
+{{template "header.html" .UIUtils.Slice "" "home"}}
 <div id="fb-root"></div>
 <script>(function(d, s, id) {
   var js, fjs = d.getElementsByTagName(s)[0];
@@ -9,17 +9,11 @@
 }(document, 'script', 'facebook-jssdk'));</script>
 <div itemscope itemtype="http://schema.org/WebApplication">
 <h1>
-    <img class="logo" src="/images/logo-32.png" itemprop="image">
     <span itemprop="name">Go Search</span>
 </h1>
 <meta itemprop="url" content="http://go-search.org/"></meta>
 <meta itemprop="applicationCategory" content="Search Engine"></meta>
-<div>
-    <form action="search">
-        <input class="query-box" type="search" name="q" value="" autofocus>
-        <button>search</button>
-    </form>
-</div>
+{{template "searchbox.html" .UIUtils.Slice "" true}}
 {{if .}}
 <div class="info">
     <a href="/search">{{.TotalDocs}}</a> packages in {{.TotalProjects}} projects indexed,
