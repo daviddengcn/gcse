@@ -76,10 +76,23 @@ func init() {
 	http.HandleFunc("/about", staticPage("about.html"))
 	http.HandleFunc("/infoapi", staticPage("infoapi.html"))
 	http.HandleFunc("/api", pageApi)
+	http.HandleFunc("/loadtemplates", pageLoadTemplate)
 
 	//	http.HandleFunc("/update", pageUpdate)
 
 	http.HandleFunc("/", pageRoot)
+}
+
+func pageLoadTemplate(w http.ResponseWriter, r *http.Request) {
+	if gcse.LoadTemplatePass != "" {
+		pass := r.FormValue("pass")
+		if pass != gcse.LoadTemplatePass {
+			w.Write([]byte("Incorrect password"))
+			return
+		}
+	}
+	
+	loadTemplates()
 }
 
 type LogHandler struct{}
@@ -141,7 +154,12 @@ func (sd SimpleDuration) String() string {
 func pageRoot(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		w.WriteHeader(http.StatusNotFound)
-		if err := templates.ExecuteTemplate(w, "404.html", nil); err != nil {
+		if err := templates.ExecuteTemplate(w, "404.html", struct {
+			UIUtils
+			Path    string
+		}{
+			Path: r.URL.Path,
+		}); err != nil {
 			w.Write([]byte(err.Error()))
 		}
 		return

@@ -56,6 +56,8 @@ const (
 var (
 	ServerAddr = ":8080"
 	ServerRoot = villa.Path("./server/")
+	
+	LoadTemplatePass = ""
 
 	DataRoot      = villa.Path("./data/")
 	CrawlerDBPath = DataRoot.Join(FnCrawlerDB)
@@ -102,6 +104,7 @@ func init() {
 	}
 	ServerAddr = conf.String("web.addr", ServerAddr)
 	ServerRoot = conf.Path("web.root", ServerRoot)
+	LoadTemplatePass = conf.String("web.loadtemplatepass", LoadTemplatePass)
 
 	DataRoot = conf.Path("back.dbroot", DataRoot)
 

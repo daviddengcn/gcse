@@ -2,6 +2,7 @@
     web: {
         // addr: ":8080"
         // root: "./server/"
+	// loadtemplatepass: ""
     }
     
     back: {

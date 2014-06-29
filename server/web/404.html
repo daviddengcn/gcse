@@ -1,4 +1,8 @@
-{{template "header.html" "404"}}
-<img src="/images/logo-error-64.png" style="vertical-align: middle">
-Page not found!
+{{template "header.html" .UIUtils.Slice "404" "404"}}
+<div class="jumbotron">
+	<h2>
+		<img src="/images/logo-error-64.png" style="vertical-align: middle">
+		Page "{{.Path}}" not found! haha
+	</h2>
+</div>
 {{template "footer.html"}}
