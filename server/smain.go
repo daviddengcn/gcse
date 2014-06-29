@@ -58,7 +58,11 @@ func init() {
 
 	http.Handle("/css/", http.StripPrefix("/css/",
 		http.FileServer(http.Dir(gcse.ServerRoot.Join("css").S()))))
+	http.Handle("/js/", http.StripPrefix("/js/",
+		http.FileServer(http.Dir(gcse.ServerRoot.Join("js").S()))))
 	http.Handle("/images/", http.StripPrefix("/images/",
+		http.FileServer(http.Dir(gcse.ServerRoot.Join("images").S()))))
+	http.Handle("/img/", http.StripPrefix("/img/",
 		http.FileServer(http.Dir(gcse.ServerRoot.Join("images").S()))))
 	http.Handle("/robots.txt", http.FileServer(http.Dir(
 		gcse.ServerRoot.Join("static").S())))
