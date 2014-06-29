@@ -19,8 +19,7 @@ import (
 	"github.com/russross/blackfriday"
 )
 
-//const debugMode = false
-const debugMode = true
+const debugMode = false
 
 type UIUtils struct{}
 
@@ -47,7 +46,7 @@ func loadTemplates() {
 }
 
 func reloadTemplates() {
-	if (debugMode) {
+	if debugMode {
 		loadTemplates()
 	}
 }
@@ -83,7 +82,7 @@ type LogHandler struct{}
 
 func (hdl LogHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	reloadTemplates()
-	
+
 	log.Printf("[B] %s %v %s %v", r.Method, r.RequestURI, r.RemoteAddr, r.Header.Get("X-Forwarded-For"))
 	http.DefaultServeMux.ServeHTTP(w, r)
 	log.Printf("[E] %s %v %s %v", r.Method, r.RequestURI, r.RemoteAddr, r.Header.Get("X-Forwarded-For"))
@@ -180,7 +179,7 @@ func pageAdd(w http.ResponseWriter, r *http.Request) {
 	templates = template.Must(template.New("templates").Funcs(template.FuncMap{
 		"markdown": Markdown,
 	}).ParseGlob(gcse.ServerRoot.Join(`web/*`).S()))
-	
+
 	pkgsStr := r.FormValue("pkg")
 	if pkgsStr != "" {
 		pkgs := strings.Split(pkgsStr, "\n")
@@ -190,7 +189,7 @@ func pageAdd(w http.ResponseWriter, r *http.Request) {
 
 	err := templates.ExecuteTemplate(w, "add.html", struct {
 		UIUtils
-	} {})
+	}{})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -476,11 +475,11 @@ func pageTops(w http.ResponseWriter, r *http.Request) {
 		N = 100
 	}
 	if err := templates.ExecuteTemplate(w, "tops.html", struct {
-				UIUtils
-				Lists   []StatList
-			} {
-				Lists: statTops(N),
-			}); err != nil {
+		UIUtils
+		Lists []StatList
+	}{
+		Lists: statTops(N),
+	}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }

@@ -183,9 +183,9 @@ func statTops(N int) []StatList {
 		cnt := sites[site]
 		tlSites.Items = append(tlSites.Items, StatItem{
 			Index: idx + 1,
-			Name: site,
-			Link: "http://" + site,
-			Info: fmt.Sprintf("%d", cnt),
+			Name:  site,
+			Link:  "http://" + site,
+			Info:  fmt.Sprintf("%d", cnt),
 		})
 	}
 

@@ -30,7 +30,7 @@ var stopWords = villa.NewStrSet(
 var (
 	indexDBBox    villa.AtomicBox
 	indexSegment  gcse.Segment
-	gIndexUpdated  time.Time
+	gIndexUpdated time.Time
 	gProjectCount int
 )
 
