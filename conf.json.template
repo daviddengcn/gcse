@@ -3,6 +3,7 @@
         // addr: ":8080"
         // root: "./server/"
 	// loadtemplatepass: ""
+	// autoloadtemplate: false
     }
     
     back: {

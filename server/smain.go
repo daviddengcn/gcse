@@ -19,8 +19,6 @@ import (
 	"github.com/russross/blackfriday"
 )
 
-const debugMode = false
-
 type UIUtils struct{}
 
 func (UIUtils) Slice(els ...interface{}) interface{} {
@@ -46,7 +44,7 @@ func loadTemplates() {
 }
 
 func reloadTemplates() {
-	if debugMode {
+	if gcse.AutoLoadTemplate {
 		loadTemplates()
 	}
 }
@@ -87,12 +85,13 @@ func pageLoadTemplate(w http.ResponseWriter, r *http.Request) {
 	if gcse.LoadTemplatePass != "" {
 		pass := r.FormValue("pass")
 		if pass != gcse.LoadTemplatePass {
-			w.Write([]byte("Incorrect password"))
+			w.Write([]byte("Incorrect password!"))
 			return
 		}
 	}
 	
 	loadTemplates()
+	w.Write([]byte("Tempates loaded."))
 }
 
 type LogHandler struct{}

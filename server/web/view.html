@@ -9,9 +9,8 @@
 }(document, 'script', 'facebook-jssdk'));</script>
 <div itemscope itemtype="http://schema.org/Code">
 <div class="page-header">
-	<h1>Package <span itemprop="name">{{.Name}}</span> - {{.StarCount}} stars
-	    <div style="vertical-align: middle" class="fb-like" data-href="{{.ProjectURL}}" data-send="false" data-layout="button_count" data-width="450" data-show-faces="true"></div>
-	    <div class="g-plusone" data-size="small" data-href="{{.ProjectURL}}" data-callback="plusonecallback"></div>
+	<h1>
+		Package <span itemprop="name">{{.Name}}</span> - {{.StarCount}} stars
 	</h1>
 </div>
 
@@ -23,8 +22,10 @@
 	    <li><a href="http://godoc.org/{{.Package}}">GoDoc</a></li>
 	    <li><a href="{{.ProjectURL}}" itemprop="url">Project</a></li>
 	    <li><a href="/api?action=package&id={{.Package}}">JSON</a></li>
+		<li><a href="#"><div style="vertical-align: middle" class="fb-like" data-href="{{.ProjectURL}}" data-send="false" data-layout="button_count" data-width="450" data-show-faces="true"></div></a></li>
+		<li><a href="#"><div class="g-plusone" data-size="small" data-href="{{.ProjectURL}}" data-callback="plusonecallback"></div></a></li>
       </ul>
-      <p class="navbar-text navbar-right">
+     <p class="navbar-text navbar-right">
         Last crawled: {{.LastUpdated.UTC.Format "2006-01-02 15:04:05 (MST)"}},
         {{printf "%.2f" .StaticScore}},
         {{.StaticRank}}/{{.TotalDocCount}}

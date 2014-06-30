@@ -67,6 +67,18 @@ ol.schres div.info {
 	margin-bottom: 10px;
 }
 
+div#totopbtn {
+    position: fixed;
+    bottom: 5px;
+    right: 20px;
+}
+
+a#top {
+	display: block;
+	position: absolute;
+	top: 0px;
+}
+
 
 
 
@@ -168,12 +180,6 @@ header {
 
 header a, footer a {
     text-decoration: none;
-}
-
-div#totopbtn {
-    position: fixed;
-    bottom: 5px;
-    right: 0px;
 }
 
 div.hdsch {
