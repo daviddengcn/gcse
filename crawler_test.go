@@ -43,7 +43,7 @@ func TestPlusone(t *testing.T) {
 }
 
 func TestLikeButton(t *testing.T) {
-	url := "http://www.google.com/"
+	url := "http://www.facebook.com/"
 	cnt, err := LikeButton(http.DefaultClient, url)
 	if err != nil {
 		t.Error(err)
