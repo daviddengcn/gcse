@@ -56,13 +56,17 @@ func (cdb *CrawlerDB) SchedulePackage(pkg string, sTime time.Time,
 	return nil
 }
 
+func TrimPackageName(pkg string) string {
+	return strings.TrimFunc(strings.TrimSpace(pkg), func(r rune) bool {
+		return r > rune(128)
+	})
+}
+
 // AppendPackage appends a package. If the package did not exist in either
 // PackageDB or Docs, shedulet it (immediately).
 func (cdb *CrawlerDB) AppendPackage(pkg string,
 	inDocs func(pkg string) bool) {
-	pkg = strings.TrimFunc(strings.TrimSpace(pkg), func(r rune) bool {
-		return r > rune(128)
-	})
+	pkg = TrimPackageName(pkg)
 	if !doc.IsValidRemotePath(pkg) {
 		return
 	}

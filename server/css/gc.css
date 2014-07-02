@@ -79,6 +79,10 @@ a#top {
 	top: 0px;
 }
 
+textarea#pkg {
+    height: 500px;
+}
+
 
 
 
@@ -104,11 +108,6 @@ ol.schres li {
 
 ol.schres div.title a {
     font-size: medium;
-}
-
-textarea#pkg {
-    width: 800px;
-    height: 500px;
 }
 
 .schres div.num {
