@@ -19,7 +19,7 @@
     <a href="/search">{{.TotalDocs}}</a> golang packages in {{.TotalProjects}} projects indexed,
     last updated {{.IndexAge}} ago.
     <div style="vertical-align: middle" class="fb-like" data-href="http://go-search.org/" data-send="false" data-layout="button_count" data-width="450" data-show-faces="true"></div>
-    <div class="g-plusone" data-size="small" data-href="http://go-search.org/"></div>
+    <div class="g-plusone" data-size="small" data-href="http://go-search.org/" data-callback="plusone_callback"></div>
 </div>
 </div>
 <script type="text/javascript">
@@ -28,6 +28,20 @@
     po.src = 'https://apis.google.com/js/plusone.js';
     var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
   })();
+</script>
+
+<script>
+function plusone_callback(e) {
+    ga('send', 'event', 'plusone', 'go-search', e.state);
+}
+function like_callback(url, html_element) {
+    ga('send', 'event', 'like', 'go-search', 'like');
+}
+function unlike_callback(url, html_element) {
+    ga('send', 'event', 'like', 'go-search', 'unlike');
+}
+FB.Event.subscribe('edge.create', like_callback);
+FB.Event.subscribe('edge.remove', unlike_callback);
 </script>
 {{end}}
 {{template "footer.html"}}

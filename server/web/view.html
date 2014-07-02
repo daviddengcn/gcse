@@ -23,7 +23,7 @@
 	    <li><a href="{{.ProjectURL}}" itemprop="url">Project</a></li>
 	    <li><a href="/api?action=package&id={{.Package}}">JSON</a></li>
 		<li><a href="#"><div style="vertical-align: middle" class="fb-like" data-href="{{.ProjectURL}}" data-send="false" data-layout="button_count" data-width="450" data-show-faces="true"></div></a></li>
-		<li><a href="#"><div class="g-plusone" data-size="small" data-href="{{.ProjectURL}}" data-callback="plusonecallback"></div></a></li>
+		<li><a href="#"><div class="g-plusone" data-size="small" data-href="{{.ProjectURL}}" data-callback="plusone_callback"></div></a></li>
       </ul>
      <p class="navbar-text navbar-right">
         Last crawled: {{.LastUpdated.UTC.Format "2006-01-02 15:04:05 (MST)"}},
@@ -112,8 +112,25 @@
 </script>
 
 <script>
-function plusonecallback(e) {
+function plusone_callback(e) {
     ga('send', 'event', 'plusone', '{{.Package}}', e.state);
 }
+function like_callback(url, html_element) {
+    ga('send', 'event', 'like', '{{.Package}}', 'like');
+}
+function unlike_callback(url, html_element) {
+    ga('send', 'event', 'like', '{{.Package}}', 'unlike');
+}
+FB.Event.subscribe('edge.create', like_callback);
+FB.Event.subscribe('edge.remove', unlike_callback);
+
+function comment_create_callback(url, html_element) {
+    ga('send', 'event', 'comment', '{{.Package}}', 'create');
+}
+function comment_remove_callback(url, html_element) {
+    ga('send', 'event', 'comment', '{{.Package}}', 'remove');
+}
+FB.Event.subscribe('comment.create', comment_create_callback);
+FB.Event.subscribe('comment.remove', comment_remove_callback);
 </script>
 {{template "footer.html"}}
