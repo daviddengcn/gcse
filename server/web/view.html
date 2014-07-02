@@ -95,6 +95,9 @@
         {{end}}
     </ol>
 {{end}}
+<div>
+	<div class="fb-comments" data-href="http://{{.Package}}" data-numposts="5" data-colorscheme="light" data-width="100%"></div>
+</div>
 <div itemprop="programmingLanguage" itemscope itemtype="http://schema.org/Thing">
     <meta itemprop="name" content="Go"></meta>
 </div>
@@ -110,7 +113,7 @@
 
 <script>
 function plusonecallback(e) {
-    ga('send', 'event', 'plusone', 'callback', e.state);
+    ga('send', 'event', 'plusone', '{{.Package}}', e.state);
 }
 </script>
 {{template "footer.html"}}
