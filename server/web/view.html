@@ -6,7 +6,15 @@
   js = d.createElement(s); js.id = id;
   js.src = "//connect.facebook.net/en_US/all.js#xfbml=1";
   fjs.parentNode.insertBefore(js, fjs);
-}(document, 'script', 'facebook-jssdk'));</script>
+}(document, 'script', 'facebook-jssdk'));
+
+window.fbAsyncInit = function() {
+	FB.Event.subscribe('edge.create', like_callback);
+	FB.Event.subscribe('edge.remove', unlike_callback);
+	FB.Event.subscribe('comment.create', comment_create_callback);
+	FB.Event.subscribe('comment.remove', comment_remove_callback);
+}
+</script>
 <div itemscope itemtype="http://schema.org/Code">
 <div class="page-header">
 	<h1>
@@ -113,24 +121,26 @@
 
 <script>
 function plusone_callback(e) {
+	console.log('plusone_callback');
     ga('send', 'event', 'plusone', '{{.Package}}', e.state);
 }
+
 function like_callback(url, html_element) {
+	console.log('like_callback');
     ga('send', 'event', 'like', '{{.Package}}', 'like');
 }
 function unlike_callback(url, html_element) {
+	console.log('unlike_callback');
     ga('send', 'event', 'like', '{{.Package}}', 'unlike');
 }
-FB.Event.subscribe('edge.create', like_callback);
-FB.Event.subscribe('edge.remove', unlike_callback);
 
 function comment_create_callback(url, html_element) {
+	console.log('comment_create_callback');
     ga('send', 'event', 'comment', '{{.Package}}', 'create');
 }
 function comment_remove_callback(url, html_element) {
+	console.log('comment_remove_callback');
     ga('send', 'event', 'comment', '{{.Package}}', 'remove');
 }
-FB.Event.subscribe('comment.create', comment_create_callback);
-FB.Event.subscribe('comment.remove', comment_remove_callback);
 </script>
 {{template "footer.html"}}

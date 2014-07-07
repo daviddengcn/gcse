@@ -6,7 +6,13 @@
   js = d.createElement(s); js.id = id;
   js.src = "//connect.facebook.net/en_US/all.js#xfbml=1";
   fjs.parentNode.insertBefore(js, fjs);
-}(document, 'script', 'facebook-jssdk'));</script>
+}(document, 'script', 'facebook-jssdk'));
+
+window.fbAsyncInit = function() {
+	FB.Event.subscribe('edge.create', like_callback);
+	FB.Event.subscribe('edge.remove', unlike_callback);
+}
+</script>
 <div itemscope itemtype="http://schema.org/WebApplication">
 <h1>
     <span itemprop="name">Go Search</span>
@@ -40,8 +46,6 @@ function like_callback(url, html_element) {
 function unlike_callback(url, html_element) {
     ga('send', 'event', 'like', 'go-search', 'unlike');
 }
-FB.Event.subscribe('edge.create', like_callback);
-FB.Event.subscribe('edge.remove', unlike_callback);
 </script>
 {{end}}
 {{template "footer.html"}}

@@ -6,7 +6,13 @@
   js = d.createElement(s); js.id = id;
   js.src = "//connect.facebook.net/en_US/all.js#xfbml=1";
   fjs.parentNode.insertBefore(js, fjs);
-}(document, 'script', 'facebook-jssdk'));</script>
+}(document, 'script', 'facebook-jssdk'));
+
+window.fbAsyncInit = function() {
+	FB.Event.subscribe('edge.create', like_callback);
+	FB.Event.subscribe('edge.remove', unlike_callback);
+}
+</script>
 {{define "aboutbody"}}
 ### Motivation
 
@@ -80,7 +86,7 @@ Special thanks to following contributors
 <div>
     Share it to your friends who also need it: 
     <div style="vertical-align: middle" class="fb-like" data-href="http://go-search.org/" data-send="false" data-layout="button_count" data-width="450" data-show-faces="true"></div>
-    <div class="g-plusone" data-size="small" data-href="http://go-search.org/"></div>
+    <div class="g-plusone" data-size="small" data-href="http://go-search.org/" data-callback="plusone_callback"></div>
 </div>
 
 {{template "searchbox.html" .UIUtils.Slice "" false}}
@@ -91,5 +97,17 @@ Special thanks to following contributors
     po.src = 'https://apis.google.com/js/plusone.js';
     var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
   })();
+</script>
+
+<script>
+function plusone_callback(e) {
+    ga('send', 'event', 'plusone', 'go-search', e.state);
+}
+function like_callback(url, html_element) {
+    ga('send', 'event', 'like', 'go-search', 'like');
+}
+function unlike_callback(url, html_element) {
+    ga('send', 'event', 'like', 'go-search', 'unlike');
+}
 </script>
 {{template "footer.html"}}
