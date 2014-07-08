@@ -647,14 +647,14 @@ func pageBadgePage(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		badgeUrl := "http://go-search.org/view?id=" + template.URLQueryEscaper(doc.Package)
-		viewUrl := "http://go-search.org/badge?id=" + template.URLQueryEscaper(doc.Package)
+		badgeUrl := "http://go-search.org/badge?id=" + template.URLQueryEscaper(doc.Package)
+		viewUrl := "http://go-search.org/view?id=" + template.URLQueryEscaper(doc.Package)
 
 		htmlCode := fmt.Sprintf(
 			`<a href="%s"><img src="%s" alt="GoSearch"></a>`,
 			viewUrl, badgeUrl)
 		mdCode := fmt.Sprintf(
-			`[![GoDoc](%s)](%s)`,
+			`[![GoSearch](%s)](%s)`,
 			badgeUrl, viewUrl)
 
 		if err := templates.ExecuteTemplate(w, "badgepage.html", struct {
