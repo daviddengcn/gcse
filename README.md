@@ -1,4 +1,4 @@
-Go Search
+Go Search [![GoSearch](http://go-search.org/badge?id=github.com%2Fdaviddengcn%2Fgcse)](http://go-search.org/view?id=github.com%2Fdaviddengcn%2Fgcse)
 =========
 
 A keyword search engine helping people to find popular and relevant Go packages.
