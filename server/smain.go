@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ajstarks/svgo"
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/gddo/doc"
 	"github.com/daviddengcn/go-index"
@@ -76,8 +77,8 @@ func init() {
 	http.HandleFunc("/infoapi", staticPage("infoapi.html"))
 	http.HandleFunc("/api", pageApi)
 	http.HandleFunc("/loadtemplates", pageLoadTemplate)
-
-	//	http.HandleFunc("/update", pageUpdate)
+	http.HandleFunc("/badge", pageBadge)
+	http.HandleFunc("/badgepage", pageBadgePage)
 
 	http.HandleFunc("/", pageRoot)
 }
@@ -635,5 +636,74 @@ func pageApi(w http.ResponseWriter, r *http.Request) {
 	default:
 		ApiContent(w, http.StatusBadRequest,
 			fmt.Sprintf("Unknown action: %s", action), callback)
+	}
+}
+func pageBadgePage(w http.ResponseWriter, r *http.Request) {
+	id := strings.TrimSpace(r.FormValue("id"))
+	if id != "" {
+		var doc gcse.HitInfo
+		if !findPackage(id, &doc) {
+			http.Error(w, fmt.Sprintf("Package %s not found!", id), http.StatusNotFound)
+			return
+		}
+		
+		badgeUrl := "http://go-search.org/view?id=" + template.URLQueryEscaper(doc.Package)
+		viewUrl := "http://go-search.org/badge?id=" + template.URLQueryEscaper(doc.Package)
+		
+		htmlCode := fmt.Sprintf(
+			`<a href="%s"><img src="%s" alt="GoSearch"></a>`,
+			viewUrl, badgeUrl)
+		mdCode := fmt.Sprintf(
+			`[![GoDoc](%s)](%s)`,
+			badgeUrl, viewUrl)
+
+		if err := templates.ExecuteTemplate(w, "badgepage.html", struct {
+			UIUtils
+			gcse.HitInfo
+			HTMLCode string
+			MDCode string
+		}{
+			HitInfo:       doc,
+			HTMLCode: htmlCode,
+			MDCode: mdCode,
+		}); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}
+}
+
+func pageBadge(w http.ResponseWriter, r *http.Request) {
+	id := strings.TrimSpace(r.FormValue("id"))
+	if id != "" {
+		var doc gcse.HitInfo
+		if !findPackage(id, &doc) {
+			http.Error(w, fmt.Sprintf("Package %s not found!", id), http.StatusNotFound)
+			return
+		}
+		indexDB, _ := indexDBBox.Get().(*index.TokenSetSearcher)
+		if doc.StarCount < 0 {
+			doc.StarCount = 0
+		}
+
+		var descHTML villa.ByteSlice
+		godoc.ToHTML(&descHTML, doc.Description, nil)
+
+		docCount := 0
+		if indexDB != nil {
+			docCount = indexDB.DocCount()
+		}
+		
+		w.Header().Set("Content-Type", "image/svg+xml")
+	
+		W, H := 128, 22
+			
+		s := svg.New(w)
+		s.Start(W, H)
+//		s.Roundrect(1, 1, W-2, H-2, 5, 5, "fill:rgba(111, 215, 228, 255)")
+		s.Roundrect(1, 1, W-2, H-2, 4, 4, "fill:#5bc0de")
+		
+		s.Text(5, 15, fmt.Sprintf("GoSearch %d / %d", doc.StaticRank + 1, docCount),
+			`font-size:10;fill:white;font-weight:bold;font-family:Arial, Helvetica, sans-serif`)
+		s.End()
 	}
 }
