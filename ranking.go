@@ -36,6 +36,84 @@ func minFloat(a, b float64) float64 {
 	return b
 }
 
+func AuthorOfPackage(pkg string) string {
+	parts := strings.Split(pkg, "/")
+	if len(parts) == 0 {
+		return ""
+	}
+
+	switch parts[0] {
+	case "github.com", "bitbucket.org":
+		if len(parts) > 1 {
+			return parts[1]
+		}
+	case "llamaslayers.net":
+		return "Nightgunner5"
+	case "launchpad.net":
+		if len(parts) > 1 && strings.HasPrefix(parts[1], "~") {
+			return parts[1][1:]
+		}
+	case "gopkg.in":
+		if len(parts) == 2 {
+			prjVer := parts[1]
+			p := strings.LastIndex(prjVer, ".v")
+			if p <= 0 {
+				return "gopkg.in"
+			}
+			return "go-" + prjVer[:p]
+		}
+		if len(parts) >=2 {
+			return parts[1]
+		}
+	}
+	return parts[0]
+}
+
+// core project of a packaage
+func ProjectOfPackage(pkg string) string {
+	parts := strings.Split(pkg, "/")
+	if len(parts) == 0 {
+		return ""
+	}
+
+	switch parts[0] {
+	case "llamaslayers.net", "bazil.org":
+		if len(parts) > 1 {
+			return parts[1]
+		}
+	case "github.com", "code.google.com", "bitbucket.org", "labix.org":
+		if len(parts) > 2 {
+			return parts[2]
+		}
+	case "golanger.com":
+		return "golangers"
+
+	case "launchpad.net":
+		if len(parts) > 2 && strings.HasPrefix(parts[1], "~") {
+			return parts[2]
+		}
+		if len(parts) > 1 {
+			return parts[1]
+		}
+	case "cgl.tideland.biz":
+		return "tcgl"
+	case "gopkg.in":
+		if len(parts) > 1 {
+			prjVer := parts[1]
+			if len(parts) > 2 {
+				prjVer = parts[2]
+			}
+			p := strings.LastIndex(prjVer, ".v")
+			if p <= 0 {
+				return parts[0]
+			}
+			
+			return prjVer[:p]
+		}
+	}
+	return pkg
+}
+
 func effectiveImported(imported []string, author, project string) float64 {
 	s := float64(0.)
 

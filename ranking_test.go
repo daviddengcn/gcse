@@ -3,6 +3,8 @@ package gcse
 import (
 	"strings"
 	"testing"
+	
+	"github.com/daviddengcn/go-assert"
 )
 
 func TestEffectiveImported(t *testing.T) {
@@ -303,8 +305,27 @@ github.com/zsol/docker`)
 }
 
 func TestProjectOfPackage(t *testing.T) {
-	proj := ProjectOfPackage(`github.com/AsherBond/docker`)
-	if proj != "docker" {
-		t.Errorf("TestProjectOfPackage")
+	PKG_PRJ := []string {
+		`github.com/AsherBond/docker`, `docker`,
+		`gopkg.in/redis.v1`, `redis`,
+		`gopkg.in/inconshreveable/log15.v2`, `log15`,
+		`gopkg.in/fatih/v0/set`, `gopkg.in`,
+	}
+	
+	for i := 0; i < len(PKG_PRJ); i += 2 {
+		assert.Equals(t, "project of " + PKG_PRJ[i], ProjectOfPackage(PKG_PRJ[i]), PKG_PRJ[i + 1])
+	}
+}
+
+func TestAuthorOfPackage(t *testing.T) {
+	PKG_AUTHOR := []string {
+		`github.com/AsherBond/docker`, `AsherBond`,
+		`gopkg.in/redis.v1`, `go-redis`,
+		`gopkg.in/inconshreveable/log15.v2`, `inconshreveable`,
+		`gopkg.in/fatih/v0/set`, `fatih`,
+	}
+	
+	for i := 0; i < len(PKG_AUTHOR); i += 2 {
+		assert.Equals(t, "author of " + PKG_AUTHOR[i], AuthorOfPackage(PKG_AUTHOR[i]), PKG_AUTHOR[i + 1])
 	}
 }
