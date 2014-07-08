@@ -56,7 +56,7 @@ const (
 var (
 	ServerAddr = ":8080"
 	ServerRoot = villa.Path("./server/")
-	
+
 	LoadTemplatePass = ""
 	AutoLoadTemplate = false
 
