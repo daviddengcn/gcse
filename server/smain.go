@@ -101,9 +101,9 @@ type LogHandler struct{}
 func (hdl LogHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	reloadTemplates()
 
-	log.Printf("[B] %s %v %s %v", r.Method, r.RequestURI, r.RemoteAddr, r.Header.Get("X-Forwarded-For"))
+	log.Printf("[B] %s %v %s %v %v %v", r.Method, r.RequestURI, r.RemoteAddr, r.Header.Get("X-Forwarded-For"), r.Header.Get("Referer"), r.Header.Get("User-Agent"))
 	http.DefaultServeMux.ServeHTTP(w, r)
-	log.Printf("[E] %s %v %s %v", r.Method, r.RequestURI, r.RemoteAddr, r.Header.Get("X-Forwarded-For"))
+	log.Printf("[E] %s %v %s %v %v %v", r.Method, r.RequestURI, r.RemoteAddr, r.Header.Get("X-Forwarded-For"), r.Header.Get("Referer"), r.Header.Get("User-Agent"))
 }
 
 func main() {
