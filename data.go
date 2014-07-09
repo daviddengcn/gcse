@@ -70,6 +70,12 @@ func filterURLs(text []byte) []byte {
 	return patURL.ReplaceAll(text, []byte(" "))
 }
 
+var patEmail = regexp.MustCompile(`[A-Za-z0-9_.+-]+@([a-zA-Z0-9_-]+[.])+[A-Za-z]+`)
+
+func filterEmails(text []byte) []byte {
+	return patEmail.ReplaceAll(text, nil)
+}
+
 func isTermSep(r rune) bool {
 	return unicode.IsPunct(r) || unicode.IsSymbol(r) || r == 0xfeff
 }
@@ -193,7 +199,8 @@ func appendTokensOfBlock(tokens villa.StrSet, block []byte) villa.StrSet {
 }
 
 func AppendTokens(tokens villa.StrSet, text []byte) villa.StrSet {
-	textBuf := filterURLs([]byte(text))
+	textBuf := filterURLs(text)
+	textBuf = filterEmails(textBuf)
 
 	index.Tokenize(index.SeparatorFRuneTypeFunc(unicode.IsSpace),
 		(*villa.ByteSlice)(&textBuf), func(block []byte) error {
