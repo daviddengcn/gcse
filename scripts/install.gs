@@ -3,14 +3,10 @@
 const GCSE = "github.com/daviddengcn/gcse"
 
 Println("getting gcse package ...")
-if err, _ := Bash("go get -u -v " + GCSE); err != nil {
-  Exit(1)
-}
+MustSucc(Bash("go get -u -v %s", GCSE))
 
 Println("testing ...")
-if err, _ := Bash("go test -a"); err != nil {
-  Exit(1)
-}
+MustSucc(Bash("go test -a"))
 
 APPS := []string {
   "server", "tocrawl", "crawler", "mergedocs", "indexer",
@@ -18,8 +14,6 @@ APPS := []string {
 
 for _, app := range APPS {
   Printf("Installing %s ...\n", app)
-  if err, _ := Bash("go install -a " + GCSE + "/" + app); err != nil {
-    Exit(1)
-  }
+  MustSucc(Bash("go install -a %s/%s", GCSE, app))
 }
 
