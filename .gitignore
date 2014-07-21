@@ -24,3 +24,4 @@ _testmain.go
 /conf.json
 /data/
 /logs/
+/scripts/backup-conf.json
