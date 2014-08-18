@@ -10,8 +10,8 @@ import (
 	"github.com/daviddengcn/gddo/doc"
 	"github.com/daviddengcn/go-villa"
 	"github.com/daviddengcn/sophie"
-	"github.com/daviddengcn/sophie/mr"
 	"github.com/daviddengcn/sophie/kv"
+	"github.com/daviddengcn/sophie/mr"
 )
 
 const (
@@ -109,7 +109,7 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter,
 		// if gcse.CrawlerVersion is larger than Version, Etag is ignored.
 		ent.Etag = ""
 	}
-	log.Printf("[Part %d] Crawling package %v\n", pc.part, pkg)
+	log.Printf("[Part %d] Crawling package %v with etag %s\n", pc.part, pkg, ent.Etag)
 
 	p, err := gcse.CrawlPackage(pc.httpClient, pkg, ent.Etag)
 	_ = p

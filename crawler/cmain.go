@@ -4,6 +4,8 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"log"
 	"runtime"
 	"time"
@@ -81,6 +83,26 @@ func (crawlerMapper) MapEnd(c []sophie.Collector) error {
 }
 
 func main() {
+	singlePackge := ""
+	singleETag := ""
+	flag.StringVar(&singlePackge, "pkg", singlePackge, "Crawling single package")
+	flag.StringVar(&singleETag, "etag", singleETag, "ETag for single package crawling")
+
+	flag.Parse()
+
+	httpClient := gcse.GenHttpClient("")
+
+	if singlePackge != "" {
+		log.Printf("Crawling single package %s ...\n", singlePackge)
+		p, err := gcse.CrawlPackage(httpClient, singlePackge, singleETag)
+		if err != nil {
+			fmt.Printf("Crawling package %s failured: %v\n", singlePackge, err)
+		} else {
+			fmt.Printf("Package %s: %+v\n", singlePackge, p)
+		}
+		return
+	}
+
 	log.Println("crawler started...")
 
 	// Load CrawlerDB
@@ -102,8 +124,6 @@ func main() {
 	//pathToCrawl := gcse.DataRoot.Join(gcse.FnToCrawl)
 	fpCrawler := fpDataRoot.Join(gcse.FnCrawlerDB)
 	fpToCrawl := fpDataRoot.Join(gcse.FnToCrawl)
-
-	httpClient := gcse.GenHttpClient("")
 
 	fpNewDocs := fpCrawler.Join(gcse.FnNewDocs)
 	fpNewDocs.Remove()

@@ -135,15 +135,15 @@ func TestIndex(t *testing.T) {
 }
 
 func TestAppendTokens_filter(t *testing.T) {
-	SRC_DST := []interface{} {
+	SRC_DST := []interface{}{
 		"My address is http://go-search.org", []string{"my", "address", "is"},
 		"Hello david_deng-cn.123@gmail-yahoo.com", []string{"hello"},
 	}
-	
+
 	for i := 0; i < len(SRC_DST); i += 2 {
-		SRC := SRC_DST[i].(string);
-		DST := villa.NewStrSet(SRC_DST[i + 1].([]string)...);
-		
-		assert.StrSetEquals(t, "Tokens of " + SRC, AppendTokens(nil, []byte(SRC)), DST)
+		SRC := SRC_DST[i].(string)
+		DST := villa.NewStrSet(SRC_DST[i+1].([]string)...)
+
+		assert.StrSetEquals(t, "Tokens of "+SRC, AppendTokens(nil, []byte(SRC)), DST)
 	}
 }

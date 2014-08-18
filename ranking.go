@@ -62,7 +62,7 @@ func AuthorOfPackage(pkg string) string {
 			}
 			return "go-" + prjVer[:p]
 		}
-		if len(parts) >=2 {
+		if len(parts) >= 2 {
 			return parts[1]
 		}
 	}
@@ -107,7 +107,7 @@ func ProjectOfPackage(pkg string) string {
 			if p <= 0 {
 				return parts[0]
 			}
-			
+
 			return prjVer[:p]
 		}
 	}
