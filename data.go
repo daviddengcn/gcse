@@ -7,7 +7,7 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/agonopol/go-stem/stemmer"
+	"github.com/agonopol/go-stem"
 	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/go-villa"
 	"github.com/daviddengcn/sophie"
