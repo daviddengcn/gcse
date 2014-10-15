@@ -12,11 +12,16 @@
     <div class="block">
         &copy; 2014 <a href="http://daviddengcn.com/">David Deng</a>
         <br> <a href="http://golang.org/">Go Language</a> 
+        <br> Hosted by <a href="https://www.linode.com/?r=bfee6dd8e305aafe9e087620d96fae11f9b490f1" target="_blank" onclick="linode_click()">Linode</a>
     </div>
 </footer>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
 <script src="http://netdna.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
 <script>
+  function linode_click() {
+    ga('send', 'event', 'linode', 'linode', document.URL)
+  }
+
   (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
   (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
   m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
