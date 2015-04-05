@@ -14,5 +14,6 @@
         // due_per_run: "1h"
         // godoc: true
         // github_update: true
+		// noncrawl_hosts: []
     }
 } 

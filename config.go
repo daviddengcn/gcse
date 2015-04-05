@@ -96,11 +96,14 @@ var (
 			4    A bug of checking CrawlerVersion is fixed
 	*/
 	CrawlerVersion = 5
+
+	NonCrawlHosts = villa.StrSet{}
 )
 
 func init() {
 	conf, err := ljconf.Load("conf.json")
 	if err != nil {
+		// we must make sure configuration exist
 		log.Fatal(err)
 	}
 	ServerAddr = conf.String("web.addr", ServerAddr)
@@ -127,4 +130,7 @@ func init() {
 	CrawlByGodocApi = conf.Bool("crawler.godoc", CrawlByGodocApi)
 	CrawlGithubUpdate = conf.Bool("crawler.github_update", CrawlGithubUpdate)
 	CrawlerDuePerRun = conf.Duration("crawler.due_per_run", CrawlerDuePerRun)
+
+	ncHosts := conf.StringList("crawler.noncrawl_hosts", []string)
+	NonCrawlHosts.Put(ncHosts...)
 }

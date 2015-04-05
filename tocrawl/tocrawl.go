@@ -62,6 +62,12 @@ func generateCrawlEntries(db *gcse.MemDB, hostFromID func(id string) string,
 		}
 
 		host := hostFromID(id)
+
+		// check host black list
+		if NonCrawlHosts.In(host) {
+			return nil
+		}
+
 		c, ok := groups[host]
 		if !ok {
 			index := len(groups)
@@ -100,6 +106,9 @@ func syncDatabases() {
 
 func main() {
 	log.Println("Running tocrawl tool, to generate crawling list")
+	log.Println("NonCrawlHosts: ", gcse.NonCrawlHosts)
+	log.Println("CrawlGithubUpdate: ", gcse.CrawlGithubUpdate)
+	log.Println("CrawlByGodocApi: ", gcse.CrawlByGodocApi)
 	// Load CrawlerDB
 	cDB = gcse.LoadCrawlerDB()
 
