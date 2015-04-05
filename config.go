@@ -131,6 +131,6 @@ func init() {
 	CrawlGithubUpdate = conf.Bool("crawler.github_update", CrawlGithubUpdate)
 	CrawlerDuePerRun = conf.Duration("crawler.due_per_run", CrawlerDuePerRun)
 
-	ncHosts := conf.StringList("crawler.noncrawl_hosts", []string)
+	ncHosts := conf.StringList("crawler.noncrawl_hosts", nil)
 	NonCrawlHosts.Put(ncHosts...)
 }
