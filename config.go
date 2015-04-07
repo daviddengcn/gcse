@@ -81,6 +81,8 @@ var (
 	CrawlByGodocApi   = true
 	CrawlGithubUpdate = true
 	CrawlerDuePerRun  = 1 * time.Hour
+	CrawlerGithubClientID = ""
+	CrawlerGithubClientSecret = ""
 
 	/*
 		Increase this to ignore etag of last versions to crawl and parse all
@@ -133,4 +135,7 @@ func init() {
 
 	ncHosts := conf.StringList("crawler.noncrawl_hosts", nil)
 	NonCrawlHosts.Put(ncHosts...)
+	
+	CrawlerGithubClientID = conf.String("crawler.github.clientid", "")
+	CrawlerGithubClientSecret = conf.String("crawler.github.clientsecret", "")
 }

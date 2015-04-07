@@ -22,8 +22,11 @@ var (
 )
 
 func init() {
-	doc.SetGithubCredentials("94446b37edb575accd8b",
-		"15f55815f0515a3f6ad057aaffa9ea83dceb220b")
+	if gcse.CrawlerGithubClientID != "" {
+		log.Printf("Github clientid: %s", gcse.CrawlerGithubClientID)
+		log.Printf("Github clientsecret: %s", gcse.CrawlerGithubClientSecret)
+		doc.SetGithubCredentials(gcse.CrawlerGithubClientID, gcse.CrawlerGithubClientSecret)
+	}
 	doc.SetUserAgent("Go-Search(http://go-search.org/)")
 }
 

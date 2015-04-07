@@ -15,5 +15,9 @@
         // godoc: true
         // github_update: true
 		// noncrawl_hosts: []
+		// github: {
+		// 	clientid: ""
+		// 	clientsecret: ""
+		// }
     }
 } 

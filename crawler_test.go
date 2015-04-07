@@ -56,9 +56,11 @@ func TestLikeButton(t *testing.T) {
 }
 
 func TestCrawlPackage(t *testing.T) {
-	doc.SetGithubCredentials("94446b37edb575accd8b",
-		"15f55815f0515a3f6ad057aaffa9ea83dceb220b")
-	doc.SetUserAgent("Go-Code-Search-Agent")
+	if CrawlerGithubClientID != "" {
+		t.Logf("Github clientid: %s", CrawlerGithubClientID)
+		t.Logf("Github clientsecret: %s", CrawlerGithubClientSecret)
+		doc.SetGithubCredentials(CrawlerGithubClientID, CrawlerGithubClientSecret)
+	}
 
 	pkg := "github.com/daviddengcn/gcse"
 	httpClient := GenHttpClient("")
