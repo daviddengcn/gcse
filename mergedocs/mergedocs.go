@@ -19,9 +19,9 @@ func main() {
 	fpCrawler := fpDataRoot.Join(gcse.FnCrawlerDB)
 	outDocsUpdated := kv.DirOutput(fpDataRoot.Join("docs-updated"))
 	outDocsUpdated.Clean()
-	
+
 	var cntDeleted, cntUpdated, cntNewUnchange int64
-	
+
 	job := mr.MrJob{
 		Source: []mr.Input{
 			kv.DirInput(fpDataRoot.Join(gcse.FnDocs)),   // 0
@@ -35,14 +35,14 @@ func main() {
 					NewValF: gcse.NewDocInfo,
 					MapF: func(key, val sophie.SophieWriter,
 						c mr.PartCollector) error {
-							
+
 						pkg := key.(*sophie.RawString).String()
 						di := val.(*gcse.DocInfo)
 						act := gcse.NewDocAction{
 							Action:  gcse.NDA_UPDATE,
 							DocInfo: *di,
 						}
-					
+
 						part := gcse.CalcPackagePartition(pkg, gcse.DOCS_PARTS)
 						return c.CollectTo(part, key, &act)
 					},
@@ -65,10 +65,10 @@ func main() {
 		Sorter: mr.NewFileSorter(fpDataRoot.Join("tmp")),
 
 		NewReducerF: func(part int) mr.Reducer {
-			return &mr.ReducerStruct {
+			return &mr.ReducerStruct{
 				NewKeyF: sophie.NewRawString,
 				NewValF: gcse.NewNewDocAction,
-				ReduceF: func (key sophie.SophieWriter,
+				ReduceF: func(key sophie.SophieWriter,
 					nextVal mr.SophierIterator, c []sophie.Collector) error {
 
 					var act gcse.DocInfo
@@ -82,7 +82,7 @@ func main() {
 						if err != nil {
 							return err
 						}
-				
+
 						cur := val.(*gcse.NewDocAction)
 						if cur.Action == gcse.NDA_DEL {
 							// not collect out to delete it
@@ -99,7 +99,7 @@ func main() {
 							}
 						}
 					}
-				
+
 					if isSet {
 						if isUpdated {
 							atomic.AddInt64(&cntUpdated, 1)

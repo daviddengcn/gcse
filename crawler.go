@@ -607,8 +607,11 @@ func (c *CrawlingEntry) ReadFrom(r sophie.Reader, l int) error {
 }
 
 const (
+	// whole document updated
 	NDA_UPDATE = iota
+	// only stars updated
 	NDA_STARS
+	// deleted
 	NDA_DEL
 )
 

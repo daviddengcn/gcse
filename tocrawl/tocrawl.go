@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"math/rand"
 	"runtime"
 	"time"
 
@@ -77,6 +78,11 @@ func generateCrawlEntries(db *gcse.MemDB, hostFromID func(id string) string,
 				return err
 			}
 			groups[host] = c
+		}
+
+		if rand.Intn(10) == 0 {
+			// randomly set Etag to empty to fetch stars
+			ent.Etag = ""
 		}
 
 		count++

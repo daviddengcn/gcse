@@ -680,7 +680,7 @@ func pageBadge(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, fmt.Sprintf("Package %s not found!", id), http.StatusNotFound)
 			return
 		}
-		
+
 		w.Header().Set("Content-Type", "image/svg+xml")
 
 		W, H := 100, 22
