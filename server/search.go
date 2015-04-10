@@ -10,6 +10,7 @@ import (
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/go-villa"
+	"github.com/golangplus/sort"
 )
 
 type Hit struct {
@@ -158,7 +159,7 @@ func search(q string) (*SearchResult, villa.StrSet, error) {
 
 	log.Printf("Got %d hits for query %q", len(hits), q)
 
-	villa.SortF(len(hits), func(i, j int) bool {
+	sortp.SortF(len(hits), func(i, j int) bool {
 		// true if doc i is before doc j
 		ssi, ssj := hits[i].Score, hits[j].Score
 		if ssi > ssj {

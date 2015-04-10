@@ -9,6 +9,7 @@ import (
 	"github.com/daviddengcn/go-villa"
 	"github.com/daviddengcn/sophie"
 	"github.com/daviddengcn/sophie/mr"
+	"github.com/golangplus/sort"
 )
 
 const (
@@ -191,7 +192,7 @@ func Index(docDB mr.Input) (*index.TokenSetSearcher, error) {
 	for i := range idxs {
 		idxs[i] = i
 	}
-	villa.SortF(len(idxs), func(i, j int) bool {
+	sortp.SortF(len(idxs), func(i, j int) bool {
 		return hits[idxs[i]].StaticScore > hits[idxs[j]].StaticScore
 	}, func(i, j int) {
 		idxs[i], idxs[j] = idxs[j], idxs[i]
