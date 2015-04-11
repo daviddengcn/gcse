@@ -9,11 +9,11 @@ import(
 	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/sophie"
 	"github.com/daviddengcn/sophie/kv"
+	"github.com/golangplus/fmt"
 )
 
 func help() {
-	fmt.Fprintln(os.Stderr,
-`Usage: dump docs|index`)
+	fmt.Fprintln(os.Stderr, `Usage: dump docs|index`)
 }
 
 func dumpDocs(keys []string) {
@@ -60,7 +60,7 @@ func dumpDocs(keys []string) {
 				if len(keys) > 0 && !parts[part][pkg] {
 					continue
 				}
-				fmt.Printf("%v -> %+v\n", key, val)
+				fmtp.Printfln("%v -> %+v", key, val)
 			}
 			
 			it.Close()
@@ -89,13 +89,13 @@ func dumpIndex(keys []string) {
 		db.Search(index.SingleFieldQuery(gcse.IndexPkgField, key),
 			func(docID int32, data interface{}) error {
 				info, _ := data.(gcse.HitInfo)
-				fmt.Printf("%s:%s -> %+v\n", gcse.IndexPkgField, key, info)
+				fmtp.Printfln("%s:%s -> %+v", gcse.IndexPkgField, key, info)
 				return nil
 			})
 		db.Search(index.SingleFieldQuery(gcse.IndexTextField, key),
 			func(docID int32, data interface{}) error {
 				info, _ := data.(gcse.HitInfo)
-				fmt.Printf("%s:%s -> %+v\n", gcse.IndexTextField, key, info)
+				fmtp.Printfln("%s:%s -> %+v", gcse.IndexTextField, key, info)
 				return nil
 			})
 	}
@@ -104,7 +104,7 @@ func dumpIndex(keys []string) {
 func main() {
 	s := `qrt` + "\xEF\xBB\xBF"
 	for i, c := range s {
-		fmt.Printf("%d: %x\n", i, c)
+		fmtp.Printfln("%d: %x", i, c)
 	}
 
 	

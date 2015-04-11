@@ -1,12 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/sophie"
 	"github.com/daviddengcn/sophie/kv"
+	"github.com/golangplus/fmt"
 )
 
 func main() {
@@ -41,5 +41,5 @@ func main() {
 		it.Close()
 	}
 	
-	fmt.Printf("Total %d files, %d entries.\n", cnt, totalEntries)
+	fmtp.Printfln("Total %d files, %d entries.", cnt, totalEntries)
 }

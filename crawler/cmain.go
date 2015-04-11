@@ -5,7 +5,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"runtime"
 	"time"
@@ -14,6 +13,7 @@ import (
 	"github.com/daviddengcn/gddo/doc"
 	"github.com/daviddengcn/sophie"
 	"github.com/daviddengcn/sophie/kv"
+	"github.com/golangplus/fmt"
 )
 
 var (
@@ -96,12 +96,12 @@ func main() {
 	httpClient := gcse.GenHttpClient("")
 
 	if singlePackge != "" {
-		log.Printf("Crawling single package %s ...\n", singlePackge)
+		log.Printf("Crawling single package %s ...", singlePackge)
 		p, err := gcse.CrawlPackage(httpClient, singlePackge, singleETag)
 		if err != nil {
-			fmt.Printf("Crawling package %s failured: %v\n", singlePackge, err)
+			fmtp.Printfln("Crawling package %s failured: %v", singlePackge, err)
 		} else {
-			fmt.Printf("Package %s: %+v\n", singlePackge, p)
+			fmtp.Printfln("Package %s: %+v", singlePackge, p)
 		}
 		return
 	}

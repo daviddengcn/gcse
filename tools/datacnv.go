@@ -8,6 +8,7 @@ import (
 	"github.com/daviddengcn/go-villa"
 	"github.com/daviddengcn/sophie"
 	"github.com/daviddengcn/sophie/kv"
+	"github.com/golangplus/fmt"
 )
 
 var (
@@ -54,7 +55,7 @@ func main() {
 				v := val.(gcse.DocInfo)
 				
 				if count < 10 {
-					fmt.Printf("  key: %+v, value: %+v\n", k, v)
+					fmtp.Printfln("  key: %+v, value: %+v", k, v)
 				}
 				
 				count ++
@@ -65,7 +66,7 @@ func main() {
 			}
 			c.Close()
 			
-			fmt.Printf("Conversion sucess, %d entries collected.\n", count)
+			fmtp.Printfln("Conversion sucess, %d entries collected.", count)
 		}
 	}
 }
