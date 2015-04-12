@@ -5,11 +5,12 @@ import(
 	"log"
 	"os"
 	
+	"github.com/golangplus/fmt"
+	
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/sophie"
 	"github.com/daviddengcn/sophie/kv"
-	"github.com/golangplus/fmt"
 )
 
 func help() {
