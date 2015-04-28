@@ -10,9 +10,10 @@ import (
 	"time"
 
 	"github.com/golangplus/fmt"
-	
+
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/gddo/doc"
+	"github.com/daviddengcn/go-villa"
 	"github.com/daviddengcn/sophie"
 	"github.com/daviddengcn/sophie/kv"
 )
@@ -87,6 +88,13 @@ func (crawlerMapper) MapEnd(c []sophie.Collector) error {
 }
 
 func main() {
+	defer func() {
+		tmpFn := villa.Path("/tmp/gddo")
+		if err := tmpFn.RemoveAll(); err != nil {
+			log.Printf("Delete %v failed: %v", tmpFn, err)
+		}
+	}()
+
 	singlePackge := ""
 	singleETag := ""
 	flag.StringVar(&singlePackge, "pkg", singlePackge, "Crawling single package")
