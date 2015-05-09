@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"log"
 	"math/rand"
 	"strings"
@@ -88,6 +89,10 @@ func (pcf PeresonCrawlerFactory) NewMapper(part int) mr.OnlyMapper {
 
 // crawl packages, send error back to end
 func crawlPersons(httpClient doc.HttpClient, fpToCrawlPsn sophie.FsPath, end chan error) {
+	time.AfterFunc(gcse.CrawlerDuePerRun+time.Minute*10, func() {
+		end <- errors.New("Crawling persons timeout!")
+	})
+
 	end <- func() error {
 		job := mr.MapOnlyJob{
 			Source: []mr.Input{

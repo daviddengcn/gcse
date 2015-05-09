@@ -16,3 +16,4 @@ for _, app := range APPS {
   MustSucc(Bash("go test %s/%s", GCSE, app))
 }
 
+Println("All tests passed!")

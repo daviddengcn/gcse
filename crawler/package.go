@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"log"
 	"math/rand"
 	"strings"
@@ -170,6 +171,11 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter,
 // crawl packages, send error back to end
 func crawlPackages(httpClient doc.HttpClient, fpToCrawlPkg,
 	fpOutNewDocs sophie.FsPath, end chan error) {
+
+	time.AfterFunc(gcse.CrawlerDuePerRun+time.Minute*10, func() {
+		end <- errors.New("Crawling packages timeout!")
+	})
+
 	end <- func() error {
 		outNewDocs := kv.DirOutput(fpOutNewDocs)
 		outNewDocs.Clean()
