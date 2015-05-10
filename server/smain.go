@@ -556,6 +556,15 @@ func ApiContent(w http.ResponseWriter, code int, obj interface{}, callback strin
 	return nil
 }
 
+type PackageDependenceInfo struct {
+	Name         string
+	Package      string
+	Imports      []string
+	TestImports  []string
+	Imported     []string
+	TestImported []string
+}
+
 func pageApi(w http.ResponseWriter, r *http.Request) {
 	action := strings.ToLower(r.FormValue("action"))
 	callback := strings.TrimSpace(r.FormValue("callback"))
@@ -580,15 +589,17 @@ func pageApi(w http.ResponseWriter, r *http.Request) {
 		}
 
 		ApiContent(w, http.StatusOK, struct {
-			Package     string
-			Name        string
-			StarCount   int
-			Synopsis    string
-			Description string
-			Imported    []string
-			Imports     []string
-			ProjectURL  string
-			StaticRank  int
+			Package      string
+			Name         string
+			StarCount    int
+			Synopsis     string
+			Description  string
+			Imported     []string
+			TestImported []string
+			Imports      []string
+			TestImports  []string
+			ProjectURL   string
+			StaticRank   int
 		}{
 			doc.Package,
 			doc.Name,
@@ -596,7 +607,9 @@ func pageApi(w http.ResponseWriter, r *http.Request) {
 			doc.Synopsis,
 			doc.Description,
 			doc.Imported,
+			doc.TestImported,
 			doc.Imports,
+			doc.TestImports,
 			doc.ProjectURL,
 			doc.StaticRank + 1,
 		}, callback)
@@ -618,6 +631,27 @@ func pageApi(w http.ResponseWriter, r *http.Request) {
 			indexDB.Search(nil, func(docID int32, data interface{}) error {
 				doc := data.(gcse.HitInfo)
 				pkgs = append(pkgs, doc.Package)
+
+				return nil
+			})
+		}
+		ApiContent(w, http.StatusOK, pkgs, callback)
+
+	case "package_depends":
+		indexDB := indexDBBox.Get().(*index.TokenSetSearcher)
+		var pkgs []PackageDependenceInfo
+		if indexDB != nil {
+			pkgs = make([]PackageDependenceInfo, 0, indexDB.DocCount())
+			indexDB.Search(nil, func(docID int32, data interface{}) error {
+				doc := data.(gcse.HitInfo)
+				pkgs = append(pkgs, PackageDependenceInfo{
+					Name:         doc.Name,
+					Package:      doc.Package,
+					Imports:      doc.Imports,
+					TestImports:  doc.TestImports,
+					Imported:     doc.Imported,
+					TestImported: doc.TestImported,
+				})
 
 				return nil
 			})

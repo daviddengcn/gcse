@@ -35,7 +35,9 @@ Returns the information of a package. [example](/api?action=package&id=github.co
     `StarCount`   | `int`      | Number of stars(github, bitbucket, plus/like buttons)
     `Synopsis`    | `string`   | Synopsis(from package comment or documentaion)
     `Description` | `string`   | Detailed documents
+    `TestImported`| `[]string` | List of packages that imports this package only in test cases.
     `Imported`    | `[]string` | List of packages that imports this package
+    `TestImports` | `[]string` | List of packages this package (only) test imports
     `Imports`     | `[]string` | List of packages this package imports
     `ProjectURL`  | `string`   | URL of the project of this package
     `StaticRank`  | `int`      | Static rank of this package. One-based.
@@ -74,6 +76,29 @@ Returns the ID array of all packages. [link](/api?action=packages)
 * Return values
 
 An array of strings, each of which is the ID (or import path) of a package.
+
+
+### "package_depends" Action
+
+Returns an array of dependency information of all packages. [link](/api?action=package_depends)
+
+* Parameters
+
+    Key      | Value
+    ---------|------------------------------------------------------------------
+    `action` | `package_depends`
+
+* Return values
+
+An array of the following struct:
+    Field         | Type       | Value
+    --------------|------------|-----------------------------------------------
+    `Package`     | `string`   | Import path, ID of a package in GS
+    `Name`        | `string`   | Package name
+    `TestImported`| `[]string` | List of packages that imports this package only in test cases.
+    `Imported`    | `[]string` | List of packages that imports this package
+    `TestImports` | `[]string` | List of packages this package (only) test imports
+    `Imports`     | `[]string` | List of packages that imports this package
 
 
 ### "search" Action
