@@ -184,8 +184,6 @@ func (s segments) GenNewSegment() (Segment, error) {
 		path.MkdirAll(0755)
 		return newSegment(path), nil
 	}
-	// won't happend
-	return nil, nil
 }
 
 func (s segments) GenMaxSegment() (Segment, error) {

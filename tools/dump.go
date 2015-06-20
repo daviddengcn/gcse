@@ -1,12 +1,12 @@
 package main
 
-import(
+import (
 	"fmt"
 	"log"
 	"os"
-	
+
 	"github.com/golangplus/fmt"
-	
+
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/sophie"
@@ -22,26 +22,26 @@ func dumpDocs(keys []string) {
 	kvDir := kv.DirInput(sophie.LocalFsPath(path))
 	cnt, err := kvDir.PartCount()
 	if err != nil {
-		log.Fatalf("kvDir.PartCount() failed: %v")
+		log.Fatalf("kvDir.PartCount() failed: %v", err)
 	}
-	
+
 	parts := make(map[int]map[string]bool)
 	for _, key := range keys {
-		part := gcse.CalcPackagePartition(key, gcse.DOCS_PARTS);
+		part := gcse.CalcPackagePartition(key, gcse.DOCS_PARTS)
 		if parts[part] == nil {
 			parts[part] = make(map[string]bool)
 		}
-		
+
 		parts[part][key] = true
 	}
-	
+
 	var key sophie.RawString
 	var val gcse.DocInfo
 	for part := 0; part < cnt; part++ {
 		if len(keys) > 0 && parts[part] == nil {
 			continue
 		}
-		
+
 		it, err := kvDir.Iterator(part)
 		if err != nil {
 			log.Fatalf("kvDir.Collector(%d) failed: %v", part, err)
@@ -49,11 +49,11 @@ func dumpDocs(keys []string) {
 
 		func() {
 			defer it.Close()
-			
+
 			for {
 				if err := it.Next(&key, &val); err != nil {
 					if err == sophie.EOF {
-						break;
+						break
 					}
 					log.Fatalf("it.Next failed %v", err)
 				}
@@ -63,7 +63,7 @@ func dumpDocs(keys []string) {
 				}
 				fmtp.Printfln("%v -> %+v", key, val)
 			}
-			
+
 			it.Close()
 		}()
 	}
@@ -85,7 +85,7 @@ func dumpIndex(keys []string) {
 	if err := db.Load(f); err != nil {
 		log.Fatalf("db.Open() failed: %v", err)
 	}
-	
+
 	for _, key := range keys {
 		db.Search(index.SingleFieldQuery(gcse.IndexPkgField, key),
 			func(docID int32, data interface{}) error {
@@ -108,14 +108,15 @@ func main() {
 		fmtp.Printfln("%d: %x", i, c)
 	}
 
-	
 	if len(os.Args) < 2 {
 		help()
 		return
 	}
-	
+
 	switch os.Args[1] {
-	case "docs": dumpDocs(os.Args[2:])
-	case "index": dumpIndex(os.Args[2:])
+	case "docs":
+		dumpDocs(os.Args[2:])
+	case "index":
+		dumpIndex(os.Args[2:])
 	}
 }
