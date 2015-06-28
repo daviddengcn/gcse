@@ -20,7 +20,7 @@ func main() {
 	outDocsUpdated := kv.DirOutput(fpDataRoot.Join("docs-updated"))
 	outDocsUpdated.Clean()
 
-	var cntDeleted, cntUpdated, cntNewUnchange int64
+	var cntDeleted, cntUpdated, cntNew, cntUnchanged int64
 
 	job := mr.MrJob{
 		Source: []mr.Input{
@@ -30,6 +30,7 @@ func main() {
 
 		NewMapperF: func(src, part int) mr.Mapper {
 			if src == 0 {
+				// Mapper for docs
 				return &mr.MapperStruct{
 					NewKeyF: sophie.NewRawString,
 					NewValF: gcse.NewDocInfo,
@@ -39,7 +40,7 @@ func main() {
 						pkg := key.(*sophie.RawString).String()
 						di := val.(*gcse.DocInfo)
 						act := gcse.NewDocAction{
-							Action:  gcse.NDA_UPDATE,
+							Action:  gcse.NDA_ORIGINAL,
 							DocInfo: *di,
 						}
 
@@ -49,12 +50,11 @@ func main() {
 				}
 			}
 
+			// Mapper for new docs
 			return &mr.MapperStruct{
 				NewKeyF: sophie.NewRawString,
 				NewValF: gcse.NewNewDocAction,
-				MapF: func(key, val sophie.SophieWriter,
-					c mr.PartCollector) error {
-
+				MapF: func(key, val sophie.SophieWriter, c mr.PartCollector) error {
 					pkg := string(*key.(*sophie.RawString))
 					part := gcse.CalcPackagePartition(pkg, gcse.DOCS_PARTS)
 					return c.CollectTo(part, key, val)
@@ -74,6 +74,7 @@ func main() {
 					var act gcse.DocInfo
 					isSet := false
 					isUpdated := false
+					hasOriginal := false
 					for {
 						val, err := nextVal()
 						if err == sophie.EOF {
@@ -84,11 +85,16 @@ func main() {
 						}
 
 						cur := val.(*gcse.NewDocAction)
-						if cur.Action == gcse.NDA_DEL {
+						switch cur.Action {
+						case gcse.NDA_DEL:
 							// not collect out to delete it
 							atomic.AddInt64(&cntDeleted, 1)
 							return nil
+
+						case gcse.NDA_ORIGINAL:
+							hasOriginal = true
 						}
+
 						if !isSet {
 							isSet = true
 							act = cur.DocInfo
@@ -103,8 +109,10 @@ func main() {
 					if isSet {
 						if isUpdated {
 							atomic.AddInt64(&cntUpdated, 1)
+						} else if hasOriginal {
+							atomic.AddInt64(&cntUnchanged, 1)
 						} else {
-							atomic.AddInt64(&cntNewUnchange, 1)
+							atomic.AddInt64(&cntNew, 1)
 						}
 						return c[0].Collect(key, &act)
 					} else {
@@ -123,9 +131,10 @@ func main() {
 		log.Fatalf("job.Run failed: %v", err)
 	}
 
-	log.Printf("Deleted: %v", cntDeleted)
-	log.Printf("Updated: %v", cntUpdated)
-	log.Printf("NewUnchange: %v", cntNewUnchange)
+	log.Printf("Deleted:   %v", cntDeleted)
+	log.Printf("Updated:   %v", cntUpdated)
+	log.Printf("New:       %v", cntNew)
+	log.Printf("Unchanged: %v", cntUnchanged)
 
 	pDocs := gcse.DataRoot.Join(gcse.FnDocs)
 	pUpdated := gcse.DataRoot.Join("docs-updated")

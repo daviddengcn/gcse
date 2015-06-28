@@ -613,6 +613,8 @@ const (
 	NDA_STARS
 	// deleted
 	NDA_DEL
+	// Original document
+	NDA_ORIGINAL
 )
 
 /*
