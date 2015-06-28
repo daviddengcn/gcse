@@ -87,13 +87,16 @@ func (crawlerMapper) MapEnd(c []sophie.Collector) error {
 	return nil
 }
 
+func cleanTempDir() {
+	tmpFn := villa.Path("/tmp/gddo")
+	if err := tmpFn.RemoveAll(); err != nil {
+		log.Printf("Delete %v failed: %v", tmpFn, err)
+	}
+}
+
 func main() {
-	defer func() {
-		tmpFn := villa.Path("/tmp/gddo")
-		if err := tmpFn.RemoveAll(); err != nil {
-			log.Printf("Delete %v failed: %v", tmpFn, err)
-		}
-	}()
+	cleanTempDir()
+	defer cleanTempDir()
 
 	singlePackge := ""
 	singleETag := ""
