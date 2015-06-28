@@ -4,7 +4,7 @@ import "flag"
 import "github.com/daviddengcn/go-villa"
 import "github.com/daviddengcn/go-ljson-conf"
 
-backupFolders := flag.String("folder", "", "Folders to backup, colon splitted. Backup docs/crawler if not speicifed")
+backupFolders := flag.String("folder", "docs:crawler", "Colon-delimited folders to backup.")
 
 flag.Parse()
 
@@ -20,14 +20,11 @@ if fdid == "" {
 today := Now().Format("2006-01-02")
 Printf("Backup to %s\n", today)
 
-folders := []string{"docs", "crawler"}
-if *backupFolders != "" {
-  folders = Split(*backupFolders, ":")
-}
+folders := Split(*backupFolders, ":")
 
 Println("Compressing files")
 for _, folder := range folders {
-  Printfln("Compresing data/%s into data/%s.%s.tar.gz", folder, folder, today)
+  Printfln("Compressing data/%s into data/%s.%s.tar.gz", folder, folder, today)
   MustSucc(Bash("tar czf data/%s.%s.tar.gz data/%s", folder, today, folder))
 }
 
@@ -37,4 +34,4 @@ for _, folder := range folders {
   Bash("rm data/%s.%s.tar.gz", folder, today)
 }
 
-Println("Backup finish")
+Println("Backup finished")
