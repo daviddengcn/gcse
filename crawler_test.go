@@ -7,8 +7,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golangplus/testing/assert"
+
 	"github.com/daviddengcn/gddo/doc"
-	"github.com/daviddengcn/go-assert"
 	"github.com/daviddengcn/go-villa"
 )
 
@@ -22,7 +23,7 @@ func TestGithubUpdates(t *testing.T) {
 
 func TestReadmeToText(t *testing.T) {
 	text := strings.TrimSpace(ReadmeToText("a.md", "#abc"))
-	assert.Equals(t, "text", text, "abc")
+	assert.Equal(t, "text", text, "abc")
 }
 
 func TestReadmeToText_Panic(t *testing.T) {
@@ -70,7 +71,7 @@ func TestCrawlPackage(t *testing.T) {
 			t.Error(err)
 		}
 	} else {
-		assert.Equals(t, "pkg", p.Package, pkg)
+		assert.Equal(t, "pkg", p.Package, pkg)
 	}
 
 	//	pkg = "git.gitorious.org/go-pkg/epubgo.git"
@@ -80,7 +81,7 @@ func TestCrawlPackage(t *testing.T) {
 	//			t.Error(err)
 	//		}
 	//	} else {
-	//		assert.Equals(t, "pkg", p.Package, pkg)
+	//		assert.Equal(t, "pkg", p.Package, pkg)
 	//	}
 
 	pkg = "thezombie.net/libgojira"
@@ -106,7 +107,7 @@ func TestDocDB(t *testing.T) {
 		t.Error("db.Get failed!")
 		return
 	}
-	assert.StringEquals(t, "hello", info2, info)
+	assert.StringEqual(t, "hello", info2, info)
 
 	if err := db.Iterate(func(key string, val interface{}) error {
 		info3, ok := val.(DocInfo)
@@ -114,7 +115,7 @@ func TestDocDB(t *testing.T) {
 			return errors.New("errNotDocInfo")
 		}
 
-		assert.StringEquals(t, key, info3, info)
+		assert.StringEqual(t, key, info3, info)
 		return nil
 	}); err != nil {
 		t.Errorf("db.Iterate failed: %v", err)
@@ -142,7 +143,7 @@ func TestDocDB_Export(t *testing.T) {
 		if !ok {
 			return errors.New("Not a DocInfo object")
 		}
-		assert.StringEquals(t, "info.Name", info.Name,
+		assert.StringEqual(t, "info.Name", info.Name,
 			"github.com/daviddengcn/gcse")
 		count++
 		return nil
@@ -150,7 +151,7 @@ func TestDocDB_Export(t *testing.T) {
 		t.Errorf("newDB.Iterate failed: %v", err)
 	}
 
-	assert.Equals(t, "count", count, 1)
+	assert.Equal(t, "count", count, 1)
 }
 
 func TestCrawlingEntry(t *testing.T) {
@@ -161,12 +162,12 @@ func TestCrawlingEntry(t *testing.T) {
 	}
 
 	var buf villa.ByteSlice
-	assert.NoErrorf(t, "src.WriteTo failed: %v", src.WriteTo(&buf))
+	assert.NoError(t, src.WriteTo(&buf))
 
 	var dst CrawlingEntry
-	assert.NoErrorf(t, "dst.ReadFrom failed: %v", dst.ReadFrom(&buf, -1))
+	assert.NoError(t, dst.ReadFrom(&buf, -1))
 
-	assert.StringEquals(t, "dst", dst, src)
+	assert.StringEqual(t, "dst", dst, src)
 }
 
 func TestFullProjectOfPackage(t *testing.T) {
@@ -178,7 +179,6 @@ func TestFullProjectOfPackage(t *testing.T) {
 
 	for i := 0; i < len(DATA); i += 2 {
 		pkg, prj := DATA[i], DATA[i+1]
-		assert.Equals(t, "FullProjectOfPackage "+pkg,
-			FullProjectOfPackage(pkg), prj)
+		assert.Equal(t, "FullProjectOfPackage "+pkg, FullProjectOfPackage(pkg), prj)
 	}
 }

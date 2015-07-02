@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/daviddengcn/go-assert"
+	"github.com/golangplus/testing/assert"
 )
 
 func TestEffectiveImported(t *testing.T) {
@@ -193,9 +193,7 @@ launchpad.net/mgo/v2`)
 	cnt := effectiveImported(imported, author, project)
 	t.Logf("cnt: %f", cnt)
 
-	if cnt > 100 {
-		t.Errorf("effectiveImported failed!")
-	}
+	assert.ValueShould(t, "cnt", cnt, cnt <= 100, "> 100: effectiveImported failed!")
 }
 
 func TestEffectiveImported_projsame(t *testing.T) {
@@ -299,9 +297,7 @@ github.com/zsol/docker`)
 	cnt := effectiveImported(imported, author, project)
 	t.Logf("cnt: %f", cnt)
 
-	if cnt > 10 {
-		t.Errorf("effectiveImported failed!")
-	}
+	assert.ValueShould(t, "cnt", cnt, cnt <= 10, "> 10: effectiveImported failed!")
 }
 
 func TestProjectOfPackage(t *testing.T) {
@@ -313,7 +309,7 @@ func TestProjectOfPackage(t *testing.T) {
 	}
 
 	for i := 0; i < len(PKG_PRJ); i += 2 {
-		assert.Equals(t, "project of "+PKG_PRJ[i], ProjectOfPackage(PKG_PRJ[i]), PKG_PRJ[i+1])
+		assert.Equal(t, "project of "+PKG_PRJ[i], ProjectOfPackage(PKG_PRJ[i]), PKG_PRJ[i+1])
 	}
 }
 
@@ -326,6 +322,6 @@ func TestAuthorOfPackage(t *testing.T) {
 	}
 
 	for i := 0; i < len(PKG_AUTHOR); i += 2 {
-		assert.Equals(t, "author of "+PKG_AUTHOR[i], AuthorOfPackage(PKG_AUTHOR[i]), PKG_AUTHOR[i+1])
+		assert.Equal(t, "author of "+PKG_AUTHOR[i], AuthorOfPackage(PKG_AUTHOR[i]), PKG_AUTHOR[i+1])
 	}
 }

@@ -1,9 +1,9 @@
 package gcse
 
 import (
-	"github.com/daviddengcn/go-algs/ed"
-	"github.com/daviddengcn/go-villa"
 	"testing"
+
+	"github.com/golangplus/testing/assert"
 )
 
 func TestSplitSentences(t *testing.T) {
@@ -33,7 +33,7 @@ server   providing web services, including home/top/search services.
 		`server providing web services, including home/top/search services.`,
 	}
 	sents := SplitSentences(TEXT)
-	AssertStringsEqual(t, "Sentences", sents, SENTS)
+	assert.StringEqual(t, "Sentences", sents, SENTS)
 }
 
 func TestChooseImportantSentenses(t *testing.T) {
@@ -79,7 +79,7 @@ A simple pluggable lexer package.
 		`A simple pluggable lexer package.`,
 	}
 	importants := ChooseImportantSentenses(TEXT, "gcse", "github/daviddengcn/core")
-	AssertStringsEqual(t, "importants", importants, IMPORTANTS)
+	assert.StringEqual(t, "importants", importants, IMPORTANTS)
 }
 
 func TestChooseImportantSentenses_GoBot(t *testing.T) {
@@ -90,7 +90,7 @@ GoBot is an IRC Bot programmed in Golang![Build Status](https://secure.travis-ci
 		`GoBot is an IRC Bot programmed in Golang.`,
 	}
 	importants := ChooseImportantSentenses(TEXT, "main", "github.com/wei2912/GoBot")
-	AssertStringsEqual(t, "importants", importants, IMPORTANTS)
+	assert.StringEqual(t, "importants", importants, IMPORTANTS)
 }
 
 func TestChooseImportantSentenses_PackageEscape(t *testing.T) {
@@ -101,46 +101,5 @@ GoBot is an IRC Bot programmed.
 		`GoBot is an IRC Bot programmed.`,
 	}
 	importants := ChooseImportantSentenses(TEXT, "main", "github.com/+wei2912/GoBot")
-	AssertStringsEqual(t, "importants", importants, IMPORTANTS)
-}
-
-func showText(text string) string {
-	return text + "."
-}
-
-func AssertStringsEqual(t *testing.T, name string, act, exp []string) {
-	if villa.StringSlice(exp).Equals(act) {
-		return
-	}
-	t.Errorf("%s unexpected(exp: %d lines, act %d lines)!", name, len(exp), len(act))
-	t.Logf("exp ---  act +++")
-	t.Logf("Difference:")
-	_, matA, matB := ed.EditDistanceFFull(len(exp), len(act), func(iA, iB int) int {
-		sa, sb := exp[iA], act[iB]
-		if sa == sb {
-			return 0
-		}
-		return ed.String(sa, sb)
-	}, func(iA int) int {
-		return len(exp[iA]) + 1
-	}, func(iB int) int {
-		return len(act[iB]) + 1
-	})
-	for i, j := 0, 0; i < len(exp) || j < len(act); {
-		switch {
-		case j >= len(act) || i < len(exp) && matA[i] < 0:
-			t.Logf("--- %3d: %s", i+1, showText(exp[i]))
-			i++
-		case i >= len(exp) || j < len(act) && matB[j] < 0:
-			t.Logf("+++ %3d: %s", j+1, showText(act[j]))
-			j++
-		default:
-			if exp[i] != act[j] {
-				t.Logf("--- %3d: %s", i+1, showText(exp[i]))
-				t.Logf("+++ %3d: %s", j+1, showText(act[j]))
-			} // else
-			i++
-			j++
-		}
-	} // for i, j
+	assert.StringEqual(t, "importants", importants, IMPORTANTS)
 }

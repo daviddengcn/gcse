@@ -4,9 +4,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/daviddengcn/go-assert"
+	"github.com/golangplus/bytes"
+	"github.com/golangplus/testing/assert"
+
 	"github.com/daviddengcn/go-index"
-	"github.com/daviddengcn/go-villa"
 )
 
 func TestDocInfo(t *testing.T) {
@@ -32,30 +33,30 @@ func TestDocInfo(t *testing.T) {
 			"DocInfo", "CheckRuneType",
 		},
 	}
-	var buf villa.ByteSlice
-	assert.NoErrorf(t, "src.WriteTo failed: %v", src.WriteTo(&buf))
+	var buf bytesp.ByteSlice
+	assert.NoError(t, src.WriteTo(&buf))
 
 	var dst DocInfo
-	assert.NoErrorf(t, "dst.ReadFrom failed: %v", dst.ReadFrom(&buf, -1))
+	assert.NoError(t, dst.ReadFrom(&buf, -1))
 
-	assert.StringEquals(t, "dst", dst, src)
+	assert.StringEqual(t, "dst", dst, src)
 
 	// checking the bug introduced by reusing slice
 	dst2 := dst
-	assert.StringEquals(t, "dst2.Imports[0]", dst2.Imports[0],
+	assert.StringEqual(t, "dst2.Imports[0]", dst2.Imports[0],
 		"github.com/daviddengcn/go-villa")
 
 	src.Imports[0] = "github.com/daviddengcn/go-assert"
 	buf = nil
-	assert.NoErrorf(t, "src.WriteTo failed: %v", src.WriteTo(&buf))
-	assert.NoErrorf(t, "dst.ReadFrom failed: %v", dst.ReadFrom(&buf, -1))
-	assert.StringEquals(t, "dst", dst, src)
+	assert.NoError(t, src.WriteTo(&buf))
+	assert.NoError(t, dst.ReadFrom(&buf, -1))
+	assert.StringEqual(t, "dst", dst, src)
 
-	assert.StringEquals(t, "dst2.Imports[0]", dst2.Imports[0],
+	assert.StringEqual(t, "dst2.Imports[0]", dst2.Imports[0],
 		"github.com/daviddengcn/go-villa")
 }
 
 func TestCheckRuneType_BOM(t *testing.T) {
 	tp := CheckRuneType('A', 0xfeff)
-	assert.Equals(t, "CheckRuneType(0, 0xfeff)", tp, index.TokenSep)
+	assert.Equal(t, "CheckRuneType(A, 0xfeff)", tp, index.TokenSep)
 }

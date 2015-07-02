@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/daviddengcn/go-assert"
+	"github.com/golangplus/testing/assert"
+
+	goassert "github.com/daviddengcn/go-assert"
 	"github.com/daviddengcn/go-villa"
 	"github.com/daviddengcn/sophie"
 	"github.com/daviddengcn/sophie/mr"
@@ -61,7 +63,7 @@ func TestIndex(t *testing.T) {
 	}
 
 	numDocs := ts.DocCount()
-	assert.Equals(t, "DocCount", numDocs, 3)
+	assert.Equal(t, "DocCount", numDocs, 3)
 
 	var pkgs []string
 	if err := ts.Search(map[string]villa.StrSet{IndexTextField: nil},
@@ -74,7 +76,7 @@ func TestIndex(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	assert.LinesEqual(t, "all", pkgs,
+	assert.StringEqual(t, "all", pkgs,
 		[]string{
 			"github.com/daviddengcn/gcse",
 			"github.com/daviddengcn/go-villa",
@@ -91,12 +93,12 @@ func TestIndex(t *testing.T) {
 		t.Errorf("ts.Search: %v", err)
 		return
 	}
-	assert.LinesEqual(t, "gcseInfo.Imported",
+	assert.StringEqual(t, "gcseInfo.Imported",
 		gcseInfo.Imported,
 		[]string{
 			"github.com/daviddengcn/gcse/indexer",
 		})
-	assert.LinesEqual(t, "gcseInfo.TestImports",
+	assert.StringEqual(t, "gcseInfo.TestImports",
 		gcseInfo.TestImports,
 		[]string{
 			"github.com/daviddengcn/go-villa",
@@ -112,10 +114,10 @@ func TestIndex(t *testing.T) {
 		t.Errorf("ts.Search: %v", err)
 		return
 	}
-	assert.LinesEqual(t, "indexerInfo.Imported",
-		indexerInfo.Imported, nil)
-	assert.LinesEqual(t, "indexerInfo.Imports",
-		indexerInfo.Imports, nil)
+	assert.StringEqual(t, "indexerInfo.Imported",
+		indexerInfo.Imported, []string{})
+	assert.StringEqual(t, "indexerInfo.Imports",
+		indexerInfo.Imports, []string{})
 
 	if err := ts.Search(map[string]villa.StrSet{
 		IndexPkgField: villa.NewStrSet("github.com/daviddengcn/go-villa"),
@@ -126,10 +128,10 @@ func TestIndex(t *testing.T) {
 		t.Errorf("ts.Search: %v", err)
 		return
 	}
-	assert.StringEquals(t, "indexerInfo.Imported",
+	assert.StringEqual(t, "indexerInfo.Imported",
 		fmt.Sprintf("%+v", indexerInfo.Imported),
 		"[]")
-	assert.LinesEqual(t, "gcseInfo.TestImported",
+	assert.StringEqual(t, "gcseInfo.TestImported",
 		gcseInfo.TestImported,
 		[]string{"github.com/daviddengcn/gcse"})
 }
@@ -144,6 +146,6 @@ func TestAppendTokens_filter(t *testing.T) {
 		SRC := SRC_DST[i].(string)
 		DST := villa.NewStrSet(SRC_DST[i+1].([]string)...)
 
-		assert.StrSetEquals(t, "Tokens of "+SRC, AppendTokens(nil, []byte(SRC)), DST)
+		goassert.StrSetEquals(t, "Tokens of "+SRC, AppendTokens(nil, []byte(SRC)), DST)
 	}
 }
