@@ -84,7 +84,7 @@ func main() {
 						pkg := string(*key.(*sophie.RawString))
 						if nonStorePackage.MatchString(pkg) {
 							log.Printf("Ignoring non-store pkg: %s", pkg)
-							return
+							return nil
 						}
 					}
 
