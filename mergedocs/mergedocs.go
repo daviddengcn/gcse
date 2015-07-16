@@ -3,7 +3,10 @@ package main
 import (
 	//	"fmt"
 	"log"
+	"regexp"
 	"sync/atomic"
+
+	"github.com/golangplus/strings"
 
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/sophie"
@@ -13,6 +16,12 @@ import (
 
 func main() {
 	log.Println("Merging new crawled docs back...")
+
+	var nonStorePackage *regexp.Regexp
+	if len(gcse.NonStorePackageRegexps) > 0 {
+		nonStorePackage = regexp.MustCompile(
+			stringsp.FullJoin(gcse.NonStorePackageRegexps, "(", ")|(", ")"))
+	}
 
 	fpDataRoot := sophie.LocalFsPath(gcse.DataRoot.S())
 
@@ -70,6 +79,14 @@ func main() {
 				NewValF: gcse.NewNewDocAction,
 				ReduceF: func(key sophie.SophieWriter,
 					nextVal mr.SophierIterator, c []sophie.Collector) error {
+
+					if nonStorePackage != nil {
+						pkg := string(*key.(*sophie.RawString))
+						if nonStorePackage.MatchString(pkg) {
+							log.Printf("Ignoring non-store pkg: %s", pkg)
+							return
+						}
+					}
 
 					var act gcse.DocInfo
 					isSet := false

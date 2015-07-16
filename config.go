@@ -99,7 +99,8 @@ var (
 	*/
 	CrawlerVersion = 5
 
-	NonCrawlHosts = villa.StrSet{}
+	NonCrawlHosts          = villa.StrSet{}
+	NonStorePackageRegexps = []string{}
 )
 
 func init() {
@@ -138,4 +139,6 @@ func init() {
 
 	CrawlerGithubClientID = conf.String("crawler.github.clientid", "")
 	CrawlerGithubClientSecret = conf.String("crawler.github.clientsecret", "")
+
+	NonStorePackageRegexps = conf.StringList("docdb.nonstore_regexps", nil)
 }

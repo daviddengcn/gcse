@@ -20,4 +20,8 @@
 		// 	clientsecret: ""
 		// }
     }
+	
+	docdb: {
+		// nonstore_regexps: []
+	}
 } 
