@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"math"
 	"strings"
+	"time"
 
 	"github.com/daviddengcn/go-villa"
 
@@ -143,6 +144,24 @@ func effectiveImported(imported []string, author, project string) float64 {
 	return s
 }
 
+var (
+	googleCodeReadonlyDate = time.Date(2015, time.August, 24, 0, 0, 0, 0, time.UTC)
+	googleCodeCloseDate    = time.Date(2016, time.January, 25, 0, 0, 0, 0, time.UTC)
+)
+
+func getCodeGoogleComFactor() float64 {
+	now := time.Now()
+	if now.After(googleCodeCloseDate) {
+		return 1e-2
+	}
+
+	if now.After(googleCodeReadonlyDate) {
+		return 1e-1
+	}
+
+	return 0.25
+}
+
 func CalcStaticScore(doc *HitInfo) float64 {
 	s := float64(1)
 
@@ -182,6 +201,10 @@ func CalcStaticScore(doc *HitInfo) float64 {
 		frac = float64(len(doc.Imported)) / float64(len(doc.Imported)+len(doc.TestImported))
 	}
 	s += math.Sqrt(float64(starCount)) * 0.5 * frac
+
+	if strings.HasPrefix(doc.Package, "code.google.com/") {
+		s *= getCodeGoogleComFactor()
+	}
 
 	return s
 }
