@@ -195,9 +195,9 @@ func search(q string) (*SearchResult, villa.StrSet, error) {
 	// Adjust Score by down ranking duplicated packages
 	pkgCount := make(map[string]int)
 	for _, hit := range hits {
-		cnt := pkgCount[hit.Package] + 1
-		pkgCount[hit.Package] = cnt
-		if cnt > 1 && len(hit.Imported) == 0 {
+		cnt := pkgCount[hit.Name] + 1
+		pkgCount[hit.Name] = cnt
+		if cnt > 1 && len(hit.Imported) == 0 && len(hit.TestImported) == 0 {
 			hit.Score /= float64(cnt)
 		}
 	}
