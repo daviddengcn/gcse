@@ -192,19 +192,23 @@ func search(q string) (*SearchResult, villa.StrSet, error) {
 		return pi < pj
 	}, swapHits)
 
-	// Adjust Score by down ranking duplicated packages
-	pkgCount := make(map[string]int)
-	for _, hit := range hits {
-		cnt := pkgCount[hit.Name] + 1
-		pkgCount[hit.Name] = cnt
-		if cnt > 1 && len(hit.Imported) == 0 && len(hit.TestImported) == 0 {
-			hit.Score /= float64(cnt)
-		}
-	}
 
-	sortp.BubbleF(len(hits), func(i, j int) bool {
-		return hits[i].Score > hits[j].Score
-	}, swapHits)
+	if len(hits) < 5000 {
+		// Adjust Score by down ranking duplicated packages
+		pkgCount := make(map[string]int)
+		for _, hit := range hits {
+			cnt := pkgCount[hit.Name] + 1
+			pkgCount[hit.Name] = cnt
+			if cnt > 1 && len(hit.Imported) == 0 && len(hit.TestImported) == 0 {
+				hit.Score /= float64(cnt)
+			}
+		}
+
+		// Re-sort
+		sortp.BubbleF(len(hits), func(i, j int) bool {
+			return hits[i].Score > hits[j].Score
+		}, swapHits)
+	}
 
 	return &SearchResult{
 		TotalResults: len(hits),
