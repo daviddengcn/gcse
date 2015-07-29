@@ -203,7 +203,7 @@ func search(q string) (*SearchResult, villa.StrSet, error) {
 	}
 
 	sortp.BubbleF(len(hits), func(i, j int) bool {
-		return hits[i].Score < hits[j].Score
+		return hits[i].Score > hits[j].Score
 	}, swapHits)
 
 	return &SearchResult{
