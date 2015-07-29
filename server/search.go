@@ -159,6 +159,10 @@ func search(q string) (*SearchResult, villa.StrSet, error) {
 
 	log.Printf("Got %d hits for query %q", len(hits), q)
 
+	swapHits := func(i, j int) {
+		hits[i], hits[j] = hits[j], hits[i]
+	}
+
 	sortp.SortF(len(hits), func(i, j int) bool {
 		// true if doc i is before doc j
 		ssi, ssj := hits[i].Score, hits[j].Score
@@ -186,10 +190,21 @@ func search(q string) (*SearchResult, villa.StrSet, error) {
 		}
 
 		return pi < pj
-	}, func(i, j int) {
-		// Swap
-		hits[i], hits[j] = hits[j], hits[i]
-	})
+	}, swapHits)
+
+	// Adjust Score by down ranking duplicated packages
+	pkgCount := make(map[string]int)
+	for _, hit := range hits {
+		cnt := pkgCount[hit.Package] + 1
+		pkgCount[hit.Package] = cnt
+		if cnt > 1 && len(hit.Imported) == 0 {
+			hit.Score /= float64(cnt)
+		}
+	}
+
+	sortp.BubbleF(len(hits), func(i, j int) bool {
+		return hits[i].Score < hits[j].Score
+	}, swapHits)
 
 	return &SearchResult{
 		TotalResults: len(hits),
