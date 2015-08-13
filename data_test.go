@@ -33,7 +33,7 @@ func TestDocInfo(t *testing.T) {
 			"DocInfo", "CheckRuneType",
 		},
 	}
-	var buf bytesp.ByteSlice
+	var buf bytesp.Slice
 	assert.NoError(t, src.WriteTo(&buf))
 
 	var dst DocInfo
