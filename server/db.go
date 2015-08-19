@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/golangplus/container/heap"
 	"github.com/golangplus/strings"
 
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/go-index"
-	"github.com/daviddengcn/go-villa"
 )
 
 type StatItem struct {
@@ -25,35 +25,30 @@ type StatList struct {
 }
 
 type TopN struct {
-	cmp villa.CmpFunc
-	pq  *villa.PriorityQueue
-	n   int
+	less func(a, b interface{}) bool
+	pq   heap.Interfaces
+	n    int
 }
 
-func NewTopN(cmp villa.CmpFunc, n int) *TopN {
+func NewTopN(less func(a, b interface{}) bool, n int) *TopN {
 	return &TopN{
-		cmp: cmp,
-		pq:  villa.NewPriorityQueue(cmp),
-		n:   n,
+		less: less,
+		pq:   heap.NewInterfaces(less, n),
+		n:    n,
 	}
 }
 
 func (t *TopN) Append(item interface{}) {
 	if t.pq.Len() < t.n {
 		t.pq.Push(item)
-	} else if t.cmp(t.pq.Peek(), item) < 0 {
+	} else if t.less(t.pq.Peek(), item) {
 		t.pq.Pop()
 		t.pq.Push(item)
 	}
 }
 
 func (t *TopN) PopAll() []interface{} {
-	lst := make([]interface{}, t.pq.Len())
-	for i := range lst {
-		lst[len(lst)-i-1] = t.pq.Pop()
-	}
-
-	return lst
+	return t.pq.PopAll()
 }
 
 func (t *TopN) Len() int {
@@ -84,15 +79,13 @@ func statTops(N int) []StatList {
 	var topStaticScores []gcse.HitInfo
 	var tssProjects stringsp.Set
 
-	topImported := NewTopN(func(a, b interface{}) int {
+	topImported := NewTopN(func(a, b interface{}) bool {
 		ia, ib := a.(gcse.HitInfo), b.(gcse.HitInfo)
-		return villa.IntValueCompare(len(ia.Imported)+len(ia.TestImported),
-			len(ib.Imported)+len(ib.TestImported))
+		return len(ia.Imported)+len(ia.TestImported) < len(ib.Imported)+len(ib.TestImported)
 	}, N)
 
-	topTestStatic := NewTopN(func(a, b interface{}) int {
-		return villa.FloatValueCompare(a.(gcse.HitInfo).TestStaticScore,
-			b.(gcse.HitInfo).TestStaticScore)
+	topTestStatic := NewTopN(func(a, b interface{}) bool {
+		return a.(gcse.HitInfo).TestStaticScore < b.(gcse.HitInfo).TestStaticScore
 	}, N)
 
 	sites := make(map[string]int)
@@ -170,8 +163,8 @@ func statTops(N int) []StatList {
 		})
 	}
 
-	topSites := NewTopN(func(a, b interface{}) int {
-		return villa.IntValueCompare(sites[a.(string)], sites[b.(string)])
+	topSites := NewTopN(func(a, b interface{}) bool {
+		return sites[a.(string)] < sites[b.(string)]
 	}, N)
 	for site := range sites {
 		topSites.Append(site)
