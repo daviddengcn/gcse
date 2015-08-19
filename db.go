@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/golangplus/strings"
+
 	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/go-villa"
 )
@@ -313,11 +315,11 @@ func (ti *TokenIndexer) Export(root villa.Path, kind string) error {
 	return ti.TokenIndexer.Save(f)
 }
 
-func (ti *TokenIndexer) Put(id string, tokens villa.StrSet) {
+func (ti *TokenIndexer) Put(id string, tokens stringsp.Set) {
 	ti.Lock()
 	defer ti.Unlock()
 
-	ti.TokenIndexer.Put(id, tokens)
+	ti.TokenIndexer.PutTokens(id, tokens)
 	ti.lastModified = time.Now()
 	ti.modified = true
 }

@@ -1,10 +1,11 @@
 package gcse
 
 import (
-	"github.com/daviddengcn/go-villa"
 	"log"
 	"regexp"
 	"strings"
+
+	"github.com/golangplus/bytes"
 )
 
 /*
@@ -159,7 +160,7 @@ func reEscapeString(s string) string {
 	if strings.IndexAny(s, "+?*\\") < 0 {
 		return s
 	}
-	var buf villa.ByteSlice
+	var buf bytesp.Slice
 	for _, r := range s {
 		buf.WriteString(reEscapeRune(r))
 	}
@@ -167,7 +168,7 @@ func reEscapeString(s string) string {
 }
 
 func reName(name string) string {
-	var res villa.ByteSlice
+	var res bytesp.Slice
 	p := len(name)
 	if strings.HasSuffix(name, "d") || strings.HasSuffix(name, "s") {
 		p = len(name) - 1
@@ -218,7 +219,7 @@ func ChooseImportantSentenses(text string, name, pkg string) []string {
 
 	name = strings.ToLower(name)
 
-	var namePrefix villa.ByteSlice
+	var namePrefix bytesp.Slice
 	namePrefix.WriteString(op(reThe) + `(`)
 	parts := strings.Split(strings.ToLower(pkg), "/")
 	for i := range parts {

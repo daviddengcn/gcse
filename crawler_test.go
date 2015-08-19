@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golangplus/bytes"
 	"github.com/golangplus/testing/assert"
 
 	"github.com/daviddengcn/gddo/doc"
@@ -161,7 +162,7 @@ func TestCrawlingEntry(t *testing.T) {
 		Etag:         "Hello",
 	}
 
-	var buf villa.ByteSlice
+	var buf bytesp.Slice
 	assert.NoError(t, src.WriteTo(&buf))
 
 	var dst CrawlingEntry

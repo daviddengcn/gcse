@@ -7,9 +7,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golangplus/strings"
+
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/gddo/doc"
-	"github.com/daviddengcn/go-villa"
 	"github.com/daviddengcn/sophie"
 	"github.com/daviddengcn/sophie/kv"
 	"github.com/daviddengcn/sophie/mr"
@@ -20,7 +21,7 @@ const (
 )
 
 var (
-	allDocsPkgs villa.StrSet
+	allDocsPkgs stringsp.Set
 )
 
 // Schedule a package for next crawling cycle, commonly after a successful
@@ -32,7 +33,7 @@ func schedulePackageNextCrawl(pkg string, etag string) {
 }
 
 func appendPackage(pkg string) {
-	cDB.AppendPackage(pkg, allDocsPkgs.In)
+	cDB.AppendPackage(pkg, allDocsPkgs.Contain)
 }
 
 func packageToDoc(p *gcse.Package) gcse.DocInfo {

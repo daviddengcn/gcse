@@ -38,7 +38,7 @@ func main() {
 			dst := fpRoot.Join(fnNewDocDB)
 			fmt.Println("Convert", src, "to", dst, "...")
 
-			srcDB := gcse.PackedDocDB{gcse.NewMemDB(DocDBPath, gcse.KindDocDB)}
+			srcDB := gcse.PackedDocDB{MemDB: gcse.NewMemDB(DocDBPath, gcse.KindDocDB)}
 			if err := srcDB.Load(); err != nil {
 				log.Fatalf("srcDB.Load: %v", err)
 			}

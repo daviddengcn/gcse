@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/golangplus/strings"
 	"github.com/golangplus/testing/assert"
 
-	goassert "github.com/daviddengcn/go-assert"
-	"github.com/daviddengcn/go-villa"
 	"github.com/daviddengcn/sophie"
 	"github.com/daviddengcn/sophie/mr"
 )
@@ -66,7 +65,7 @@ func TestIndex(t *testing.T) {
 	assert.Equal(t, "DocCount", numDocs, 3)
 
 	var pkgs []string
-	if err := ts.Search(map[string]villa.StrSet{IndexTextField: nil},
+	if err := ts.Search(map[string]stringsp.Set{IndexTextField: nil},
 		func(docID int32, data interface{}) error {
 			hit := data.(HitInfo)
 			pkgs = append(pkgs, hit.Package)
@@ -84,8 +83,8 @@ func TestIndex(t *testing.T) {
 		})
 
 	var gcseInfo HitInfo
-	if err := ts.Search(map[string]villa.StrSet{
-		IndexPkgField: villa.NewStrSet("github.com/daviddengcn/gcse"),
+	if err := ts.Search(map[string]stringsp.Set{
+		IndexPkgField: stringsp.NewSet("github.com/daviddengcn/gcse"),
 	}, func(docID int32, data interface{}) error {
 		gcseInfo = data.(HitInfo)
 		return nil
@@ -105,8 +104,8 @@ func TestIndex(t *testing.T) {
 		})
 
 	var indexerInfo HitInfo
-	if err := ts.Search(map[string]villa.StrSet{
-		IndexPkgField: villa.NewStrSet("github.com/daviddengcn/gcse/indexer"),
+	if err := ts.Search(map[string]stringsp.Set{
+		IndexPkgField: stringsp.NewSet("github.com/daviddengcn/gcse/indexer"),
 	}, func(docID int32, data interface{}) error {
 		gcseInfo = data.(HitInfo)
 		return nil
@@ -119,8 +118,8 @@ func TestIndex(t *testing.T) {
 	assert.StringEqual(t, "indexerInfo.Imports",
 		indexerInfo.Imports, []string{})
 
-	if err := ts.Search(map[string]villa.StrSet{
-		IndexPkgField: villa.NewStrSet("github.com/daviddengcn/go-villa"),
+	if err := ts.Search(map[string]stringsp.Set{
+		IndexPkgField: stringsp.NewSet("github.com/daviddengcn/go-villa"),
 	}, func(docID int32, data interface{}) error {
 		gcseInfo = data.(HitInfo)
 		return nil
@@ -144,8 +143,8 @@ func TestAppendTokens_filter(t *testing.T) {
 
 	for i := 0; i < len(SRC_DST); i += 2 {
 		SRC := SRC_DST[i].(string)
-		DST := villa.NewStrSet(SRC_DST[i+1].([]string)...)
+		DST := stringsp.NewSet(SRC_DST[i+1].([]string)...)
 
-		goassert.StrSetEquals(t, "Tokens of "+SRC, AppendTokens(nil, []byte(SRC)), DST)
+		assert.Equal(t, "Tokens of "+SRC, AppendTokens(nil, []byte(SRC)), DST)
 	}
 }

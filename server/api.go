@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"unicode/utf8"
 
-	"github.com/daviddengcn/go-villa"
+	"github.com/golangplus/bytes"
 )
 
 func JSon(o interface{}) []byte {
@@ -16,7 +16,7 @@ func FilterFunc(s string, f func(r rune) bool) string {
 	for i, r := range s {
 		if f(r) {
 			// first time
-			buf := villa.ByteSlice(s[:i])
+			buf := bytesp.Slice(s[:i])
 			i += utf8.RuneLen(r)
 			for _, r := range s[i:] {
 				if !f(r) {

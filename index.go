@@ -5,6 +5,8 @@ import (
 	"log"
 	"time"
 
+	"github.com/golangplus/strings"
+
 	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/go-villa"
 	"github.com/daviddengcn/sophie"
@@ -22,14 +24,14 @@ var errNotDocInfo = errors.New("Value is not DocInfo")
 
 // Excludes packages in src which has same full-project with any elements in excl.
 func excludeImports(src, excl []string) (dst []string) {
-	exclPrjsSets := villa.NewStrSet()
+	exclPrjsSets := stringsp.NewSet()
 	for _, pkg := range excl {
-		exclPrjsSets.Put(FullProjectOfPackage(pkg))
+		exclPrjsSets.Add(FullProjectOfPackage(pkg))
 	}
 
 	for _, pkg := range src {
 		prj := FullProjectOfPackage(string(pkg))
-		if !exclPrjsSets.In(prj) {
+		if !exclPrjsSets.Contain(prj) {
 			dst = append(dst, pkg)
 		}
 	}
@@ -88,21 +90,21 @@ func Index(docDB mr.Input) (*index.TokenSetSearcher, error) {
 			}
 			filterDocInfo(&docInfo)
 
-			importsDB.Put(string(pkg), villa.NewStrSet(docInfo.Imports...))
-			testImportsDB.Put(string(pkg),
-				villa.NewStrSet(docInfo.TestImports...))
+			importsDB.PutTokens(string(pkg), stringsp.NewSet(docInfo.Imports...))
+			testImportsDB.PutTokens(string(pkg),
+				stringsp.NewSet(docInfo.TestImports...))
 
-			var projects villa.StrSet
+			var projects stringsp.Set
 			for _, imp := range docInfo.Imports {
-				projects.Put(FullProjectOfPackage(imp))
+				projects.Add(FullProjectOfPackage(imp))
 			}
 			for _, imp := range docInfo.TestImports {
-				projects.Put(FullProjectOfPackage(imp))
+				projects.Add(FullProjectOfPackage(imp))
 			}
 			prj := FullProjectOfPackage(string(pkg))
 			orgProjects := prjImportsDB.TokensOfId(prj)
-			projects.Put(orgProjects...)
-			prjImportsDB.Put(prj, projects)
+			projects.Add(orgProjects...)
+			prjImportsDB.PutTokens(prj, projects)
 
 			// update stars
 			if cur, ok := prjStars[prj]; !ok ||
@@ -157,12 +159,12 @@ func Index(docDB mr.Input) (*index.TokenSetSearcher, error) {
 					perStarCount :=
 						float64(prjStars[prj].StarCount) / float64(impPrjsCnt)
 
-					var projects villa.StrSet
+					var projects stringsp.Set
 					for _, imp := range hitInfo.Imported {
-						projects.Put(FullProjectOfPackage(imp))
+						projects.Add(FullProjectOfPackage(imp))
 					}
 					for _, imp := range hitInfo.TestImported {
-						projects.Put(FullProjectOfPackage(imp))
+						projects.Add(FullProjectOfPackage(imp))
 					}
 					assignedStarCount = perStarCount * float64(len(projects))
 				}
@@ -209,11 +211,11 @@ func Index(docDB mr.Input) (*index.TokenSetSearcher, error) {
 		}
 		hit.StaticRank = rank
 
-		var nameTokens villa.StrSet
+		var nameTokens stringsp.Set
 		nameTokens = AppendTokens(nameTokens, []byte(hit.Name))
 
-		var tokens villa.StrSet
-		tokens.Put(nameTokens.Elements()...)
+		var tokens stringsp.Set
+		tokens.Add(nameTokens.Elements()...)
 		tokens = AppendTokens(tokens, []byte(hit.Package))
 		tokens = AppendTokens(tokens, []byte(hit.Description))
 		tokens = AppendTokens(tokens, []byte(hit.ReadmeData))
@@ -222,10 +224,10 @@ func Index(docDB mr.Input) (*index.TokenSetSearcher, error) {
 			AppendTokens(tokens, []byte(word))
 		}
 
-		ts.AddDoc(map[string]villa.StrSet{
+		ts.AddDoc(map[string]stringsp.Set{
 			IndexTextField: tokens,
 			IndexNameField: nameTokens,
-			IndexPkgField:  villa.NewStrSet(hit.Package),
+			IndexPkgField:  stringsp.NewSet(hit.Package),
 		}, *hit)
 	}
 

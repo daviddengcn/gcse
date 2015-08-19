@@ -7,10 +7,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golangplus/bytes"
+	"github.com/golangplus/sort"
+	"github.com/golangplus/strings"
+
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/go-villa"
-	"github.com/golangplus/sort"
 )
 
 type Hit struct {
@@ -24,7 +27,7 @@ type SearchResult struct {
 	Hits         []*Hit
 }
 
-var stopWords = villa.NewStrSet(
+var stopWords = stringsp.NewSet(
 	"the", "on", "in", "as",
 )
 
@@ -69,10 +72,10 @@ func loadIndex() error {
 
 	gIndexUpdated = updateTime
 
-	var projects villa.StrSet
+	var projects stringsp.Set
 	db.Search(nil, func(docID int32, data interface{}) error {
 		hit := data.(gcse.HitInfo)
-		projects.Put(hit.ProjectURL)
+		projects.Add(hit.ProjectURL)
 		return nil
 	})
 	gProjectCount = len(projects)
@@ -113,7 +116,7 @@ func idf(df, N int) float64 {
 	return idf
 }
 
-func search(q string) (*SearchResult, villa.StrSet, error) {
+func search(q string) (*SearchResult, stringsp.Set, error) {
 	tokens := gcse.AppendTokens(nil, []byte(q))
 	tokenList := tokens.Elements()
 	log.Printf("tokens for query %s: %v", q, tokens)
@@ -141,7 +144,7 @@ func search(q string) (*SearchResult, villa.StrSet, error) {
 		nameIdfs[i] = idf(NameDf(tokenList[i]), N)
 	}
 
-	indexDB.Search(map[string]villa.StrSet{gcse.IndexTextField: tokens},
+	indexDB.Search(map[string]stringsp.Set{gcse.IndexTextField: tokens},
 		func(docID int32, data interface{}) error {
 			hitInfo, _ := data.(gcse.HitInfo)
 			hit := &Hit{
@@ -192,7 +195,6 @@ func search(q string) (*SearchResult, villa.StrSet, error) {
 		return pi < pj
 	}, swapHits)
 
-
 	if len(hits) < 5000 {
 		// Adjust Score by down ranking duplicated packages
 		pkgCount := make(map[string]int)
@@ -231,7 +233,7 @@ func splitToLines(text string) []string {
 	return newLines
 }
 
-func selectSnippets(text string, tokens villa.StrSet, maxBytes int) string {
+func selectSnippets(text string, tokens stringsp.Set, maxBytes int) string {
 	text = strings.TrimSpace(text)
 	if len(text) <= maxBytes {
 		return text
@@ -240,7 +242,7 @@ func selectSnippets(text string, tokens villa.StrSet, maxBytes int) string {
 
 	lines := splitToLines(text)
 
-	var hitTokens villa.StrSet
+	var hitTokens stringsp.Set
 	type lineinfo struct {
 		idx  int
 		line string
@@ -254,9 +256,9 @@ func selectSnippets(text string, tokens villa.StrSet, maxBytes int) string {
 		lineTokens := gcse.AppendTokens(nil, []byte(line))
 		reserve := false
 		for token := range tokens {
-			if !hitTokens.In(token) && lineTokens.In(token) {
+			if !hitTokens.Contain(token) && lineTokens.Contain(token) {
 				reserve = true
-				hitTokens.Put(token)
+				hitTokens.Add(token)
 			}
 		}
 
@@ -292,14 +294,14 @@ func selectSnippets(text string, tokens villa.StrSet, maxBytes int) string {
 			count += len(line) + 1
 		}
 
-		villa.SortF(len(selLines), func(i, j int) bool {
+		sortp.SortF(len(selLines), func(i, j int) bool {
 			return selLines[i].idx < selLines[j].idx
 		}, func(i, j int) {
 			selLines[i], selLines[j] = selLines[j], selLines[i]
 		})
 	}
 
-	var outBuf villa.ByteSlice
+	var outBuf bytesp.Slice
 	for i, line := range selLines {
 		if line.idx > 1 && (i < 1 || line.idx != selLines[i-1].idx+1) {
 			outBuf.WriteString("...")

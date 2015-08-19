@@ -30,6 +30,8 @@ import (
 	"log"
 	"time"
 
+	"github.com/golangplus/strings"
+
 	"github.com/daviddengcn/go-ljson-conf"
 	"github.com/daviddengcn/go-villa"
 )
@@ -99,7 +101,7 @@ var (
 	*/
 	CrawlerVersion = 5
 
-	NonCrawlHosts          = villa.StrSet{}
+	NonCrawlHosts          = stringsp.Set{}
 	NonStorePackageRegexps = []string{}
 )
 
@@ -135,7 +137,7 @@ func init() {
 	CrawlerDuePerRun = conf.Duration("crawler.due_per_run", CrawlerDuePerRun)
 
 	ncHosts := conf.StringList("crawler.noncrawl_hosts", nil)
-	NonCrawlHosts.Put(ncHosts...)
+	NonCrawlHosts.Add(ncHosts...)
 
 	CrawlerGithubClientID = conf.String("crawler.github.clientid", "")
 	CrawlerGithubClientSecret = conf.String("crawler.github.clientsecret", "")

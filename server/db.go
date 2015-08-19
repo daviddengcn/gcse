@@ -2,10 +2,13 @@ package main
 
 import (
 	"fmt"
+	"strings"
+
+	"github.com/golangplus/strings"
+
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/go-villa"
-	"strings"
 )
 
 type StatItem struct {
@@ -57,9 +60,9 @@ func (t *TopN) Len() int {
 	return t.pq.Len()
 }
 
-func inProjects(projs villa.StrSet, pkg string) bool {
+func inProjects(projs stringsp.Set, pkg string) bool {
 	for {
-		if projs.In(pkg) {
+		if projs.Contain(pkg) {
 			return true
 		}
 		p := strings.LastIndex(pkg, "/")
@@ -79,7 +82,7 @@ func statTops(N int) []StatList {
 	}
 
 	var topStaticScores []gcse.HitInfo
-	var tssProjects villa.StrSet
+	var tssProjects stringsp.Set
 
 	topImported := NewTopN(func(a, b interface{}) int {
 		ia, ib := a.(gcse.HitInfo), b.(gcse.HitInfo)
@@ -105,7 +108,7 @@ func statTops(N int) []StatList {
 				orgName != "" && orgName != "main" &&
 				!inProjects(tssProjects, hit.ProjectURL) {
 				topStaticScores = append(topStaticScores, hit)
-				tssProjects.Put(hit.ProjectURL)
+				tssProjects.Add(hit.ProjectURL)
 			}
 		}
 

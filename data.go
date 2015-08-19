@@ -7,9 +7,11 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/golangplus/bytes"
+	"github.com/golangplus/strings"
+
 	"github.com/agonopol/go-stem"
 	"github.com/daviddengcn/go-index"
-	"github.com/daviddengcn/go-villa"
 	"github.com/daviddengcn/sophie"
 )
 
@@ -96,7 +98,7 @@ func NormWord(word string) string {
 	return word
 }
 
-var stopWords = villa.NewStrSet(
+var stopWords = stringsp.NewSet(
 	"the", "on", "in", "as",
 )
 
@@ -155,23 +157,23 @@ func CheckCamel(last, current rune) index.RuneType {
 }
 
 // a block does not contain blanks
-func appendTokensOfBlock(tokens villa.StrSet, block []byte) villa.StrSet {
+func appendTokensOfBlock(tokens stringsp.Set, block []byte) stringsp.Set {
 	lastToken := ""
-	index.Tokenize(CheckRuneType, (*villa.ByteSlice)(&block),
+	index.Tokenize(CheckRuneType, (*bytesp.Slice)(&block),
 		func(token []byte) error {
 			tokenStr := string(token)
 			if isCamel(tokenStr) {
 				last := ""
-				index.Tokenize(CheckCamel, villa.NewPByteSlice(token),
+				index.Tokenize(CheckCamel, bytesp.NewPSlice(token),
 					func(token []byte) error {
 						tokenStr := string(token)
 						tokenStr = NormWord(tokenStr)
-						if !stopWords.In(tokenStr) {
-							tokens.Put(tokenStr)
+						if !stopWords.Contain(tokenStr) {
+							tokens.Add(tokenStr)
 						}
 
 						if last != "" {
-							tokens.Put(last + string(tokenStr))
+							tokens.Add(last + string(tokenStr))
 						}
 
 						last = tokenStr
@@ -179,16 +181,16 @@ func appendTokensOfBlock(tokens villa.StrSet, block []byte) villa.StrSet {
 					})
 			}
 			tokenStr = NormWord(tokenStr)
-			if !stopWords.In(tokenStr) {
-				tokens.Put(tokenStr)
+			if !stopWords.Contain(tokenStr) {
+				tokens.Add(tokenStr)
 			}
 
 			if lastToken != "" {
 				if tokenStr[0] > 128 && lastToken[0] > 128 {
 					// Chinese bigrams
-					tokens.Put(lastToken + tokenStr)
+					tokens.Add(lastToken + tokenStr)
 				} else if tokenStr[0] <= 128 && lastToken[0] <= 128 {
-					tokens.Put(lastToken + "-" + tokenStr)
+					tokens.Add(lastToken + "-" + tokenStr)
 				}
 			}
 
@@ -198,12 +200,12 @@ func appendTokensOfBlock(tokens villa.StrSet, block []byte) villa.StrSet {
 	return tokens
 }
 
-func AppendTokens(tokens villa.StrSet, text []byte) villa.StrSet {
+func AppendTokens(tokens stringsp.Set, text []byte) stringsp.Set {
 	textBuf := filterURLs(text)
 	textBuf = filterEmails(textBuf)
 
 	index.Tokenize(index.SeparatorFRuneTypeFunc(unicode.IsSpace),
-		(*villa.ByteSlice)(&textBuf), func(block []byte) error {
+		(*bytesp.Slice)(&textBuf), func(block []byte) error {
 			tokens = appendTokensOfBlock(tokens, block)
 			return nil
 		})

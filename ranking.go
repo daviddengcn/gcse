@@ -2,13 +2,12 @@ package gcse
 
 import (
 	"bytes"
+	"log"
 	"math"
 	"strings"
 	"time"
 
-	"github.com/daviddengcn/go-villa"
-
-	"log"
+	"github.com/golangplus/strings"
 )
 
 func scoreOfPkgByProject(n int, sameProj bool) float64 {
@@ -118,21 +117,21 @@ func ProjectOfPackage(pkg string) string {
 func effectiveImported(imported []string, author, project string) float64 {
 	s := float64(0.)
 
-	var authorSet, projSet villa.StrSet
+	var authorSet, projSet stringsp.Set
 	for _, imp := range imported {
 		impAuthor := AuthorOfPackage(imp)
 		if impAuthor != "" {
-			if authorSet.In(impAuthor) {
+			if authorSet.Contain(impAuthor) {
 				continue
 			}
-			authorSet.Put(impAuthor)
+			authorSet.Add(impAuthor)
 		}
 
 		impProj := ProjectOfPackage(imp)
-		if projSet.In(impProj) {
+		if projSet.Contain(impProj) {
 			continue
 		}
-		projSet.Put(impProj)
+		projSet.Add(impProj)
 
 		if impAuthor != "" && impAuthor == author || impProj == project {
 			s += 0.5
@@ -309,12 +308,12 @@ func dbgCalcTestStaticScore(doc *HitInfo) float64 {
 	return s
 }
 
-func matchToken(token string, text string, tokens villa.StrSet) bool {
+func matchToken(token string, text string, tokens stringsp.Set) bool {
 	if strings.Index(text, token) >= 0 {
 		return true
 	}
 
-	if tokens.In(token) {
+	if tokens.Contain(token) {
 		return true
 	}
 
@@ -355,7 +354,7 @@ func CalcMatchScore(doc *HitInfo, tokenList []string,
 	pkg := strings.ToLower(pkgStr)
 	pkgTokens := AppendTokens(nil, []byte(pkgStr))
 
-	var isTokens villa.StrSet
+	var isTokens stringsp.Set
 	isText := ""
 	for _, sent := range doc.ImportantSentences {
 		isTokens = AppendTokens(isTokens, []byte(sent))

@@ -13,11 +13,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golangplus/bytes"
+	"github.com/golangplus/strings"
+
 	"github.com/ajstarks/svgo"
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/gddo/doc"
 	"github.com/daviddengcn/go-index"
-	"github.com/daviddengcn/go-villa"
 	"github.com/russross/blackfriday"
 )
 
@@ -34,7 +36,7 @@ func (UIUtils) Add(vl, delta int) int {
 var templates *template.Template
 
 func Markdown(templ string) template.HTML {
-	var out villa.ByteSlice
+	var out bytesp.Slice
 	templates.ExecuteTemplate(&out, templ, nil)
 	return template.HTML(blackfriday.MarkdownCommon(out))
 }
@@ -267,23 +269,23 @@ type ShowResults struct {
 }
 
 func markWord(word []byte) []byte {
-	buf := villa.ByteSlice("<b>")
+	buf := bytesp.Slice("<b>")
 	template.HTMLEscape(&buf, word)
 	buf.Write([]byte("</b>"))
 	return buf
 }
 
-func markText(text string, tokens villa.StrSet,
+func markText(text string, tokens stringsp.Set,
 	markFunc func([]byte) []byte) template.HTML {
 	if len(text) == 0 {
 		return ""
 	}
 
-	var outBuf villa.ByteSlice
+	var outBuf bytesp.Slice
 
 	index.MarkText([]byte(text), gcse.CheckRuneType, func(token []byte) bool {
 		// needMark
-		return tokens.In(gcse.NormWord(string(token)))
+		return tokens.Contain(gcse.NormWord(string(token)))
 	}, func(text []byte) error {
 		// output
 		template.HTMLEscape(&outBuf, text)
@@ -318,7 +320,7 @@ func packageShowName(name, pkg string) string {
 	return "(" + prj + ")"
 }
 
-func showSearchResults(results *SearchResult, tokens villa.StrSet,
+func showSearchResults(results *SearchResult, tokens stringsp.Set,
 	r Range) *ShowResults {
 	docs := make([]ShowDocInfo, 0, len(results.Hits))
 
@@ -487,7 +489,7 @@ func pageView(w http.ResponseWriter, r *http.Request) {
 			doc.StarCount = 0
 		}
 
-		var descHTML villa.ByteSlice
+		var descHTML bytesp.Slice
 		godoc.ToHTML(&descHTML, doc.Description, nil)
 
 		showReadme := len(doc.Description) < 10 && len(doc.ReadmeData) > 0

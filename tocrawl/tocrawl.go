@@ -65,7 +65,7 @@ func generateCrawlEntries(db *gcse.MemDB, hostFromID func(id string) string,
 		host := hostFromID(id)
 
 		// check host black list
-		if gcse.NonCrawlHosts.In(host) {
+		if gcse.NonCrawlHosts.Contain(host) {
 			return nil
 		}
 

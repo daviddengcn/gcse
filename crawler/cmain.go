@@ -62,7 +62,7 @@ func loadAllDocsPkgs(in kv.DirInput) error {
 				}
 				return err
 			}
-			allDocsPkgs.Put(string(key))
+			allDocsPkgs.Add(string(key))
 			// value is ignored
 		}
 	}

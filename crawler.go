@@ -18,6 +18,9 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/golangplus/bytes"
+	"github.com/golangplus/strings"
+
 	"github.com/daviddengcn/gddo/doc"
 	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/go-villa"
@@ -72,7 +75,7 @@ func (br *BlackRequest) Do(req *http.Request) (*http.Response, error) {
 	br.RUnlock()
 	if ok {
 		log.Printf("%s was found in 500 blacklist, return it directly", u)
-		r.Body = villa.NewPByteSlice(nil)
+		r.Body = bytesp.NewPSlice(nil)
 		return &r, nil
 	}
 	resp, err := br.client.Do(req)
@@ -198,7 +201,7 @@ func ReadmeToText(fn, data string) string {
 func Plusone(httpClient doc.HttpClient, url string) (int, error) {
 	req, err := http.NewRequest("POST",
 		"https://clients6.google.com/rpc?key=AIzaSyCKSbrvQasunBoV16zDH9R33D88CeLr9gQ",
-		villa.NewPByteSlice([]byte(
+		bytesp.NewPSlice([]byte(
 			`[{"method":"pos.plusones.get","id":"p","params":{"nolog":true,"id": "`+
 				url+`","source":"widget","userId":"@viewer","groupId":"@self"},"jsonrpc":"2.0","key":"p","apiVersion":"v1"}]`)))
 	if err != nil {
@@ -389,20 +392,20 @@ func CrawlPackage(httpClient doc.HttpClient, pkg string,
 		readmeData = readmeData[:100*1024]
 	}
 
-	importsSet := villa.NewStrSet(pdoc.Imports...)
+	importsSet := stringsp.NewSet(pdoc.Imports...)
 	importsSet.Delete(pdoc.ImportPath)
 	imports := importsSet.Elements()
-	testImports := villa.NewStrSet(pdoc.TestImports...)
-	testImports.Put(pdoc.XTestImports...)
+	testImports := stringsp.NewSet(pdoc.TestImports...)
+	testImports.Add(pdoc.XTestImports...)
 	testImports.Delete(imports...)
 	testImports.Delete(pdoc.ImportPath)
 
-	var exported villa.StrSet
+	var exported stringsp.Set
 	for _, f := range pdoc.Funcs {
-		exported.Put(f.Name)
+		exported.Add(f.Name)
 	}
 	for _, t := range pdoc.Types {
-		exported.Put(t.Name)
+		exported.Add(t.Name)
 	}
 
 	return &Package{
@@ -536,7 +539,7 @@ type PackedDocDB struct {
 }
 
 func (db PackedDocDB) Get(key string, data interface{}) bool {
-	var bs villa.ByteSlice
+	var bs bytesp.Slice
 	if ok := db.MemDB.Get(key, (*[]byte)(&bs)); !ok {
 		return false
 	}
@@ -549,7 +552,7 @@ func (db PackedDocDB) Get(key string, data interface{}) bool {
 }
 
 func (db PackedDocDB) Put(key string, data interface{}) {
-	var bs villa.ByteSlice
+	var bs bytesp.Slice
 	enc := gob.NewEncoder(&bs)
 	if err := enc.Encode(data); err != nil {
 		log.Printf("Put %s failed: %v", key, err)
@@ -562,7 +565,7 @@ func (db PackedDocDB) Put(key string, data interface{}) {
 func (db PackedDocDB) Iterate(
 	output func(key string, val interface{}) error) error {
 	return db.MemDB.Iterate(func(key string, val interface{}) error {
-		dec := gob.NewDecoder(villa.NewPByteSlice(val.([]byte)))
+		dec := gob.NewDecoder(bytesp.NewPSlice(val.([]byte)))
 		var info DocInfo
 		if err := dec.Decode(&info); err != nil {
 			log.Printf("Decode %s failed: %v", key, err)

@@ -5,6 +5,8 @@ import (
 	"log"
 	"strconv"
 
+	"github.com/golangplus/strings"
+
 	"github.com/daviddengcn/go-villa"
 	"github.com/howeyc/fsnotify"
 )
@@ -169,14 +171,14 @@ func (s segments) GenNewSegment() (Segment, error) {
 		return nil, err
 	}
 
-	var nset villa.StrSet
+	var nset stringsp.Set
 	for _, s := range curSs {
-		nset.Put(s.Name())
+		nset.Add(s.Name())
 	}
 
 	for i := 0; ; i++ {
 		fn := fmt.Sprintf("%d", i)
-		if nset.In(fn) {
+		if nset.Contain(fn) {
 			continue
 		}
 
