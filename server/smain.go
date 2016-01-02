@@ -109,6 +109,7 @@ func (hdl LogHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	runtime.GOMAXPROCS(2)
 	if err := gcse.ImportSegments.ClearUndones(); err != nil {
 		log.Printf("CleanImportSegments failed: %v", err)
 	}

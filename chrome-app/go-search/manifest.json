@@ -1,0 +1,15 @@
+{
+  "name": "Go Search",
+  "description": "Find popular and relevant Go packages.",
+  "version": "1.0",
+  "manifest_version": 2,
+  "app": {
+	"launch": {
+      "web_url": "http://go-search.org/"
+    }
+  },
+  "icons": {
+	"16": "logo-16.png",
+	"128": "logo-128.png"
+  }
+}

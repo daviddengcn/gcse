@@ -95,6 +95,8 @@ func cleanTempDir() {
 }
 
 func main() {
+	runtime.GOMAXPROCS(1)
+
 	cleanTempDir()
 	defer cleanTempDir()
 

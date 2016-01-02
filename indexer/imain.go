@@ -7,6 +7,7 @@ import (
 )
 
 func main() {
+	runtime.GOMAXPROCS(1)
 	log.Println("indexer started...")
 
 	if err := gcse.IndexSegments.ClearUndones(); err != nil {
