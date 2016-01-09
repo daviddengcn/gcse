@@ -52,7 +52,7 @@ func (cdb *CrawlerDB) SchedulePackage(pkg string, sTime time.Time,
 
 	cdb.PackageDB.Put(pkg, ent)
 
-	log.Printf("Schedule package %s to %v", pkg, sTime)
+	//	log.Printf("Schedule package %s to %v", pkg, sTime)
 	return nil
 }
 
