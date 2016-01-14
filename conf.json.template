@@ -5,11 +5,11 @@
 	// loadtemplatepass: ""
 	// autoloadtemplate: false
     }
-    
+
     back: {
         // dbroot: "./data/"
     }
-    
+
     crawler: {
         // due_per_run: "1h"
         // godoc: true
@@ -20,8 +20,13 @@
 		// 	clientsecret: ""
 		// }
     }
-	
+
 	docdb: {
 		// nonstore_regexps: []
 	}
-} 
+
+	bi: {
+		// data_path: "/tmp/gcse.bolt"
+		// web_path: "/bi"
+	}
+}

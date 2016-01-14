@@ -76,6 +76,7 @@ func doIndex() bool {
 	}
 
 	log.Printf("Indexing success: %s (%d)", idxSegm, ts.DocCount())
+	gcse.AddBiValueAndProcess("index-doc-count", ts.DocCount())
 
 	ts = nil
 	gcse.DumpMemStats()

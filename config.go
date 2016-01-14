@@ -86,6 +86,9 @@ var (
 	CrawlerGithubClientID     = ""
 	CrawlerGithubClientSecret = ""
 
+	BiDataPath = villa.Path("/tmp/gcse.bolt")
+	BiWebPath  = "/bi"
+
 	/*
 		Increase this to ignore etag of last versions to crawl and parse all
 		packages.
@@ -143,4 +146,7 @@ func init() {
 	CrawlerGithubClientSecret = conf.String("crawler.github.clientsecret", "")
 
 	NonStorePackageRegexps = conf.StringList("docdb.nonstore_regexps", nil)
+
+	BiDataPath = villa.Path(conf.String("bi.data_path", BiDataPath.S()))
+	BiWebPath = conf.String("bi.web_path", BiWebPath)
 }

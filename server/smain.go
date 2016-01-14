@@ -20,6 +20,7 @@ import (
 	"github.com/ajstarks/svgo"
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/gddo/doc"
+	"github.com/daviddengcn/go-easybi"
 	"github.com/daviddengcn/go-index"
 	"github.com/russross/blackfriday"
 )
@@ -82,6 +83,7 @@ func init() {
 	http.HandleFunc("/loadtemplates", pageLoadTemplate)
 	http.HandleFunc("/badge", pageBadge)
 	http.HandleFunc("/badgepage", pageBadgePage)
+	bi.HandleRequest(gcse.BiWebPath)
 
 	http.HandleFunc("/", pageRoot)
 }
@@ -122,7 +124,7 @@ func main() {
 
 	log.Printf("ListenAndServe at %s ...", gcse.ServerAddr)
 
-	http.ListenAndServe(gcse.ServerAddr, LogHandler{})
+	log.Fatal(http.ListenAndServe(gcse.ServerAddr, LogHandler{}))
 }
 
 type SimpleDuration time.Duration
