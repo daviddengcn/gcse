@@ -26,7 +26,6 @@ func FilterFunc(s string, f func(r rune) bool) string {
 			return string(buf)
 		}
 	}
-
 	return s
 }
 
@@ -54,7 +53,6 @@ func SearchResultToApi(q string, res *SearchResult) *SearchApiStruct {
 		if i >= MAX_API_SEARCH_HITS {
 			break
 		}
-
 		apiHit := &SearchApiHit{
 			Name:        hit.Name,
 			Package:     hit.Package,

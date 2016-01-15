@@ -60,18 +60,12 @@ func init() {
 
 	loadTemplates()
 
-	http.Handle("/css/", http.StripPrefix("/css/",
-		http.FileServer(http.Dir(gcse.ServerRoot.Join("css").S()))))
-	http.Handle("/js/", http.StripPrefix("/js/",
-		http.FileServer(http.Dir(gcse.ServerRoot.Join("js").S()))))
-	http.Handle("/images/", http.StripPrefix("/images/",
-		http.FileServer(http.Dir(gcse.ServerRoot.Join("images").S()))))
-	http.Handle("/img/", http.StripPrefix("/img/",
-		http.FileServer(http.Dir(gcse.ServerRoot.Join("images").S()))))
-	http.Handle("/robots.txt", http.FileServer(http.Dir(
-		gcse.ServerRoot.Join("static").S())))
-	http.Handle("/clippy.swf", http.FileServer(http.Dir(
-		gcse.ServerRoot.Join("static").S())))
+	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir(gcse.ServerRoot.Join("css").S()))))
+	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir(gcse.ServerRoot.Join("js").S()))))
+	http.Handle("/images/", http.StripPrefix("/images/", http.FileServer(http.Dir(gcse.ServerRoot.Join("images").S()))))
+	http.Handle("/img/", http.StripPrefix("/img/", http.FileServer(http.Dir(gcse.ServerRoot.Join("images").S()))))
+	http.Handle("/robots.txt", http.FileServer(http.Dir(gcse.ServerRoot.Join("static").S())))
+	http.Handle("/clippy.swf", http.FileServer(http.Dir(gcse.ServerRoot.Join("static").S())))
 
 	http.HandleFunc("/add", pageAdd)
 	http.HandleFunc("/search", pageSearch)
@@ -96,7 +90,6 @@ func pageLoadTemplate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-
 	loadTemplates()
 	w.Write([]byte("Tempates loaded."))
 }
@@ -116,7 +109,6 @@ func main() {
 	if err := gcse.ImportSegments.ClearUndones(); err != nil {
 		log.Printf("CleanImportSegments failed: %v", err)
 	}
-
 	if err := loadIndex(); err != nil {
 		log.Fatal(err)
 	}
@@ -134,27 +126,21 @@ func (sd SimpleDuration) String() string {
 	if d.Hours() > 24 {
 		return fmt.Sprintf("%.0f days", d.Hours()/24)
 	}
-
 	if d.Hours() >= 1 {
 		return fmt.Sprintf("%.0f hours", d.Hours())
 	}
-
 	if d.Minutes() >= 1 {
 		return fmt.Sprintf("%.0f mins", d.Minutes())
 	}
-
 	if d.Seconds() >= 1 {
 		return fmt.Sprintf("%.0f sec", d.Seconds())
 	}
-
 	if d.Nanoseconds() >= 1e6 {
 		return fmt.Sprintf("%d ms", d.Nanoseconds()/1e6)
 	}
-
 	if d.Nanoseconds() >= 1e3 {
 		return fmt.Sprintf("%d us", d.Nanoseconds()/1e3)
 	}
-
 	return fmt.Sprintf("%d ns", d.Nanoseconds())
 }
 
@@ -210,7 +196,6 @@ func filterPackages(pkgs []string) (res []string) {
 		if !doc.IsValidRemotePath(pkg) {
 			continue
 		}
-
 		res = append(res, pkg)
 	}
 	return
@@ -233,7 +218,6 @@ func pageAdd(w http.ResponseWriter, r *http.Request) {
 			taValue = pkgsStr
 		}
 	}
-
 	err := templates.ExecuteTemplate(w, "add.html", struct {
 		UIUtils
 		Message string
@@ -279,12 +263,10 @@ func markWord(word []byte) []byte {
 	return buf
 }
 
-func markText(text string, tokens stringsp.Set,
-	markFunc func([]byte) []byte) template.HTML {
+func markText(text string, tokens stringsp.Set, markFunc func([]byte) []byte) template.HTML {
 	if len(text) == 0 {
 		return ""
 	}
-
 	var outBuf bytesp.Slice
 
 	index.MarkText([]byte(text), gcse.CheckRuneType, func(token []byte) bool {
@@ -298,7 +280,6 @@ func markText(text string, tokens stringsp.Set,
 		outBuf.Write(markFunc(token))
 		return nil
 	})
-
 	return template.HTML(string(outBuf))
 }
 
@@ -314,13 +295,11 @@ func packageShowName(name, pkg string) string {
 	if name != "" && name != "main" {
 		return name
 	}
-
 	prj := gcse.ProjectOfPackage(pkg)
 
 	if name == "main" {
 		return "main - " + prj
 	}
-
 	return "(" + prj + ")"
 }
 
@@ -358,7 +337,6 @@ mainLoop:
 				}
 			}
 		}
-
 		projToIdx[d.Package] = cnt
 		if r.In(cnt) {
 			markedName := markText(d.Name, tokens, markWord)
@@ -386,7 +364,6 @@ mainLoop:
 		}
 		cnt++
 	}
-
 	return &ShowResults{
 		TotalResults: results.TotalResults,
 		TotalEntries: cnt,
@@ -403,7 +380,6 @@ func pageSearch(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		p = 1
 	}
-
 	startTime := time.Now()
 
 	q := strings.TrimSpace(r.FormValue("q"))
@@ -412,9 +388,7 @@ func pageSearch(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	showResults := showSearchResults(results, tokens,
-		Range{(p - 1) * itemsPerPage, itemsPerPage})
+	showResults := showSearchResults(results, tokens, Range{(p - 1) * itemsPerPage, itemsPerPage})
 	totalPages := (showResults.TotalEntries + itemsPerPage - 1) / itemsPerPage
 	log.Printf("totalPages: %d", totalPages)
 	var beforePages, afterPages []int
@@ -425,7 +399,6 @@ func pageSearch(w http.ResponseWriter, r *http.Request) {
 			afterPages = append(afterPages, i)
 		}
 	}
-
 	prevPage, nextPage := p-1, p+1
 	if prevPage < 0 || prevPage > totalPages {
 		prevPage = 0
@@ -433,7 +406,6 @@ func pageSearch(w http.ResponseWriter, r *http.Request) {
 	if nextPage < 0 || nextPage > totalPages {
 		nextPage = 0
 	}
-
 	data := struct {
 		UIUtils
 		Q           string
@@ -492,7 +464,6 @@ func pageView(w http.ResponseWriter, r *http.Request) {
 		if doc.StarCount < 0 {
 			doc.StarCount = 0
 		}
-
 		var descHTML bytesp.Slice
 		godoc.ToHTML(&descHTML, doc.Description, nil)
 
@@ -545,7 +516,6 @@ func ApiContent(w http.ResponseWriter, code int, obj interface{}, callback strin
 		_, err := w.Write(JSon(obj))
 		return err
 	}
-
 	w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
 	/*
 		<callback>(<code>, <obj(JSON)>);
@@ -593,7 +563,6 @@ func pageApi(w http.ResponseWriter, r *http.Request) {
 				fmt.Sprintf("Package %s not found!", id), callback)
 			return
 		}
-
 		ApiContent(w, http.StatusOK, struct {
 			Package      string
 			Name         string
@@ -658,7 +627,6 @@ func pageApi(w http.ResponseWriter, r *http.Request) {
 					Imported:     doc.Imported,
 					TestImported: doc.TestImported,
 				})
-
 				return nil
 			})
 		}
@@ -674,8 +642,7 @@ func pageApi(w http.ResponseWriter, r *http.Request) {
 		ApiContent(w, http.StatusOK, SearchResultToApi(q, results), callback)
 
 	default:
-		ApiContent(w, http.StatusBadRequest,
-			fmt.Sprintf("Unknown action: %s", action), callback)
+		ApiContent(w, http.StatusBadRequest, fmt.Sprintf("Unknown action: %s", action), callback)
 	}
 }
 func pageBadgePage(w http.ResponseWriter, r *http.Request) {
@@ -690,12 +657,8 @@ func pageBadgePage(w http.ResponseWriter, r *http.Request) {
 		badgeUrl := "http://go-search.org/badge?id=" + template.URLQueryEscaper(doc.Package)
 		viewUrl := "http://go-search.org/view?id=" + template.URLQueryEscaper(doc.Package)
 
-		htmlCode := fmt.Sprintf(
-			`<a href="%s"><img src="%s" alt="GoSearch"></a>`,
-			viewUrl, badgeUrl)
-		mdCode := fmt.Sprintf(
-			`[![GoSearch](%s)](%s)`,
-			badgeUrl, viewUrl)
+		htmlCode := fmt.Sprintf(`<a href="%s"><img src="%s" alt="GoSearch"></a>`, viewUrl, badgeUrl)
+		mdCode := fmt.Sprintf(`[![GoSearch](%s)](%s)`, badgeUrl, viewUrl)
 
 		if err := templates.ExecuteTemplate(w, "badgepage.html", struct {
 			UIUtils
@@ -720,7 +683,6 @@ func pageBadge(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, fmt.Sprintf("Package %s not found!", id), http.StatusNotFound)
 			return
 		}
-
 		w.Header().Set("Content-Type", "image/svg+xml")
 
 		W, H := 100, 22

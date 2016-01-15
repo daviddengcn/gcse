@@ -190,14 +190,8 @@ func Index(docDB mr.Input) (*index.TokenSetSearcher, error) {
 	DumpMemStats()
 	log.Printf("%d hits collected, sorting static-scores in descending order",
 		len(hits))
-	idxs := make([]int, len(hits))
-	for i := range idxs {
-		idxs[i] = i
-	}
-	sortp.SortF(len(idxs), func(i, j int) bool {
-		return hits[idxs[i]].StaticScore > hits[idxs[j]].StaticScore
-	}, func(i, j int) {
-		idxs[i], idxs[j] = idxs[j], idxs[i]
+	idxs := sortp.IndexSortF(len(hits), func(i, j int) bool {
+		return hits[i].StaticScore > hits[j].StaticScore
 	})
 	ts := &index.TokenSetSearcher{}
 

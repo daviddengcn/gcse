@@ -54,19 +54,23 @@ func doIndex() bool {
 		return false
 	}
 
-	f, err := idxSegm.Join(gcse.IndexFn).Create()
-	if err != nil {
-		log.Printf("Create index file failed: %v", err)
+	if !func() bool {
+		f, err := idxSegm.Join(gcse.IndexFn).Create()
+		if err != nil {
+			log.Printf("Create index file failed: %v", err)
+			return false
+		}
+		defer f.Close()
+
+		log.Printf("Saving index to %v ...", idxSegm)
+		if err := ts.Save(f); err != nil {
+			log.Printf("ts.Save failed: %v", err)
+			return false
+		}
+		return true
+	}() {
 		return false
 	}
-	//defer f.Close()
-	log.Printf("Saving index to %v ...", idxSegm)
-	if err := ts.Save(f); err != nil {
-		log.Printf("ts.Save failed: %v", err)
-		return false
-	}
-	f.Close()
-	f = nil
 	runtime.GC()
 	gcse.DumpMemStats()
 

@@ -136,6 +136,7 @@ func main() {
 			if err != nil {
 				log.Fatalf("FetchAllPackagesInGodoc failed: %v", err)
 			}
+			gcse.AddBiValueAndProcess("godoc.org-doc-count", len(pkgs))
 			log.Printf("FetchAllPackagesInGodoc returns %d entries", len(pkgs))
 			for _, pkg := range pkgs {
 				cDB.AppendPackage(pkg, func(pkg string) bool {

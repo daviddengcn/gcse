@@ -75,7 +75,6 @@ func statTops(N int) []StatList {
 	if indexDB == nil {
 		return nil
 	}
-
 	var topStaticScores []gcse.HitInfo
 	var tssProjects stringsp.Set
 
@@ -104,7 +103,6 @@ func statTops(N int) []StatList {
 				tssProjects.Add(hit.ProjectURL)
 			}
 		}
-
 		if len(hit.TestImported) > 0 {
 			topTestStatic.Append(hit)
 		}
@@ -114,10 +112,8 @@ func statTops(N int) []StatList {
 		if host != "" {
 			sites[host] = sites[host] + 1
 		}
-
 		return nil
 	})
-
 	tlStaticScore := StatList{
 		Name:  "Hot",
 		Info:  "refs stars",
@@ -131,7 +127,6 @@ func statTops(N int) []StatList {
 			Info:    fmt.Sprintf("%d %d", len(hit.Imported), hit.StarCount),
 		})
 	}
-
 	tlTestStatic := StatList{
 		Name:  "Hot Test",
 		Info:  "refs stars",
@@ -147,7 +142,6 @@ func statTops(N int) []StatList {
 				hit.StarCount),
 		})
 	}
-
 	tlImported := StatList{
 		Name:  "Most Imported",
 		Info:  "refs",
@@ -162,7 +156,6 @@ func statTops(N int) []StatList {
 			Info:    fmt.Sprintf("%d", len(hit.Imported)+len(hit.TestImported)),
 		})
 	}
-
 	topSites := NewTopN(func(a, b interface{}) bool {
 		return sites[a.(string)] < sites[b.(string)]
 	}, N)
@@ -184,7 +177,6 @@ func statTops(N int) []StatList {
 			Info:  fmt.Sprintf("%d", cnt),
 		})
 	}
-
 	return []StatList{
 		tlStaticScore, tlTestStatic, tlImported, tlSites,
 	}

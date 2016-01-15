@@ -334,13 +334,10 @@ func removeHost(pkg string) string {
 	return pkg
 }
 
-func CalcMatchScore(doc *HitInfo, tokenList []string,
-	textIdfs, nameIdfs []float64) float64 {
-
+func CalcMatchScore(doc *HitInfo, tokenList []string, textIdfs, nameIdfs []float64) float64 {
 	if len(tokenList) == 0 {
 		return 1.
 	}
-
 	s := float64(0.02 * float64(len(tokenList)))
 
 	filteredSyn := filterURLs([]byte(doc.Synopsis))
@@ -354,6 +351,7 @@ func CalcMatchScore(doc *HitInfo, tokenList []string,
 	pkg := strings.ToLower(pkgStr)
 	pkgTokens := AppendTokens(nil, []byte(pkgStr))
 
+	// Important sentenses tokens.
 	var isTokens stringsp.Set
 	isText := ""
 	for _, sent := range doc.ImportantSentences {
@@ -381,6 +379,5 @@ func CalcMatchScore(doc *HitInfo, tokenList []string,
 			s += 0.1 * textIdf
 		}
 	}
-
 	return s
 }

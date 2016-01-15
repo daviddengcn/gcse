@@ -1,4 +1,4 @@
-#!/bin/gosl
+#!/usr/bin/env gosl
 
 GCSE := "github.com/daviddengcn/gcse"
 
