@@ -1,38 +1,56 @@
 package gcse
 
 import (
+	"encoding/gob"
 	"fmt"
+	"os"
 	"testing"
 
+	"github.com/golangplus/bytes"
 	"github.com/golangplus/strings"
 	"github.com/golangplus/testing/assert"
 
+	"github.com/boltdb/bolt"
 	"github.com/daviddengcn/sophie"
 	"github.com/daviddengcn/sophie/mr"
 )
 
 func TestIndex(t *testing.T) {
+	const (
+		package0 = "github.com/daviddengcn/gcse"
+		package1 = "github.com/daviddengcn/gcse/indexer"
+		package2 = "github.com/daviddengcn/go-villa"
+	)
+
 	docs := []DocInfo{
 		{
-			Package: "github.com/daviddengcn/gcse",
+			Package: package0,
 			Name:    "gcse",
 			TestImports: []string{
-				"github.com/daviddengcn/go-villa",
-				"github.com/daviddengcn/gcse",
+				package2, package0,
 			},
 		}, {
-			Package: "github.com/daviddengcn/gcse/indexer",
+			Package: package1,
 			Name:    "main",
 			Imports: []string{
-				"github.com/daviddengcn/gcse",
-				"github.com/daviddengcn/go-villa",
-				"github.com/daviddengcn/gcse/indexer",
+				package0,
+				package2,
+				package1,
 			},
 		}, {
-			Package: "github.com/daviddengcn/go-villa",
+			Package: package2,
 			Name:    "villa",
 		},
 	}
+	if !assert.NoError(t, os.RemoveAll("/tmp/gcse-TestIndex.bolt")) {
+		return
+	}
+	wholeInfoDb, err := bolt.Open("/tmp/gcse-TestIndex.bolt", 0644, nil)
+	if !assert.NoError(t, err) {
+		return
+	}
+	defer wholeInfoDb.Close()
+
 	ts, err := Index(&mr.InputStruct{
 		PartCountF: func() (int, error) {
 			return 1, nil
@@ -55,11 +73,25 @@ func TestIndex(t *testing.T) {
 				},
 			}, nil
 		},
-	})
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	}, wholeInfoDb)
+	assert.NoErrorOrDie(t, err)
+
+	assert.NoError(t, wholeInfoDb.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(IndexHitsBucket))
+		if !assert.Should(t, b != nil, "Bucket not found!") {
+			return nil
+		}
+		for _, doc := range docs {
+			bs := bytesp.Slice(b.Get([]byte(doc.Package)))
+			if assert.Should(t, bs != nil, "Get "+doc.Package+" returns nil") {
+				var info HitInfo
+				if assert.NoError(t, gob.NewDecoder(&bs).Decode(&info)) {
+					assert.Equal(t, "package", info.Package, doc.Package)
+				}
+			}
+		}
+		return nil
+	}))
 
 	numDocs := ts.DocCount()
 	assert.Equal(t, "DocCount", numDocs, 3)

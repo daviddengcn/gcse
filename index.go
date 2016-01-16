@@ -1,17 +1,21 @@
 package gcse
 
 import (
+	"encoding/gob"
 	"errors"
+	"fmt"
 	"log"
 	"time"
 
+	"github.com/golangplus/bytes"
+	"github.com/golangplus/sort"
 	"github.com/golangplus/strings"
 
+	"github.com/boltdb/bolt"
 	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/go-villa"
 	"github.com/daviddengcn/sophie"
 	"github.com/daviddengcn/sophie/mr"
-	"github.com/golangplus/sort"
 )
 
 const (
@@ -53,7 +57,9 @@ func filterDocInfo(docInfo *DocInfo) {
 	}
 }
 
-func Index(docDB mr.Input) (*index.TokenSetSearcher, error) {
+const IndexHitsBucket = "hits"
+
+func Index(docDB mr.Input, wholeInfoDb *bolt.DB) (*index.TokenSetSearcher, error) {
 	DumpMemStats()
 
 	docPartCnt, err := docDB.PartCount()
@@ -67,17 +73,18 @@ func Index(docDB mr.Input) (*index.TokenSetSearcher, error) {
 	testImportsDB := NewTokenIndexer("", "")
 	// per project imported by projects
 	prjImportsDB := NewTokenIndexer("", "")
-	prjStars := make(map[string]struct {
+	type projectStart struct {
 		StarCount   int
 		LastUpdated time.Time
-	})
+	}
+	prjStars := make(map[string]projectStart)
+
 	// generate importsDB
 	for i := 0; i < docPartCnt; i++ {
 		it, err := docDB.Iterator(i)
 		if err != nil {
 			return nil, err
 		}
-
 		var pkg sophie.RawString
 		var docInfo DocInfo
 		for {
@@ -91,8 +98,7 @@ func Index(docDB mr.Input) (*index.TokenSetSearcher, error) {
 			filterDocInfo(&docInfo)
 
 			importsDB.PutTokens(string(pkg), stringsp.NewSet(docInfo.Imports...))
-			testImportsDB.PutTokens(string(pkg),
-				stringsp.NewSet(docInfo.TestImports...))
+			testImportsDB.PutTokens(string(pkg), stringsp.NewSet(docInfo.TestImports...))
 
 			var projects stringsp.Set
 			for _, imp := range docInfo.Imports {
@@ -109,18 +115,13 @@ func Index(docDB mr.Input) (*index.TokenSetSearcher, error) {
 			// update stars
 			if cur, ok := prjStars[prj]; !ok ||
 				docInfo.LastUpdated.After(cur.LastUpdated) {
-				prjStars[prj] = struct {
-					StarCount   int
-					LastUpdated time.Time
-				}{
-					docInfo.StarCount,
-					docInfo.LastUpdated,
+				prjStars[prj] = projectStart{
+					StarCount:   docInfo.StarCount,
+					LastUpdated: docInfo.LastUpdated,
 				}
 			}
-
 			docCount++
 		}
-
 		it.Close()
 	}
 
@@ -132,7 +133,6 @@ func Index(docDB mr.Input) (*index.TokenSetSearcher, error) {
 		if err != nil {
 			return nil, err
 		}
-
 		var pkg sophie.RawString
 		var hitInfo HitInfo
 		for {
@@ -146,7 +146,9 @@ func Index(docDB mr.Input) (*index.TokenSetSearcher, error) {
 			filterDocInfo(&hitInfo.DocInfo)
 
 			hitInfo.Imported = importsDB.IdsOfToken(hitInfo.Package)
+			hitInfo.ImportedLen = len(hitInfo.Imported)
 			hitInfo.TestImported = testImportsDB.IdsOfToken(hitInfo.Package)
+			hitInfo.TestImportedLen = len(hitInfo.TestImported)
 			realTestImported := excludeImports(testImportsDB.IdsOfToken(hitInfo.Package), hitInfo.Imported)
 
 			prj := FullProjectOfPackage(hitInfo.Package)
@@ -181,15 +183,14 @@ func Index(docDB mr.Input) (*index.TokenSetSearcher, error) {
 			hitInfo.TestStaticScore = CalcTestStaticScore(&hitInfo, realTestImported)
 			hits = append(hits, hitInfo)
 		}
-
 		it.Close()
 	}
 
 	DumpMemStats()
 	importsDB = nil
 	DumpMemStats()
-	log.Printf("%d hits collected, sorting static-scores in descending order",
-		len(hits))
+	log.Printf("%d hits collected, sorting static-scores in descending order", len(hits))
+
 	idxs := sortp.IndexSortF(len(hits), func(i, j int) bool {
 		return hits[i].StaticScore > hits[j].StaticScore
 	})
@@ -205,6 +206,21 @@ func Index(docDB mr.Input) (*index.TokenSetSearcher, error) {
 		}
 		hit.StaticRank = rank
 
+		if err := wholeInfoDb.Update(func(tx *bolt.Tx) error {
+			b, err := tx.CreateBucketIfNotExists([]byte(IndexHitsBucket))
+			if err != nil {
+				return fmt.Errorf("create bucket: %s", err)
+			}
+			var bs bytesp.Slice
+			if err := gob.NewEncoder(&bs).Encode(hit); err != nil {
+				log.Printf("Encoding package %v failed: %v", hit.Package, err)
+				return err
+			}
+			return b.Put([]byte(hit.Package), []byte(bs))
+		}); err != nil {
+			return nil, err
+		}
+
 		var nameTokens stringsp.Set
 		nameTokens = AppendTokens(nameTokens, []byte(hit.Name))
 
@@ -217,14 +233,12 @@ func Index(docDB mr.Input) (*index.TokenSetSearcher, error) {
 		for _, word := range hit.Exported {
 			AppendTokens(tokens, []byte(word))
 		}
-
 		ts.AddDoc(map[string]stringsp.Set{
 			IndexTextField: tokens,
 			IndexNameField: nameTokens,
 			IndexPkgField:  stringsp.NewSet(hit.Package),
 		}, *hit)
 	}
-
 	DumpMemStats()
 	return ts, nil
 }

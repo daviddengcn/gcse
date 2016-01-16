@@ -165,7 +165,6 @@ func search(q string) (*SearchResult, stringsp.Set, error) {
 	swapHits := func(i, j int) {
 		hits[i], hits[j] = hits[j], hits[i]
 	}
-
 	sortp.SortF(len(hits), func(i, j int) bool {
 		// true if doc i is before doc j
 		ssi, ssj := hits[i].Score, hits[j].Score
@@ -175,7 +174,6 @@ func search(q string) (*SearchResult, stringsp.Set, error) {
 		if ssi < ssj {
 			return false
 		}
-
 		sci, scj := hits[i].StarCount, hits[j].StarCount
 		if sci > scj {
 			return true
@@ -183,7 +181,6 @@ func search(q string) (*SearchResult, stringsp.Set, error) {
 		if sci < scj {
 			return false
 		}
-
 		pi, pj := hits[i].Package, hits[j].Package
 		if len(pi) < len(pj) {
 			return true
@@ -191,7 +188,6 @@ func search(q string) (*SearchResult, stringsp.Set, error) {
 		if len(pi) > len(pj) {
 			return false
 		}
-
 		return pi < pj
 	}, swapHits)
 

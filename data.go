@@ -51,8 +51,12 @@ func (d *DocInfo) ReadFrom(r sophie.Reader, l int) error {
 type HitInfo struct {
 	DocInfo
 
-	Imported           []string
-	TestImported       []string
+	Imported    []string
+	ImportedLen int
+
+	TestImported    []string
+	TestImportedLen int
+
 	ImportantSentences []string
 
 	AssignedStarCount float64

@@ -334,6 +334,18 @@ func removeHost(pkg string) string {
 	return pkg
 }
 
+type InfoForRanking struct {
+	Name               string
+	Package            string
+	Synopsis           string
+	ImportantSentences string
+
+	StaticScore     float64
+	TestStaticScore float64
+	ImportedLen     int
+	TestImportedLen int
+}
+
 func CalcMatchScore(doc *HitInfo, tokenList []string, textIdfs, nameIdfs []float64) float64 {
 	if len(tokenList) == 0 {
 		return 1.
@@ -358,7 +370,6 @@ func CalcMatchScore(doc *HitInfo, tokenList []string, textIdfs, nameIdfs []float
 		isTokens = AppendTokens(isTokens, []byte(sent))
 		isText += strings.ToLower(sent) + " "
 	}
-
 	for i, token := range tokenList {
 		textIdf := textIdfs[i]
 		nameIdf := nameIdfs[i]
@@ -366,15 +377,12 @@ func CalcMatchScore(doc *HitInfo, tokenList []string, textIdfs, nameIdfs []float
 		if matchToken(token, synopsis, synTokens) {
 			s += 0.25 * textIdf
 		}
-
 		if matchToken(token, isText, isTokens) {
 			s += 0.25 * textIdf
 		}
-
 		if matchToken(token, name, nameTokens) {
 			s += 0.25 * nameIdf
 		}
-
 		if matchToken(token, pkg, pkgTokens) {
 			s += 0.1 * textIdf
 		}

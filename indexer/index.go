@@ -4,6 +4,7 @@ import (
 	"log"
 	"runtime"
 
+	"github.com/boltdb/bolt"
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/sophie"
 	"github.com/daviddengcn/sophie/kv"
@@ -47,8 +48,13 @@ func doIndex() bool {
 	log.Printf("Indexing to %v ...", idxSegm)
 
 	fpDocDB := sophie.LocalFsPath(gcse.DocsDBPath.S())
+	wholeInfoDb, err := bolt.Open(idxSegm.Join(gcse.WholeInfoFn).S(), 0644, nil)
+	if err != nil {
+		log.Printf("bolt.Open %v failed: ", idxSegm.Join(gcse.WholeInfoFn), err)
+	}
+	defer wholeInfoDb.Close()
 
-	ts, err := gcse.Index(kv.DirInput(fpDocDB))
+	ts, err := gcse.Index(kv.DirInput(fpDocDB), wholeInfoDb)
 	if err != nil {
 		log.Printf("Indexing failed: %v", err)
 		return false
