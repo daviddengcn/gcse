@@ -3,17 +3,13 @@ package main
 import (
 	"log"
 	"math"
-	"runtime"
 	"strings"
-	"time"
 
 	"github.com/golangplus/bytes"
 	"github.com/golangplus/sort"
 	"github.com/golangplus/strings"
 
 	"github.com/daviddengcn/gcse"
-	"github.com/daviddengcn/go-index"
-	"github.com/daviddengcn/go-villa"
 )
 
 type Hit struct {
@@ -30,73 +26,6 @@ type SearchResult struct {
 var stopWords = stringsp.NewSet(
 	"the", "on", "in", "as",
 )
-
-var (
-	indexDBBox    villa.AtomicBox
-	indexSegment  gcse.Segment
-	gIndexUpdated time.Time
-	gProjectCount int
-)
-
-func loadIndex() error {
-	segm, err := gcse.IndexSegments.FindMaxDone()
-	if segm == nil || err != nil {
-		return err
-	}
-
-	if indexSegment != nil && !gcse.SegmentLess(indexSegment, segm) {
-		// no new index
-		return nil
-	}
-
-	db := &index.TokenSetSearcher{}
-	f, err := segm.Join(gcse.IndexFn).Open()
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	if err := db.Load(f); err != nil {
-		return err
-	}
-
-	indexSegment = segm
-	log.Printf("Load index from %v (%d packages)", segm, db.DocCount())
-
-	indexDBBox.Set(db)
-	updateTime := time.Now()
-
-	if st, err := segm.Join(gcse.IndexFn).Stat(); err == nil {
-		updateTime = st.ModTime()
-	}
-
-	gIndexUpdated = updateTime
-
-	var projects stringsp.Set
-	db.Search(nil, func(docID int32, data interface{}) error {
-		hit := data.(gcse.HitInfo)
-		projects.Add(hit.ProjectURL)
-		return nil
-	})
-	gProjectCount = len(projects)
-
-	db = nil
-	gcse.DumpMemStats()
-	runtime.GC()
-	gcse.DumpMemStats()
-
-	return nil
-}
-
-func loadIndexLoop() {
-	for {
-		time.Sleep(30 * time.Second)
-
-		if err := loadIndex(); err != nil {
-			log.Printf("loadIndex failed: %v", err)
-		}
-	}
-}
 
 func maxF(a, b float64) float64 {
 	if a > b {
@@ -116,35 +45,22 @@ func idf(df, N int) float64 {
 	return idf
 }
 
-func search(q string) (*SearchResult, stringsp.Set, error) {
+func search(db database, q string) (*SearchResult, stringsp.Set, error) {
 	tokens := gcse.AppendTokens(nil, []byte(q))
 	tokenList := tokens.Elements()
 	log.Printf("tokens for query %s: %v", q, tokens)
 
-	indexDB := indexDBBox.Get().(*index.TokenSetSearcher)
-
-	if indexDB == nil {
-		return &SearchResult{}, tokens, nil
-	}
-
 	var hits []*Hit
 
-	N := indexDB.DocCount()
-	TextDf := func(token string) int {
-		return len(indexDB.TokenDocList(gcse.IndexTextField, token))
-	}
-	NameDf := func(token string) int {
-		return len(indexDB.TokenDocList(gcse.IndexNameField, token))
-	}
-
+	N := db.PackageCount()
 	textIdfs := make([]float64, len(tokenList))
 	nameIdfs := make([]float64, len(tokenList))
 	for i := range textIdfs {
-		textIdfs[i] = idf(TextDf(tokenList[i]), N)
-		nameIdfs[i] = idf(NameDf(tokenList[i]), N)
+		textIdfs[i] = idf(db.PackageCountOfToken(gcse.IndexTextField, tokenList[i]), N)
+		nameIdfs[i] = idf(db.PackageCountOfToken(gcse.IndexNameField, tokenList[i]), N)
 	}
 
-	indexDB.Search(map[string]stringsp.Set{gcse.IndexTextField: tokens},
+	db.Search(map[string]stringsp.Set{gcse.IndexTextField: tokens},
 		func(docID int32, data interface{}) error {
 			hitInfo, _ := data.(gcse.HitInfo)
 			hit := &Hit{
@@ -197,7 +113,7 @@ func search(q string) (*SearchResult, stringsp.Set, error) {
 		for _, hit := range hits {
 			cnt := pkgCount[hit.Name] + 1
 			pkgCount[hit.Name] = cnt
-			if cnt > 1 && len(hit.Imported) == 0 && len(hit.TestImported) == 0 {
+			if cnt > 1 && hit.ImportedLen == 0 && hit.TestImportedLen == 0 {
 				hit.Score /= float64(cnt)
 			}
 		}

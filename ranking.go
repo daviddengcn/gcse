@@ -334,18 +334,6 @@ func removeHost(pkg string) string {
 	return pkg
 }
 
-type InfoForRanking struct {
-	Name               string
-	Package            string
-	Synopsis           string
-	ImportantSentences string
-
-	StaticScore     float64
-	TestStaticScore float64
-	ImportedLen     int
-	TestImportedLen int
-}
-
 func CalcMatchScore(doc *HitInfo, tokenList []string, textIdfs, nameIdfs []float64) float64 {
 	if len(tokenList) == 0 {
 		return 1.

@@ -157,11 +157,7 @@ func pageRoot(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	docCount := 0
-	indexDB, _ := indexDBBox.Get().(*index.TokenSetSearcher)
-	if indexDB != nil {
-		docCount = indexDB.DocCount()
-	}
+	db := getDatabase()
 	if err := templates.ExecuteTemplate(w, "index.html", struct {
 		UIUtils
 		TotalDocs     int
@@ -169,10 +165,10 @@ func pageRoot(w http.ResponseWriter, r *http.Request) {
 		LastUpdated   time.Time
 		IndexAge      SimpleDuration
 	}{
-		TotalDocs:     docCount,
-		TotalProjects: gProjectCount,
-		LastUpdated:   gIndexUpdated,
-		IndexAge:      SimpleDuration(time.Since(gIndexUpdated)),
+		TotalDocs:     db.PackageCount(),
+		TotalProjects: db.ProjectCount(),
+		LastUpdated:   db.IndexUpdated(),
+		IndexAge:      SimpleDuration(time.Since(db.IndexUpdated())),
 	}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -303,8 +299,7 @@ func packageShowName(name, pkg string) string {
 	return "(" + prj + ")"
 }
 
-func showSearchResults(results *SearchResult, tokens stringsp.Set,
-	r Range) *ShowResults {
+func showSearchResults(db database, results *SearchResult, tokens stringsp.Set, r Range) *ShowResults {
 	docs := make([]ShowDocInfo, 0, len(results.Hits))
 
 	projToIdx := make(map[string]int)
@@ -345,6 +340,9 @@ mainLoop:
 				readme = readme[:20*1024]
 			}
 			desc := d.Description
+			if hit, found := db.FindFullPackage(d.Package); found {
+				desc = hit.Description
+			}
 			for _, sent := range d.ImportantSentences {
 				desc += "\n" + sent
 			}
@@ -383,12 +381,13 @@ func pageSearch(w http.ResponseWriter, r *http.Request) {
 	startTime := time.Now()
 
 	q := strings.TrimSpace(r.FormValue("q"))
-	results, tokens, err := search(q)
+	db := getDatabase()
+	results, tokens, err := search(db, q)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	showResults := showSearchResults(results, tokens, Range{(p - 1) * itemsPerPage, itemsPerPage})
+	showResults := showSearchResults(db, results, tokens, Range{(p - 1) * itemsPerPage, itemsPerPage})
 	totalPages := (showResults.TotalEntries + itemsPerPage - 1) / itemsPerPage
 	log.Printf("totalPages: %d", totalPages)
 	var beforePages, afterPages []int
@@ -438,41 +437,21 @@ func pageSearch(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Search results rendered")
 }
 
-func findPackage(id string, doc *gcse.HitInfo) (found bool) {
-	indexDB, _ := indexDBBox.Get().(*index.TokenSetSearcher)
-	if indexDB == nil {
-		return false
-	}
-	indexDB.Search(index.SingleFieldQuery("pkg", id),
-		func(docID int32, data interface{}) error {
-			*doc, _ = data.(gcse.HitInfo)
-			found = true
-			return nil
-		})
-	return found
-}
-
 func pageView(w http.ResponseWriter, r *http.Request) {
 	id := strings.TrimSpace(r.FormValue("id"))
 	if id != "" {
-		var doc gcse.HitInfo
-		if !findPackage(id, &doc) {
+		db := getDatabase()
+		doc, found := db.FindFullPackage(id)
+		if !found {
 			http.Error(w, fmt.Sprintf("Package %s not found!", id), http.StatusNotFound)
 			return
 		}
-		indexDB, _ := indexDBBox.Get().(*index.TokenSetSearcher)
 		if doc.StarCount < 0 {
 			doc.StarCount = 0
 		}
 		var descHTML bytesp.Slice
 		godoc.ToHTML(&descHTML, doc.Description, nil)
 
-		showReadme := len(doc.Description) < 10 && len(doc.ReadmeData) > 0
-
-		docCount := 0
-		if indexDB != nil {
-			docCount = indexDB.DocCount()
-		}
 		if err := templates.ExecuteTemplate(w, "view.html", struct {
 			UIUtils
 			gcse.HitInfo
@@ -483,9 +462,9 @@ func pageView(w http.ResponseWriter, r *http.Request) {
 		}{
 			HitInfo:       doc,
 			DescHTML:      template.HTML(descHTML),
-			TotalDocCount: docCount,
+			TotalDocCount: db.PackageCount(),
 			StaticRank:    doc.StaticRank + 1,
-			ShowReadme:    showReadme,
+			ShowReadme:    len(doc.Description) < 10 && len(doc.ReadmeData) > 0,
 		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
@@ -509,42 +488,10 @@ func pageTops(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func ApiContent(w http.ResponseWriter, code int, obj interface{}, callback string) error {
-	if callback == "" {
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(code)
-		_, err := w.Write(JSon(obj))
-		return err
-	}
-	w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
-	/*
-		<callback>(<code>, <obj(JSON)>);
-	*/
-	if _, err := w.Write([]byte(fmt.Sprintf("%s(%d, ", callback, code))); err != nil {
-		return err
-	}
-	if _, err := w.Write(JSon(obj)); err != nil {
-		return err
-	}
-	if _, err := w.Write([]byte(");")); err != nil {
-		return err
-	}
-	return nil
-}
-
-type PackageDependenceInfo struct {
-	Name         string
-	Package      string
-	Imports      []string
-	TestImports  []string
-	Imported     []string
-	TestImported []string
-}
-
 func pageApi(w http.ResponseWriter, r *http.Request) {
 	action := strings.ToLower(r.FormValue("action"))
 	callback := strings.TrimSpace(r.FormValue("callback"))
-	callback = FilterFunc(callback, func(r rune) bool {
+	callback = filterFunc(callback, func(r rune) bool {
 		if r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' {
 			return false
 		}
@@ -557,13 +504,13 @@ func pageApi(w http.ResponseWriter, r *http.Request) {
 	case "package":
 		id := r.FormValue("id")
 
-		var doc gcse.HitInfo
-		if !findPackage(id, &doc) {
-			ApiContent(w, http.StatusNotFound,
-				fmt.Sprintf("Package %s not found!", id), callback)
+		db := getDatabase()
+		doc, found := db.FindFullPackage(id)
+		if !found {
+			apiContent(w, http.StatusNotFound, fmt.Sprintf("Package %s not found!", id), callback)
 			return
 		}
-		ApiContent(w, http.StatusOK, struct {
+		apiContent(w, http.StatusOK, struct {
 			Package      string
 			Name         string
 			StarCount    int
@@ -596,29 +543,28 @@ func pageApi(w http.ResponseWriter, r *http.Request) {
 		} else if N > 100 {
 			N = 100
 		}
-		ApiContent(w, http.StatusOK, statTops(N), callback)
+		apiContent(w, http.StatusOK, statTops(N), callback)
 
 	case "packages":
-		indexDB := indexDBBox.Get().(*index.TokenSetSearcher)
+		db := getDatabase()
 		var pkgs []string
-		if indexDB != nil {
-			pkgs = make([]string, 0, indexDB.DocCount())
-			indexDB.Search(nil, func(docID int32, data interface{}) error {
+		if db != nil {
+			pkgs = make([]string, 0, db.PackageCount())
+			db.Search(nil, func(docID int32, data interface{}) error {
 				doc := data.(gcse.HitInfo)
 				pkgs = append(pkgs, doc.Package)
 
 				return nil
 			})
 		}
-		ApiContent(w, http.StatusOK, pkgs, callback)
+		apiContent(w, http.StatusOK, pkgs, callback)
 
 	case "package_depends":
-		indexDB := indexDBBox.Get().(*index.TokenSetSearcher)
+		db := getDatabase()
 		var pkgs []PackageDependenceInfo
-		if indexDB != nil {
-			pkgs = make([]PackageDependenceInfo, 0, indexDB.DocCount())
-			indexDB.Search(nil, func(docID int32, data interface{}) error {
-				doc := data.(gcse.HitInfo)
+		if db != nil {
+			pkgs = make([]PackageDependenceInfo, 0, db.PackageCount())
+			db.ForEachFullPackage(func(doc gcse.HitInfo) error {
 				pkgs = append(pkgs, PackageDependenceInfo{
 					Name:         doc.Name,
 					Package:      doc.Package,
@@ -630,30 +576,29 @@ func pageApi(w http.ResponseWriter, r *http.Request) {
 				return nil
 			})
 		}
-		ApiContent(w, http.StatusOK, pkgs, callback)
+		apiContent(w, http.StatusOK, pkgs, callback)
 
 	case "search":
 		q := strings.TrimSpace(r.FormValue("q"))
-		results, _, err := search(q)
+		results, _, err := search(getDatabase(), q)
 		if err != nil {
-			ApiContent(w, http.StatusInternalServerError, err.Error(), callback)
+			apiContent(w, http.StatusInternalServerError, err.Error(), callback)
 			return
 		}
-		ApiContent(w, http.StatusOK, SearchResultToApi(q, results), callback)
+		apiContent(w, http.StatusOK, SearchResultToApi(q, results), callback)
 
 	default:
-		ApiContent(w, http.StatusBadRequest, fmt.Sprintf("Unknown action: %s", action), callback)
+		apiContent(w, http.StatusBadRequest, fmt.Sprintf("Unknown action: %s", action), callback)
 	}
 }
 func pageBadgePage(w http.ResponseWriter, r *http.Request) {
 	id := strings.TrimSpace(r.FormValue("id"))
 	if id != "" {
-		var doc gcse.HitInfo
-		if !findPackage(id, &doc) {
+		doc, found := getDatabase().FindFullPackage(id)
+		if !found {
 			http.Error(w, fmt.Sprintf("Package %s not found!", id), http.StatusNotFound)
 			return
 		}
-
 		badgeUrl := "http://go-search.org/badge?id=" + template.URLQueryEscaper(doc.Package)
 		viewUrl := "http://go-search.org/view?id=" + template.URLQueryEscaper(doc.Package)
 
@@ -678,8 +623,8 @@ func pageBadgePage(w http.ResponseWriter, r *http.Request) {
 func pageBadge(w http.ResponseWriter, r *http.Request) {
 	id := strings.TrimSpace(r.FormValue("id"))
 	if id != "" {
-		var doc gcse.HitInfo
-		if !findPackage(id, &doc) {
+		doc, found := getDatabase().FindFullPackage(id)
+		if !found {
 			http.Error(w, fmt.Sprintf("Package %s not found!", id), http.StatusNotFound)
 			return
 		}

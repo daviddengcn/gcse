@@ -1,183 +1,208 @@
 package main
 
 import (
-	"fmt"
-	"strings"
+	"encoding/gob"
+	"errors"
+	"log"
+	"runtime"
+	"sync/atomic"
+	"time"
 
-	"github.com/golangplus/container/heap"
+	"github.com/golangplus/bytes"
 	"github.com/golangplus/strings"
 
+	"github.com/boltdb/bolt"
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/go-index"
 )
 
-type StatItem struct {
-	Index   int
-	Name    string
-	Package string
-	Link    string // no package, specify a link
-	Info    string
-}
-type StatList struct {
-	Name  string
-	Info  string
-	Items []StatItem
+var (
+	databaseValue atomic.Value
+	indexSegment  gcse.Segment
+)
+
+type database interface {
+	PackageCount() int
+	ProjectCount() int
+	IndexUpdated() time.Time
+	Close()
+
+	FindFullPackage(id string) (hit gcse.HitInfo, found bool)
+	ForEachFullPackage(func(gcse.HitInfo) error) error
+	PackageCountOfToken(field, token string) int
+	Search(q map[string]stringsp.Set, out func(docID int32, data interface{}) error) error
 }
 
-type TopN struct {
-	less func(a, b interface{}) bool
-	pq   heap.Interfaces
-	n    int
+type searcherDB struct {
+	ts   index.TokenSetSearcher
+	hits *bolt.DB
+
+	projectCount int
+	indexUpdated time.Time
 }
 
-func NewTopN(less func(a, b interface{}) bool, n int) *TopN {
-	return &TopN{
-		less: less,
-		pq:   heap.NewInterfaces(less, n),
-		n:    n,
+func (db *searcherDB) PackageCount() int {
+	if db == nil {
+		return 0
 	}
+	return db.ts.DocCount()
 }
 
-func (t *TopN) Append(item interface{}) {
-	if t.pq.Len() < t.n {
-		t.pq.Push(item)
-	} else if t.less(t.pq.Peek(), item) {
-		t.pq.Pop()
-		t.pq.Push(item)
+func (db *searcherDB) ProjectCount() int {
+	if db == nil {
+		return 0
 	}
+	return db.projectCount
 }
 
-func (t *TopN) PopAll() []interface{} {
-	return t.pq.PopAll()
+func (db *searcherDB) IndexUpdated() time.Time {
+	if db == nil {
+		return time.Now()
+	}
+	return db.indexUpdated
 }
 
-func (t *TopN) Len() int {
-	return t.pq.Len()
+func (db *searcherDB) Close() {
+	if db == nil {
+		return
+	}
+	db.hits.Close()
 }
 
-func inProjects(projs stringsp.Set, pkg string) bool {
-	for {
-		if projs.Contain(pkg) {
-			return true
+var notFoundInHits = errors.New("Not found in hits")
+
+func (db *searcherDB) FindFullPackage(id string) (gcse.HitInfo, bool) {
+	if db == nil {
+		return gcse.HitInfo{}, false
+	}
+	var hit gcse.HitInfo
+	if err := db.hits.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(gcse.IndexHitsBucket))
+		if b == nil {
+			return notFoundInHits
 		}
-		p := strings.LastIndex(pkg, "/")
-		if p < 0 {
-			break
+		bs := bytesp.Slice(b.Get([]byte(id)))
+		if bs == nil {
+			return notFoundInHits
 		}
-		pkg = pkg[:p]
+		return gob.NewDecoder(&bs).Decode(&hit)
+	}); err != nil {
+		return gcse.HitInfo{}, false
 	}
-
-	return false
+	return hit, true
 }
 
-func statTops(N int) []StatList {
-	indexDB := indexDBBox.Get().(*index.TokenSetSearcher)
-	if indexDB == nil {
+func (db *searcherDB) ForEachFullPackage(out func(gcse.HitInfo) error) error {
+	if db == nil {
 		return nil
 	}
-	var topStaticScores []gcse.HitInfo
-	var tssProjects stringsp.Set
-
-	topImported := NewTopN(func(a, b interface{}) bool {
-		ia, ib := a.(gcse.HitInfo), b.(gcse.HitInfo)
-		return len(ia.Imported)+len(ia.TestImported) < len(ib.Imported)+len(ib.TestImported)
-	}, N)
-
-	topTestStatic := NewTopN(func(a, b interface{}) bool {
-		return a.(gcse.HitInfo).TestStaticScore < b.(gcse.HitInfo).TestStaticScore
-	}, N)
-
-	sites := make(map[string]int)
-
-	indexDB.Search(nil, func(docID int32, data interface{}) error {
-		hit := data.(gcse.HitInfo)
-		orgName := hit.Name
-		hit.Name = packageShowName(hit.Name, hit.Package)
-
-		// assuming all packages has been sorted by static-scores.
-		if len(topStaticScores) < N {
-			if len(hit.Imported) > 0 &&
-				orgName != "" && orgName != "main" &&
-				!inProjects(tssProjects, hit.ProjectURL) {
-				topStaticScores = append(topStaticScores, hit)
-				tssProjects.Add(hit.ProjectURL)
+	return db.hits.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(gcse.IndexHitsBucket))
+		if b == nil {
+			return nil
+		}
+		return b.ForEach(func(_, v []byte) error {
+			if v == nil {
+				// Skip sub bucket if any.
+				return nil
 			}
-		}
-		if len(hit.TestImported) > 0 {
-			topTestStatic.Append(hit)
-		}
-		topImported.Append(hit)
+			bs := bytesp.Slice(v)
+			var hit gcse.HitInfo
+			if err := gob.NewDecoder(&bs).Decode(&hit); err != nil {
+				return err
+			}
+			return out(hit)
+		})
+	})
+}
 
-		host := strings.ToLower(gcse.HostOfPackage(hit.Package))
-		if host != "" {
-			sites[host] = sites[host] + 1
+func (db *searcherDB) PackageCountOfToken(field, token string) int {
+	if db == nil {
+		return 0
+	}
+	return len(db.ts.TokenDocList(field, token))
+}
+
+func (db *searcherDB) Search(q map[string]stringsp.Set, out func(docID int32, data interface{}) error) error {
+	if db == nil {
+		return nil
+	}
+	return db.ts.Search(q, out)
+}
+
+func getDatabase() database {
+	db, ok := databaseValue.Load().(database)
+	if !ok {
+		return (*searcherDB)(nil)
+	}
+	return db
+}
+
+func loadIndex() error {
+	segm, err := gcse.IndexSegments.FindMaxDone()
+	if segm == nil || err != nil {
+		return err
+	}
+
+	if indexSegment != nil && !gcse.SegmentLess(indexSegment, segm) {
+		// no new index
+		return nil
+	}
+
+	db := &searcherDB{}
+	if err := func() error {
+		f, err := segm.Join(gcse.IndexFn).Open()
+		if err != nil {
+			return err
 		}
+		defer f.Close()
+
+		return db.ts.Load(f)
+	}(); err != nil {
+		return err
+	}
+	wholeInfoPath := segm.Join(gcse.WholeInfoFn)
+	if db.hits, err = bolt.Open(wholeInfoPath.S(), 0666, &bolt.Options{ReadOnly: true}); err != nil {
+		log.Printf("bolt.Open %v failed: %v", wholeInfoPath, err)
+		return err
+	}
+	// Calculate db.projectCount
+	var projects stringsp.Set
+	db.ts.Search(nil, func(docID int32, data interface{}) error {
+		hit := data.(gcse.HitInfo)
+		projects.Add(hit.ProjectURL)
 		return nil
 	})
-	tlStaticScore := StatList{
-		Name:  "Hot",
-		Info:  "refs stars",
-		Items: make([]StatItem, 0, len(topStaticScores)),
+	db.projectCount = len(projects)
+
+	// Update db.indexUpdated
+	db.indexUpdated = time.Now()
+	if st, err := segm.Join(gcse.IndexFn).Stat(); err == nil {
+		db.indexUpdated = st.ModTime()
 	}
-	for idx, hit := range topStaticScores {
-		tlStaticScore.Items = append(tlStaticScore.Items, StatItem{
-			Index:   idx + 1,
-			Name:    hit.Name,
-			Package: hit.Package,
-			Info:    fmt.Sprintf("%d %d", len(hit.Imported), hit.StarCount),
-		})
-	}
-	tlTestStatic := StatList{
-		Name:  "Hot Test",
-		Info:  "refs stars",
-		Items: make([]StatItem, 0, topTestStatic.Len()),
-	}
-	for idx, item := range topTestStatic.PopAll() {
-		hit := item.(gcse.HitInfo)
-		tlTestStatic.Items = append(tlTestStatic.Items, StatItem{
-			Index:   idx + 1,
-			Name:    hit.Name,
-			Package: hit.Package,
-			Info: fmt.Sprintf("%d %d", len(hit.TestImported),
-				hit.StarCount),
-		})
-	}
-	tlImported := StatList{
-		Name:  "Most Imported",
-		Info:  "refs",
-		Items: make([]StatItem, 0, topImported.Len()),
-	}
-	for idx, item := range topImported.PopAll() {
-		hit := item.(gcse.HitInfo)
-		tlImported.Items = append(tlImported.Items, StatItem{
-			Index:   idx + 1,
-			Name:    hit.Name,
-			Package: hit.Package,
-			Info:    fmt.Sprintf("%d", len(hit.Imported)+len(hit.TestImported)),
-		})
-	}
-	topSites := NewTopN(func(a, b interface{}) bool {
-		return sites[a.(string)] < sites[b.(string)]
-	}, N)
-	for site := range sites {
-		topSites.Append(site)
-	}
-	tlSites := StatList{
-		Name:  "Sites",
-		Info:  "packages",
-		Items: make([]StatItem, 0, topSites.Len()),
-	}
-	for idx, st := range topSites.PopAll() {
-		site := st.(string)
-		cnt := sites[site]
-		tlSites.Items = append(tlSites.Items, StatItem{
-			Index: idx + 1,
-			Name:  site,
-			Link:  "http://" + site,
-			Info:  fmt.Sprintf("%d", cnt),
-		})
-	}
-	return []StatList{
-		tlStaticScore, tlTestStatic, tlImported, tlSites,
+
+	indexSegment = segm
+	log.Printf("Load index from %v (%d packages)", segm, db.PackageCount())
+
+	// Exchange new/old database and close the old one.
+	oldDB := getDatabase()
+	databaseValue.Store(db)
+	oldDB.Close()
+	oldDB = nil
+	gcse.DumpMemStats()
+
+	runtime.GC()
+	gcse.DumpMemStats()
+
+	return nil
+}
+
+func loadIndexLoop() {
+	for {
+		time.Sleep(30 * time.Second)
+
+		if err := loadIndex(); err != nil {
+			log.Printf("loadIndex failed: %v", err)
+		}
 	}
 }

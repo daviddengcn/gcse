@@ -1,18 +1,15 @@
 package main
 
 import (
-	"encoding/json"
+	"fmt"
+	"net/http"
 	"unicode/utf8"
 
 	"github.com/golangplus/bytes"
+	"github.com/golangplus/encoding/json"
 )
 
-func JSon(o interface{}) []byte {
-	bts, _ := json.Marshal(o)
-	return bts
-}
-
-func FilterFunc(s string, f func(r rune) bool) string {
+func filterFunc(s string, f func(r rune) bool) string {
 	for i, r := range s {
 		if f(r) {
 			// first time
@@ -64,4 +61,36 @@ func SearchResultToApi(q string, res *SearchResult) *SearchApiStruct {
 		apiRes.Hits = append(apiRes.Hits, apiHit)
 	}
 	return &apiRes
+}
+
+func apiContent(w http.ResponseWriter, code int, obj interface{}, callback string) error {
+	if callback == "" {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(code)
+		_, err := w.Write(jsonp.MarshalIgnoreError(obj))
+		return err
+	}
+	w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
+	/*
+		<callback>(<code>, <obj(JSON)>);
+	*/
+	if _, err := w.Write([]byte(fmt.Sprintf("%s(%d, ", callback, code))); err != nil {
+		return err
+	}
+	if _, err := w.Write(jsonp.MarshalIgnoreError(obj)); err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte(");")); err != nil {
+		return err
+	}
+	return nil
+}
+
+type PackageDependenceInfo struct {
+	Name         string
+	Package      string
+	Imports      []string
+	TestImports  []string
+	Imported     []string
+	TestImported []string
 }

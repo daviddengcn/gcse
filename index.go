@@ -13,7 +13,6 @@ import (
 
 	"github.com/boltdb/bolt"
 	"github.com/daviddengcn/go-index"
-	"github.com/daviddengcn/go-villa"
 	"github.com/daviddengcn/sophie"
 	"github.com/daviddengcn/sophie/mr"
 )
@@ -45,19 +44,17 @@ func excludeImports(src, excl []string) (dst []string) {
 func filterDocInfo(docInfo *DocInfo) {
 	for i, imp := range docInfo.Imports {
 		if imp == docInfo.Package {
-			(*villa.StringSlice)(&docInfo.Imports).Remove(i)
+			docInfo.Imports = stringsp.SliceRemove(docInfo.Imports, i)
 			break
 		}
 	}
 	for i, imp := range docInfo.TestImports {
 		if imp == docInfo.Package {
-			(*villa.StringSlice)(&docInfo.TestImports).Remove(i)
+			docInfo.TestImports = stringsp.SliceRemove(docInfo.TestImports, i)
 			break
 		}
 	}
 }
-
-const IndexHitsBucket = "hits"
 
 func Index(docDB mr.Input, wholeInfoDb *bolt.DB) (*index.TokenSetSearcher, error) {
 	DumpMemStats()
@@ -220,6 +217,9 @@ func Index(docDB mr.Input, wholeInfoDb *bolt.DB) (*index.TokenSetSearcher, error
 		}); err != nil {
 			return nil, err
 		}
+		hit.Description = ""
+		hit.Imported = nil
+		hit.TestImported = nil
 
 		var nameTokens stringsp.Set
 		nameTokens = AppendTokens(nameTokens, []byte(hit.Name))
