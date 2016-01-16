@@ -2,7 +2,6 @@ package gcse
 
 import (
 	"encoding/gob"
-	"fmt"
 	"os"
 	"testing"
 
@@ -124,16 +123,9 @@ func TestIndex(t *testing.T) {
 		t.Errorf("ts.Search: %v", err)
 		return
 	}
-	assert.StringEqual(t, "gcseInfo.Imported",
-		gcseInfo.Imported,
-		[]string{
-			"github.com/daviddengcn/gcse/indexer",
-		})
-	assert.StringEqual(t, "gcseInfo.TestImports",
-		gcseInfo.TestImports,
-		[]string{
-			"github.com/daviddengcn/go-villa",
-		})
+	assert.Equal(t, "gcseInfo.Imported", gcseInfo.Imported, []string(nil))
+	assert.Equal(t, "gcseInfo.ImportedLen", gcseInfo.ImportedLen, 1)
+	assert.Equal(t, "gcseInfo.TestImports", gcseInfo.TestImports, []string{"github.com/daviddengcn/go-villa"})
 
 	var indexerInfo HitInfo
 	if err := ts.Search(map[string]stringsp.Set{
@@ -159,12 +151,9 @@ func TestIndex(t *testing.T) {
 		t.Errorf("ts.Search: %v", err)
 		return
 	}
-	assert.StringEqual(t, "indexerInfo.Imported",
-		fmt.Sprintf("%+v", indexerInfo.Imported),
-		"[]")
-	assert.StringEqual(t, "gcseInfo.TestImported",
-		gcseInfo.TestImported,
-		[]string{"github.com/daviddengcn/gcse"})
+	assert.Equal(t, "indexerInfo.Imported", indexerInfo.Imported, []string(nil))
+	assert.Equal(t, "gcseInfo.TestImportedLen", gcseInfo.TestImportedLen, 1)
+	assert.Equal(t, "gcseInfo.TestImported", gcseInfo.TestImported, []string(nil))
 }
 
 func TestAppendTokens_filter(t *testing.T) {
