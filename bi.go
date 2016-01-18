@@ -8,8 +8,8 @@ func init() {
 	bi.DataPath = BiDataPath.S()
 }
 
-func AddBiValueAndProcess(name string, value int) {
-	bi.AddValue(name, value)
+func AddBiValueAndProcess(aggr bi.AggregateMethod, name string, value int) {
+	bi.AddValue(aggr, name, value)
 	bi.Flush()
 	bi.Process()
 }
