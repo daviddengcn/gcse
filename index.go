@@ -182,6 +182,7 @@ func Index(docDB mr.Input, outDir string) (*index.TokenSetSearcher, error) {
 
 	DumpMemStats()
 	importsDB = nil
+	testImportsDB = nil
 	DumpMemStats()
 	log.Printf("%d hits collected, sorting static-scores in descending order", len(hits))
 
