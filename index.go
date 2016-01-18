@@ -3,12 +3,15 @@ package gcse
 import (
 	"errors"
 	"log"
+	"os"
 	"path"
 	"time"
 
 	"github.com/golangplus/sort"
 	"github.com/golangplus/strings"
+	"golang.org/x/crypto/ssh/terminal"
 
+	"github.com/cheggaaa/pb"
 	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/sophie"
 	"github.com/daviddengcn/sophie/mr"
@@ -199,6 +202,11 @@ func Index(docDB mr.Input, outDir string) (*index.TokenSetSearcher, error) {
 		return nil, err
 	}
 	defer hitsArr.Close()
+	var bar *pb.ProgressBar
+	if terminal.IsTerminal(int(os.Stdout.Fd())) {
+		bar = pb.New(len(idxs))
+		bar.Start()
+	}
 	for i := range idxs {
 		hit := &hits[idxs[i]]
 		if i > 0 && hit.StaticScore < hits[idxs[i-1]].StaticScore {
@@ -231,7 +239,9 @@ func Index(docDB mr.Input, outDir string) (*index.TokenSetSearcher, error) {
 			IndexNameField: nameTokens,
 			IndexPkgField:  stringsp.NewSet(hit.Package),
 		}, *hit)
+		bar.Increment()
 	}
+	bar.FinishPrint("Indexing finished!")
 	DumpMemStats()
 	return ts, nil
 }
