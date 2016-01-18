@@ -37,10 +37,9 @@ import (
 )
 
 const (
-	KindIndex       = "index"
-	IndexFn         = KindIndex + ".gob"
-	WholeInfoFn     = "wholeinfo.bolt" // filename for whole info bolt DB in a index segment folder
-	IndexHitsBucket = "hits"
+	KindIndex = "index"
+	IndexFn   = KindIndex + ".gob"
+	HitsArrFn = "hits"
 
 	KindDocDB = "docdb"
 

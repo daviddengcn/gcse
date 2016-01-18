@@ -1,17 +1,14 @@
 package gcse
 
 import (
-	"encoding/gob"
 	"errors"
-	"fmt"
 	"log"
+	"path"
 	"time"
 
-	"github.com/golangplus/bytes"
 	"github.com/golangplus/sort"
 	"github.com/golangplus/strings"
 
-	"github.com/boltdb/bolt"
 	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/sophie"
 	"github.com/daviddengcn/sophie/mr"
@@ -56,7 +53,7 @@ func filterDocInfo(docInfo *DocInfo) {
 	}
 }
 
-func Index(docDB mr.Input, wholeInfoDb *bolt.DB) (*index.TokenSetSearcher, error) {
+func Index(docDB mr.Input, outDir string) (*index.TokenSetSearcher, error) {
 	DumpMemStats()
 
 	docPartCnt, err := docDB.PartCount()
@@ -191,11 +188,16 @@ func Index(docDB mr.Input, wholeInfoDb *bolt.DB) (*index.TokenSetSearcher, error
 	idxs := sortp.IndexSortF(len(hits), func(i, j int) bool {
 		return hits[i].StaticScore > hits[j].StaticScore
 	})
-	ts := &index.TokenSetSearcher{}
 
+	ts := &index.TokenSetSearcher{}
 	DumpMemStats()
 	log.Printf("Indexing %d packages to TokenSetSearcher ...", len(idxs))
 	rank := 0
+	hitsArr, err := index.CreateConstArray(path.Join(outDir, HitsArrFn))
+	if err != nil {
+		return nil, err
+	}
+	defer hitsArr.Close()
 	for i := range idxs {
 		hit := &hits[idxs[i]]
 		if i > 0 && hit.StaticScore < hits[idxs[i-1]].StaticScore {
@@ -203,20 +205,10 @@ func Index(docDB mr.Input, wholeInfoDb *bolt.DB) (*index.TokenSetSearcher, error
 		}
 		hit.StaticRank = rank
 
-		if err := wholeInfoDb.Update(func(tx *bolt.Tx) error {
-			b, err := tx.CreateBucketIfNotExists([]byte(IndexHitsBucket))
-			if err != nil {
-				return fmt.Errorf("create bucket: %s", err)
-			}
-			var bs bytesp.Slice
-			if err := gob.NewEncoder(&bs).Encode(hit); err != nil {
-				log.Printf("Encoding package %v failed: %v", hit.Package, err)
-				return err
-			}
-			return b.Put([]byte(hit.Package), []byte(bs))
-		}); err != nil {
+		if _, err := hitsArr.AppendGob(hit); err != nil {
 			return nil, err
 		}
+
 		hit.Description = ""
 		hit.Imported = nil
 		hit.TestImported = nil

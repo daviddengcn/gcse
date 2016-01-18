@@ -1,15 +1,13 @@
 package gcse
 
 import (
-	"encoding/gob"
-	"os"
+	"path"
 	"testing"
 
-	"github.com/golangplus/bytes"
 	"github.com/golangplus/strings"
 	"github.com/golangplus/testing/assert"
 
-	"github.com/boltdb/bolt"
+	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/sophie"
 	"github.com/daviddengcn/sophie/mr"
 )
@@ -41,15 +39,6 @@ func TestIndex(t *testing.T) {
 			Name:    "villa",
 		},
 	}
-	if !assert.NoError(t, os.RemoveAll("/tmp/gcse-TestIndex.bolt")) {
-		return
-	}
-	wholeInfoDb, err := bolt.Open("/tmp/gcse-TestIndex.bolt", 0644, nil)
-	if !assert.NoError(t, err) {
-		return
-	}
-	defer wholeInfoDb.Close()
-
 	ts, err := Index(&mr.InputStruct{
 		PartCountF: func() (int, error) {
 			return 1, nil
@@ -72,26 +61,20 @@ func TestIndex(t *testing.T) {
 				},
 			}, nil
 		},
-	}, wholeInfoDb)
+	}, "./tmp")
 	assert.NoErrorOrDie(t, err)
 
-	assert.NoError(t, wholeInfoDb.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(IndexHitsBucket))
-		if !assert.Should(t, b != nil, "Bucket not found!") {
+	hitsArr, err := index.OpenConstArray(path.Join("./tmp", HitsArrFn))
+	for _, doc := range docs {
+		idx := -1
+		ts.Search(index.SingleFieldQuery(IndexPkgField, doc.Package), func(docID int32, data interface{}) error {
+			idx = int(docID)
 			return nil
-		}
-		for _, doc := range docs {
-			bs := bytesp.Slice(b.Get([]byte(doc.Package)))
-			if assert.Should(t, bs != nil, "Get "+doc.Package+" returns nil") {
-				var info HitInfo
-				if assert.NoError(t, gob.NewDecoder(&bs).Decode(&info)) {
-					assert.Equal(t, "package", info.Package, doc.Package)
-				}
-			}
-		}
-		return nil
-	}))
-
+		})
+		d, err := hitsArr.GetGob(idx)
+		assert.NoError(t, err)
+		assert.Equal(t, "d.Package", d.(HitInfo).Package, doc.Package)
+	}
 	numDocs := ts.DocCount()
 	assert.Equal(t, "DocCount", numDocs, 3)
 

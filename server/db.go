@@ -1,17 +1,14 @@
 package main
 
 import (
-	"encoding/gob"
 	"errors"
 	"log"
 	"runtime"
 	"sync/atomic"
 	"time"
 
-	"github.com/golangplus/bytes"
 	"github.com/golangplus/strings"
 
-	"github.com/boltdb/bolt"
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/go-index"
 )
@@ -35,7 +32,7 @@ type database interface {
 
 type searcherDB struct {
 	ts   index.TokenSetSearcher
-	hits *bolt.DB
+	hits *index.ConstArrayReader
 
 	projectCount int
 	indexUpdated time.Time
@@ -73,19 +70,17 @@ var notFoundInHits = errors.New("Not found in hits")
 
 func (db *searcherDB) FindFullPackage(id string) (gcse.HitInfo, bool) {
 	if db == nil {
+		log.Print("Database not loaded!")
 		return gcse.HitInfo{}, false
 	}
 	var hit gcse.HitInfo
-	if err := db.hits.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(gcse.IndexHitsBucket))
-		if b == nil {
-			return notFoundInHits
+	if err := db.ts.Search(index.SingleFieldQuery(gcse.IndexPkgField, id), func(docID int32, _ interface{}) error {
+		h, err := db.hits.GetGob(int(docID))
+		if err != nil {
+			return err
 		}
-		bs := bytesp.Slice(b.Get([]byte(id)))
-		if bs == nil {
-			return notFoundInHits
-		}
-		return gob.NewDecoder(&bs).Decode(&hit)
+		hit = h.(gcse.HitInfo)
+		return nil
 	}); err != nil {
 		return gcse.HitInfo{}, false
 	}
@@ -96,23 +91,8 @@ func (db *searcherDB) ForEachFullPackage(out func(gcse.HitInfo) error) error {
 	if db == nil {
 		return nil
 	}
-	return db.hits.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(gcse.IndexHitsBucket))
-		if b == nil {
-			return nil
-		}
-		return b.ForEach(func(_, v []byte) error {
-			if v == nil {
-				// Skip sub bucket if any.
-				return nil
-			}
-			bs := bytesp.Slice(v)
-			var hit gcse.HitInfo
-			if err := gob.NewDecoder(&bs).Decode(&hit); err != nil {
-				return err
-			}
-			return out(hit)
-		})
+	return db.hits.ForEachGob(func(_ int, hit interface{}) error {
+		return out(hit.(gcse.HitInfo))
 	})
 }
 
@@ -161,9 +141,9 @@ func loadIndex() error {
 	}(); err != nil {
 		return err
 	}
-	wholeInfoPath := segm.Join(gcse.WholeInfoFn)
-	if db.hits, err = bolt.Open(wholeInfoPath.S(), 0666, &bolt.Options{ReadOnly: true}); err != nil {
-		log.Printf("bolt.Open %v failed: %v", wholeInfoPath, err)
+	hitsPath := segm.Join(gcse.HitsArrFn)
+	if db.hits, err = index.OpenConstArray(hitsPath.S()); err != nil {
+		log.Printf("OpenConstArray %v failed: %v", hitsPath, err)
 		return err
 	}
 	// Calculate db.projectCount
