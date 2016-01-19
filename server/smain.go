@@ -104,6 +104,13 @@ func (hdl LogHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Printf("[E] %s %v %s %v %v %v", r.Method, r.RequestURI, r.RemoteAddr, r.Header.Get("X-Forwarded-For"), r.Header.Get("Referer"), r.Header.Get("User-Agent"))
 }
 
+func processBi() {
+	for {
+		bi.Process()
+		time.Sleep(time.Minute)
+	}
+}
+
 func main() {
 	runtime.GOMAXPROCS(2)
 	if err := gcse.ImportSegments.ClearUndones(); err != nil {
@@ -113,6 +120,7 @@ func main() {
 		log.Fatal(err)
 	}
 	go loadIndexLoop()
+	go processBi()
 
 	log.Printf("ListenAndServe at %s ...", gcse.ServerAddr)
 
@@ -405,6 +413,18 @@ func pageSearch(w http.ResponseWriter, r *http.Request) {
 	if nextPage < 0 || nextPage > totalPages {
 		nextPage = 0
 	}
+	searchDue := time.Since(startTime)
+	if searchDue <= time.Second {
+		bi.AddValue(bi.Sum, "search.latency.<=1s", 1)
+	} else {
+		bi.AddValue(bi.Sum, "search.latency.>1", 1)
+		if searchDue > 10*time.Second {
+			bi.AddValue(bi.Sum, "search.latency.>10", 1)
+			if searchDue > 100*time.Second {
+				bi.AddValue(bi.Sum, "search.latency.>100s", 1)
+			}
+		}
+	}
 	data := struct {
 		UIUtils
 		Q           string
@@ -420,7 +440,7 @@ func pageSearch(w http.ResponseWriter, r *http.Request) {
 	}{
 		Q:           q,
 		Results:     showResults,
-		SearchTime:  SimpleDuration(time.Since(startTime)),
+		SearchTime:  SimpleDuration(searchDue),
 		BeforePages: beforePages,
 		PrevPage:    prevPage,
 		CurrentPage: p,
