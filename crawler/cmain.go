@@ -13,6 +13,7 @@ import (
 
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/gddo/doc"
+	"github.com/daviddengcn/go-easybi"
 	"github.com/daviddengcn/go-villa"
 	"github.com/daviddengcn/sophie"
 	"github.com/daviddengcn/sophie/kv"
@@ -146,22 +147,20 @@ func main() {
 	fpNewDocs.Remove()
 
 	pkgEnd := make(chan error, 1)
-	go crawlPackages(httpClient, fpToCrawl.Join(gcse.FnPackage), fpNewDocs,
-		pkgEnd)
+	go crawlPackages(httpClient, fpToCrawl.Join(gcse.FnPackage), fpNewDocs, pkgEnd)
 
 	psnEnd := make(chan error, 1)
 	go crawlPersons(httpClient, fpToCrawl.Join(gcse.FnPerson), psnEnd)
 
 	errPkg, errPsn := <-pkgEnd, <-psnEnd
+	bi.Flush()
+	bi.Process()
 	if errPkg != nil || errPsn != nil {
-		log.Fatalf("Some job may failed, package: %v, person: %v",
-			errPkg, errPsn)
+		log.Fatalf("Some job may failed, package: %v, person: %v", errPkg, errPsn)
 	}
-
 	if err := processImports(); err != nil {
 		log.Printf("processImports failed: %v", err)
 	}
-
 	syncDatabases()
 	log.Println("crawler stopped...")
 }

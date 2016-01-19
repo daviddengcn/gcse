@@ -11,6 +11,7 @@ import (
 
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/gddo/doc"
+	"github.com/daviddengcn/go-easybi"
 	"github.com/daviddengcn/sophie"
 	"github.com/daviddengcn/sophie/kv"
 	"github.com/daviddengcn/sophie/mr"
@@ -97,14 +98,12 @@ type PackageCrawler struct {
 }
 
 // OnlyMapper.Map
-func (pc *PackageCrawler) Map(key, val sophie.SophieWriter,
-	c []sophie.Collector) error {
+func (pc *PackageCrawler) Map(key, val sophie.SophieWriter, c []sophie.Collector) error {
 	if time.Now().After(AppStopTime) {
 		log.Printf("[Part %d] Timeout(key = %v), PackageCrawler returns EOM",
 			pc.part, key)
 		return mr.EOM
 	}
-
 	pkg := string(*key.(*sophie.RawString))
 	ent := val.(*gcse.CrawlingEntry)
 	if ent.Version < gcse.CrawlerVersion {
@@ -118,6 +117,7 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter,
 	if err != nil && err != gcse.ErrPackageNotModifed {
 		log.Printf("[Part %d] Crawling pkg %s failed: %v", pc.part, pkg, err)
 		if gcse.IsBadPackage(err) {
+			bi.AddValue(bi.Sum, "crawler-package-wrong-package", 1)
 			// a wrong path
 			nda := gcse.NewDocAction{
 				Action: gcse.NDA_DEL,
@@ -126,6 +126,7 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter,
 			cDB.PackageDB.Delete(pkg)
 			log.Printf("[Part %d] Remove wrong package %s", pc.part, pkg)
 		} else {
+			bi.AddValue(bi.Sum, "crawler-package-failed", 1)
 			pc.failCount++
 
 			cDB.SchedulePackage(pkg, time.Now().Add(12*time.Hour), ent.Etag)
@@ -146,15 +147,15 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter,
 		}
 		return nil
 	}
-
 	pc.failCount = 0
 	if err == gcse.ErrPackageNotModifed {
 		// TODO crawling stars for unchanged project
 		log.Printf("[Part %d] Package %s unchanged!", pc.part, pkg)
 		schedulePackageNextCrawl(pkg, ent.Etag)
+		bi.AddValue(bi.Sum, "crawler-package-not-modified", 1)
 		return nil
 	}
-
+	bi.AddValue(bi.Sum, "crawler-package-success", 1)
 	log.Printf("[Part %d] Crawled package %s success!", pc.part, pkg)
 
 	nda := gcse.NewDocAction{
