@@ -117,7 +117,7 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter, c []sophie.Collector
 	if err != nil && err != gcse.ErrPackageNotModifed {
 		log.Printf("[Part %d] Crawling pkg %s failed: %v", pc.part, pkg, err)
 		if gcse.IsBadPackage(err) {
-			bi.AddValue(bi.Sum, "crawler-package-wrong-package", 1)
+			bi.AddValue(bi.Sum, "crawler.package.wrong-package", 1)
 			// a wrong path
 			nda := gcse.NewDocAction{
 				Action: gcse.NDA_DEL,
@@ -126,7 +126,7 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter, c []sophie.Collector
 			cDB.PackageDB.Delete(pkg)
 			log.Printf("[Part %d] Remove wrong package %s", pc.part, pkg)
 		} else {
-			bi.AddValue(bi.Sum, "crawler-package-failed", 1)
+			bi.AddValue(bi.Sum, "crawler.package.failed", 1)
 			pc.failCount++
 
 			cDB.SchedulePackage(pkg, time.Now().Add(12*time.Hour), ent.Etag)
@@ -152,10 +152,10 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter, c []sophie.Collector
 		// TODO crawling stars for unchanged project
 		log.Printf("[Part %d] Package %s unchanged!", pc.part, pkg)
 		schedulePackageNextCrawl(pkg, ent.Etag)
-		bi.AddValue(bi.Sum, "crawler-package-not-modified", 1)
+		bi.AddValue(bi.Sum, "crawler.package.not-modified", 1)
 		return nil
 	}
-	bi.AddValue(bi.Sum, "crawler-package-success", 1)
+	bi.AddValue(bi.Sum, "crawler.package.success", 1)
 	log.Printf("[Part %d] Crawled package %s success!", pc.part, pkg)
 
 	nda := gcse.NewDocAction{

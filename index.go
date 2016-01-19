@@ -239,9 +239,13 @@ func Index(docDB mr.Input, outDir string) (*index.TokenSetSearcher, error) {
 			IndexNameField: nameTokens,
 			IndexPkgField:  stringsp.NewSet(hit.Package),
 		}, *hit)
-		bar.Increment()
+		if bar != nil {
+			bar.Increment()
+		}
 	}
-	bar.FinishPrint("Indexing finished!")
+	if bar != nil {
+		bar.FinishPrint("Indexing finished!")
+	}
 	DumpMemStats()
 	return ts, nil
 }

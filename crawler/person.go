@@ -47,7 +47,7 @@ func (pc *PersonCrawler) Map(key, val sophie.SophieWriter,
 
 	p, err := gcse.CrawlPerson(pc.httpClient, id)
 	if err != nil {
-		bi.AddValue(bi.Sum, "crawler-person-failed", 1)
+		bi.AddValue(bi.Sum, "crawler.person.failed", 1)
 		pc.failCount++
 		log.Printf("[Part %d] Crawling person %s failed: %v", pc.part, id, err)
 
@@ -66,7 +66,7 @@ func (pc *PersonCrawler) Map(key, val sophie.SophieWriter,
 		}
 		return nil
 	}
-	bi.AddValue(bi.Sum, "crawler-person-success", 1)
+	bi.AddValue(bi.Sum, "crawler.person.success", 1)
 	log.Printf("[Part %d] Crawled person %s success!", pc.part, id)
 	pushPerson(p)
 	log.Printf("[Part %d] Push person %s success", pc.part, id)
