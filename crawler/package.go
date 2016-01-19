@@ -127,6 +127,9 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter, c []sophie.Collector
 			log.Printf("[Part %d] Remove wrong package %s", pc.part, pkg)
 		} else {
 			bi.AddValue(bi.Sum, "crawler.package.failed", 1)
+			if strings.HasPrefix(pkg, "github.com/") {
+				bi.AddValue(bi.Sum, "crawler.package.failed.github", 1)
+			}
 			pc.failCount++
 
 			cDB.SchedulePackage(pkg, time.Now().Add(12*time.Hour), ent.Etag)
@@ -156,6 +159,9 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter, c []sophie.Collector
 		return nil
 	}
 	bi.AddValue(bi.Sum, "crawler.package.success", 1)
+	if strings.HasPrefix(pkg, "github.com/") {
+		bi.AddValue(bi.Sum, "crawler.package.success.github", 1)
+	}
 	log.Printf("[Part %d] Crawled package %s success!", pc.part, pkg)
 
 	nda := gcse.NewDocAction{
