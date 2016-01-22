@@ -32,6 +32,7 @@ import (
 
 	"github.com/golangplus/strings"
 
+	"github.com/daviddengcn/go-easybi"
 	"github.com/daviddengcn/go-ljson-conf"
 	"github.com/daviddengcn/go-villa"
 )
@@ -87,8 +88,7 @@ var (
 	CrawlerGithubClientID     = ""
 	CrawlerGithubClientSecret = ""
 
-	BiDataPath = villa.Path("/tmp/gcse.bolt")
-	BiWebPath  = "/bi"
+	BiWebPath = "/bi"
 
 	/*
 		Increase this to ignore etag of last versions to crawl and parse all
@@ -148,6 +148,6 @@ func init() {
 
 	NonStorePackageRegexps = conf.StringList("docdb.nonstore_regexps", nil)
 
-	BiDataPath = villa.Path(conf.String("bi.data_path", BiDataPath.S()))
+	bi.DataPath = conf.String("bi.data_path", "/tmp/gcse.bolt")
 	BiWebPath = conf.String("bi.web_path", BiWebPath)
 }
