@@ -155,7 +155,7 @@ func loadIndex() error {
 		return nil
 	})
 	db.projectCount = len(projects)
-	bi.AddValue(bi.Max, "index.proj-count", db.projectCount)
+	gcse.AddBiValueAndProcess(bi.Max, "index.proj-count", db.projectCount)
 
 	// Update db.indexUpdated
 	db.indexUpdated = time.Now()
