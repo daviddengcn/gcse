@@ -10,6 +10,7 @@ import (
 	"github.com/golangplus/strings"
 
 	"github.com/daviddengcn/gcse"
+	"github.com/daviddengcn/go-easybi"
 	"github.com/daviddengcn/go-index"
 )
 
@@ -154,6 +155,7 @@ func loadIndex() error {
 		return nil
 	})
 	db.projectCount = len(projects)
+	bi.AddValue(bi.Max, "index.proj-count", db.projectCount)
 
 	// Update db.indexUpdated
 	db.indexUpdated = time.Now()
