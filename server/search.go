@@ -27,13 +27,6 @@ var stopWords = stringsp.NewSet(
 	"the", "on", "in", "as",
 )
 
-func maxF(a, b float64) float64 {
-	if a > b {
-		return a
-	}
-	return b
-}
-
 func idf(df, N int) float64 {
 	if df < 1 {
 		df = 1
@@ -67,15 +60,12 @@ func search(db database, q string) (*SearchResult, stringsp.Set, error) {
 				HitInfo: hitInfo,
 			}
 
-			hit.MatchScore = gcse.CalcMatchScore(&hitInfo, tokenList,
-				textIdfs, nameIdfs)
-			hit.Score = maxF(hit.StaticScore, hit.TestStaticScore) *
-				hit.MatchScore
+			hit.MatchScore = gcse.CalcMatchScore(&hitInfo, tokenList, textIdfs, nameIdfs)
+			hit.Score = math.Max(hit.StaticScore, hit.TestStaticScore) * hit.MatchScore
 
 			hits = append(hits, hit)
 			return nil
 		})
-
 	log.Printf("Got %d hits for query %q", len(hits), q)
 
 	swapHits := func(i, j int) {
@@ -117,13 +107,11 @@ func search(db database, q string) (*SearchResult, stringsp.Set, error) {
 				hit.Score /= float64(cnt)
 			}
 		}
-
 		// Re-sort
 		sortp.BubbleF(len(hits), func(i, j int) bool {
 			return hits[i].Score > hits[j].Score
 		}, swapHits)
 	}
-
 	return &SearchResult{
 		TotalResults: len(hits),
 		Hits:         hits,
@@ -138,10 +126,8 @@ func splitToLines(text string) []string {
 		if len(line) == 0 {
 			continue
 		}
-
 		newLines = append(newLines, line)
 	}
-
 	return newLines
 }
 
@@ -150,8 +136,6 @@ func selectSnippets(text string, tokens stringsp.Set, maxBytes int) string {
 	if len(text) <= maxBytes {
 		return text
 	}
-	// return text[:maxBytes] + "..."
-
 	lines := splitToLines(text)
 
 	var hitTokens stringsp.Set
@@ -173,7 +157,6 @@ func selectSnippets(text string, tokens stringsp.Set, maxBytes int) string {
 				hitTokens.Add(token)
 			}
 		}
-
 		if i == 0 || reserve && (count+len(line)+1 < maxBytes) {
 			selLines = append(selLines, lineinfo{
 				idx:  i,
@@ -183,36 +166,29 @@ func selectSnippets(text string, tokens stringsp.Set, maxBytes int) string {
 			if count == maxBytes {
 				break
 			}
-
 			lines[i] = ""
 		}
 	}
-
 	if count < maxBytes {
 		for i, line := range lines {
 			if len(line) == 0 {
 				continue
 			}
-
 			if count+len(line) >= maxBytes {
 				break
 			}
-
 			selLines = append(selLines, lineinfo{
 				idx:  i,
 				line: line,
 			})
-
 			count += len(line) + 1
 		}
-
 		sortp.SortF(len(selLines), func(i, j int) bool {
 			return selLines[i].idx < selLines[j].idx
 		}, func(i, j int) {
 			selLines[i], selLines[j] = selLines[j], selLines[i]
 		})
 	}
-
 	var outBuf bytesp.Slice
 	for i, line := range selLines {
 		if line.idx > 1 && (i < 1 || line.idx != selLines[i-1].idx+1) {
@@ -224,10 +200,8 @@ func selectSnippets(text string, tokens stringsp.Set, maxBytes int) string {
 		}
 		outBuf.WriteString(line.line)
 	}
-
 	if selLines[len(selLines)-1].idx != len(lines)-1 {
 		outBuf.WriteString("...")
 	}
-
 	return string(outBuf)
 }

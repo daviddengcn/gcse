@@ -17,8 +17,8 @@ import (
 
 // DocInfo is the information stored in backend docDB
 type DocInfo struct {
-	Name        string
-	Package     string
+	Name        string // Package name
+	Package     string // Package path
 	Author      string
 	LastUpdated time.Time
 	StarCount   int
@@ -175,11 +175,9 @@ func appendTokensOfBlock(tokens stringsp.Set, block []byte) stringsp.Set {
 						if !stopWords.Contain(tokenStr) {
 							tokens.Add(tokenStr)
 						}
-
 						if last != "" {
 							tokens.Add(last + string(tokenStr))
 						}
-
 						last = tokenStr
 						return nil
 					})
@@ -188,7 +186,6 @@ func appendTokensOfBlock(tokens stringsp.Set, block []byte) stringsp.Set {
 			if !stopWords.Contain(tokenStr) {
 				tokens.Add(tokenStr)
 			}
-
 			if lastToken != "" {
 				if tokenStr[0] > 128 && lastToken[0] > 128 {
 					// Chinese bigrams
@@ -197,13 +194,13 @@ func appendTokensOfBlock(tokens stringsp.Set, block []byte) stringsp.Set {
 					tokens.Add(lastToken + "-" + tokenStr)
 				}
 			}
-
 			lastToken = tokenStr
 			return nil
 		})
 	return tokens
 }
 
+// Tokenizes text into the current token set.
 func AppendTokens(tokens stringsp.Set, text []byte) stringsp.Set {
 	textBuf := filterURLs(text)
 	textBuf = filterEmails(textBuf)

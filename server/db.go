@@ -124,12 +124,10 @@ func loadIndex() error {
 	if segm == nil || err != nil {
 		return err
 	}
-
 	if indexSegment != nil && !gcse.SegmentLess(indexSegment, segm) {
 		// no new index
 		return nil
 	}
-
 	db := &searcherDB{}
 	if err := func() error {
 		f, err := segm.Join(gcse.IndexFn).Open()
@@ -162,7 +160,6 @@ func loadIndex() error {
 	if st, err := segm.Join(gcse.IndexFn).Stat(); err == nil {
 		db.indexUpdated = st.ModTime()
 	}
-
 	indexSegment = segm
 	log.Printf("Load index from %v (%d packages)", segm, db.PackageCount())
 
@@ -186,5 +183,6 @@ func loadIndexLoop() {
 		if err := loadIndex(); err != nil {
 			log.Printf("loadIndex failed: %v", err)
 		}
+		bi.AddValue(bi.Max, "search.age_in_hours", int(time.Now().Sub(getDatabase().IndexUpdated()).Hours()))
 	}
 }
