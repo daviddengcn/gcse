@@ -1,9 +1,11 @@
 package github
 
 import (
+	"errors"
 	"go/parser"
 	"go/token"
 	"log"
+	"net/http"
 	"path"
 	"strings"
 	"time"
@@ -15,18 +17,22 @@ import (
 	"golang.org/x/oauth2"
 )
 
+var ErrInvalidPackage = errors.New("the package is not a Go package")
+
 type Spider struct {
 	client *github.Client
 }
 
 func NewSpiderWithToken(token string) *Spider {
-	client := github.NewClient(oauth2.NewClient(oauth2.NoContext, oauth2.StaticTokenSource(
-		&oauth2.Token{
-			AccessToken: token,
-		},
-	)))
+	hc := http.DefaultClient
+	if token != "" {
+		hc = oauth2.NewClient(oauth2.NoContext, oauth2.StaticTokenSource(
+			&oauth2.Token{AccessToken: token},
+		))
+	}
+	c := github.NewClient(hc)
 	return &Spider{
-		client: client,
+		client: c,
 	}
 }
 
@@ -76,14 +82,11 @@ type Package struct {
 	Name        string // package "name"
 	Path        string // Relative path to the repository
 	Description string
-	LastUpdated time.Time
 	ReadmeFn    string // No directory info
 	ReadmeData  string // Raw content, cound be md, txt, etc.
 	Imports     []string
 	TestImports []string
 	URL         string
-
-	LastChecked time.Time
 }
 
 func (s *Spider) ReadRepositry(user, name string) (*Repository, error) {
@@ -133,8 +136,7 @@ func (s *Spider) appendPackages(user, repo, path, url string, pkgs []Package) ([
 		case strings.HasSuffix(fn, ".go"):
 			body, err := s.getFile(user, repo, cPath)
 			if err != nil {
-				log.Printf("Get file %v failed: %v", cPath, err)
-				continue
+				return nil, err
 			}
 			fs := token.NewFileSet()
 			goF, err := parser.ParseFile(fs, "", body, parser.ImportsOnly|parser.ParseComments)
@@ -201,4 +203,77 @@ func (s *Spider) getFile(user, repo, path string) ([]byte, error) {
 	}
 	body, err := c.Decode()
 	return body, errorsp.WithStacks(err)
+}
+
+func (s *Spider) ReadPackage(user, repo, path string) (*Package, error) {
+	_, cs, _, err := s.client.Repositories.GetContents(user, repo, path, nil)
+	if err != nil {
+		return nil, errorsp.WithStacks(err)
+	}
+	pkg := Package{
+		Path: path,
+	}
+	var imports stringsp.Set
+	var testImports stringsp.Set
+	// Process files
+	for _, c := range cs {
+		if getString(c.Type) != "file" {
+			continue
+		}
+		fn := getString(c.Name)
+		cPath := path + "/" + fn
+		switch {
+		case strings.HasSuffix(fn, ".go"):
+			body, err := s.getFile(user, repo, cPath)
+			if err != nil {
+				return nil, err
+			}
+			fs := token.NewFileSet()
+			goF, err := parser.ParseFile(fs, "", body, parser.ImportsOnly|parser.ParseComments)
+			if err != nil {
+				log.Printf("Parsing file %v failed: %v", cPath, err)
+				continue
+			}
+			isTest := strings.HasSuffix(fn, "_test.go")
+			for _, imp := range goF.Imports {
+				p := imp.Path.Value
+				if isTest {
+					testImports.Add(p)
+				} else {
+					imports.Add(p)
+				}
+			}
+			if !isTest {
+				if pkg.Name == "" {
+					pkg.Name = goF.Name.Name
+				} else if pkg.Name != goF.Name.Name {
+					// A folder containing different packages are not ready for importing, ignored.
+					pkg.Name = ""
+					break
+				}
+				if goF.Doc != nil {
+					if pkg.Description != "" && !strings.HasSuffix(pkg.Description, "\n") {
+						pkg.Description += "\n"
+					}
+					pkg.Description += goF.Doc.Text()
+				}
+			}
+		case isReadmeFile(fn):
+			body, err := s.getFile(user, repo, cPath)
+			if err != nil {
+				log.Printf("Get file %v failed: %v", cPath, err)
+				continue
+			}
+			pkg.ReadmeFn = fn
+			pkg.ReadmeData = string(body)
+		}
+	}
+	if pkg.Name == "" {
+		return nil, errorsp.WithStacks(ErrInvalidPackage)
+	}
+	if pkg.Name != "" {
+		pkg.Imports = imports.Elements()
+		pkg.TestImports = testImports.Elements()
+	}
+	return &pkg, nil
 }

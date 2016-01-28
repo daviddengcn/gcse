@@ -87,6 +87,7 @@ var (
 	CrawlerDuePerRun          = 1 * time.Hour
 	CrawlerGithubClientID     = ""
 	CrawlerGithubClientSecret = ""
+	CrawlerGithubPersonal     = ""
 
 	BiWebPath = "/bi"
 
@@ -145,6 +146,7 @@ func init() {
 
 	CrawlerGithubClientID = conf.String("crawler.github.clientid", "")
 	CrawlerGithubClientSecret = conf.String("crawler.github.clientsecret", "")
+	CrawlerGithubPersonal = conf.String("crawler.github.personal", "")
 
 	NonStorePackageRegexps = conf.StringList("docdb.nonstore_regexps", nil)
 
