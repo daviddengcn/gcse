@@ -19,8 +19,10 @@ import (
 	"unicode/utf8"
 
 	"github.com/golangplus/bytes"
+	"github.com/golangplus/errors"
 	"github.com/golangplus/strings"
 
+	"github.com/daviddengcn/gcse/spider/github"
 	"github.com/daviddengcn/gddo/doc"
 	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/go-villa"
@@ -278,8 +280,7 @@ func fuseStars(a, b int) int {
 	return (a + b) * 3 / 4
 }
 
-func newDocGet(httpClient doc.HttpClient, pkg string,
-	etag string) (p *doc.Package, err error) {
+func newDocGet(httpClient doc.HttpClient, pkg string, etag string) (p *doc.Package, err error) {
 	gp, err := glgddo.Get(httpClient.(*BlackRequest).client.(*http.Client),
 		pkg, etag)
 	if err != nil {
@@ -333,8 +334,39 @@ func newDocGet(httpClient doc.HttpClient, pkg string,
 	//	return nil, nil
 }
 
-func CrawlPackage(httpClient doc.HttpClient, pkg string,
-	etag string) (p *Package, err error) {
+var GithubSpider *github.Spider
+
+func getGithub(pkg string) (*doc.Package, error) {
+	parts := strings.SplitN(pkg, "/", 4)
+	for len(parts) < 4 {
+		parts = append(parts, "")
+	}
+	if parts[1] == "" || parts[2] == "" {
+		return nil, errorsp.WithStacks(ErrInvalidPackage)
+	}
+	p, err := GithubSpider.ReadPackage(parts[1], parts[2], parts[3])
+	if err != nil {
+		return nil, err
+	}
+	r, err := GithubSpider.ReadRepository(parts[1], parts[2], false)
+	return &doc.Package{
+		ImportPath:  pkg,
+		ProjectRoot: strings.Join(parts[:3], "/"),
+		ProjectName: parts[2],
+		ProjectURL:  "https://" + strings.Join(parts[:3], "/"),
+		Updated:     time.Now(),
+		Name:        p.Name,
+		Doc:         p.Description,
+
+		Imports:     p.Imports,
+		TestImports: p.TestImports,
+		StarCount:   r.Stars,
+
+		ReadmeFiles: map[string][]byte{p.ReadmeFn: []byte(p.ReadmeData)},
+	}, nil
+}
+
+func CrawlPackage(httpClient doc.HttpClient, pkg string, etag string) (p *Package, err error) {
 	defer func() {
 		if err := recover(); err != nil {
 			p, err = nil, errors.New(fmt.Sprintf(
@@ -348,7 +380,11 @@ func CrawlPackage(httpClient doc.HttpClient, pkg string,
 	if strings.HasPrefix(pkg, "thezombie.net") {
 		return nil, ErrInvalidPackage
 	} else if strings.HasPrefix(pkg, "github.com/") {
-		pdoc, err = doc.Get(httpClient, pkg, etag)
+		if GithubSpider != nil {
+			pdoc, err = getGithub(pkg)
+		} else {
+			pdoc, err = doc.Get(httpClient, pkg, etag)
+		}
 	} else {
 		pdoc, err = newDocGet(httpClient, pkg, etag)
 	}

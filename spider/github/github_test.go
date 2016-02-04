@@ -16,11 +16,11 @@ func TestReadUser(t *testing.T) {
 	assert.ValueShould(t, "len(da.Repos)", len(da.Repos), len(da.Repos) > 0, "== 0")
 }
 
-func TestReadRepositry(t *testing.T) {
+func TestReadRepository(t *testing.T) {
 	s := NewSpiderWithToken(gcse.CrawlerGithubPersonal)
 	assert.Should(t, s != nil, "s == nil")
 
-	repo, err := s.ReadRepositry("daviddengcn", "gosl")
+	repo, err := s.ReadRepository("daviddengcn", "gosl", true)
 	assert.NoErrorOrDie(t, err)
 	assert.ValueShould(t, "len(repo.Packages)", len(repo.Packages), len(repo.Packages) > 0, "== 0")
 }

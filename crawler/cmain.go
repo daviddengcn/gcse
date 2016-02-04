@@ -12,6 +12,7 @@ import (
 	"github.com/golangplus/fmt"
 
 	"github.com/daviddengcn/gcse"
+	"github.com/daviddengcn/gcse/spider/github"
 	"github.com/daviddengcn/gddo/doc"
 	"github.com/daviddengcn/go-easybi"
 	"github.com/daviddengcn/go-villa"
@@ -96,7 +97,10 @@ func cleanTempDir() {
 }
 
 func main() {
-	runtime.GOMAXPROCS(1)
+	runtime.GOMAXPROCS(2)
+
+	log.Printf("Using personal: %v", gcse.CrawlerGithubPersonal)
+	gcse.GithubSpider = github.NewSpiderWithToken(gcse.CrawlerGithubPersonal)
 
 	cleanTempDir()
 	defer cleanTempDir()

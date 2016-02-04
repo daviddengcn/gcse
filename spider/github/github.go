@@ -89,7 +89,7 @@ type Package struct {
 	URL         string
 }
 
-func (s *Spider) ReadRepositry(user, name string) (*Repository, error) {
+func (s *Spider) ReadRepository(user, name string, scanPackages bool) (*Repository, error) {
 	repo, _, err := s.client.Repositories.Get(user, name)
 	if err != nil {
 		return nil, errorsp.WithStacks(err)
@@ -102,9 +102,11 @@ func (s *Spider) ReadRepositry(user, name string) (*Repository, error) {
 	if repo.Source != nil {
 		r.Source = getString(repo.Source.Name)
 	}
-	r.Packages, err = s.appendPackages(user, name, "", getString(repo.HTMLURL), nil)
-	if err != nil {
-		return nil, errorsp.WithStacks(err)
+	if scanPackages {
+		r.Packages, err = s.appendPackages(user, name, "", getString(repo.HTMLURL), nil)
+		if err != nil {
+			return nil, errorsp.WithStacks(err)
+		}
 	}
 	return r, nil
 }
