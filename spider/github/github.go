@@ -250,6 +250,19 @@ func parseGoFile(path string, body []byte) GoFileInfo {
 	return info
 }
 
+func calcFullPath(user, repo, path, fn string) string {
+	full := "github.com/" + user + "/" + repo
+	if !strings.HasPrefix(path, "/") {
+		full += "/"
+	}
+	full += path
+	if !strings.HasSuffix(full, "/") {
+		full += "/"
+	}
+	full += fn
+	return full
+}
+
 func (s *Spider) ReadPackage(user, repo, path string) (*Package, error) {
 	_, cs, _, err := s.client.Repositories.GetContents(user, repo, path, nil)
 	if err != nil {
@@ -272,8 +285,9 @@ func (s *Spider) ReadPackage(user, repo, path string) (*Package, error) {
 		case strings.HasSuffix(fn, ".go"):
 			fi, err := func() (GoFileInfo, error) {
 				var cached GoFileInfo
-				if s.FileCache.Get(cPath, sha, &cached) {
-					log.Printf("Cache for %v found!", cPath)
+				fullPath := calcFullPath(user, repo, path, fn)
+				if s.FileCache.Get(fullPath, sha, &cached) {
+					log.Printf("Cache for %v found!", fullPath)
 					return cached, nil
 				}
 				body, err := s.getFile(user, repo, cPath)
@@ -281,7 +295,7 @@ func (s *Spider) ReadPackage(user, repo, path string) (*Package, error) {
 					return GoFileInfo{}, err
 				}
 				fi := parseGoFile(cPath, body)
-				s.FileCache.Set(cPath, sha, fi)
+				s.FileCache.Set(fullPath, sha, fi)
 				return fi, nil
 			}()
 			if err != nil {

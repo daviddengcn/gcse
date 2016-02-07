@@ -56,7 +56,7 @@ func reloadTemplates() {
 }
 
 func init() {
-	log.SetFlags(log.LstdFlags | log.Lmicroseconds)
+	log.SetFlags(log.Flags() | log.Lmicroseconds)
 
 	loadTemplates()
 
