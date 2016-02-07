@@ -4,13 +4,17 @@
 package main
 
 import (
+	"encoding/gob"
 	"flag"
 	"log"
 	"runtime"
 	"time"
 
+	"github.com/golangplus/bytes"
+	"github.com/golangplus/errors"
 	"github.com/golangplus/fmt"
 
+	"github.com/daviddengcn/bolthelper"
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/gcse/spider/github"
 	"github.com/daviddengcn/gddo/doc"
@@ -96,14 +100,81 @@ func cleanTempDir() {
 	}
 }
 
+type boltFileCache struct {
+	bh.DB
+}
+
+var (
+	cacheSignatureKey = []byte("s")
+	cacheContentsKey  = []byte("c")
+)
+
+func (bc boltFileCache) Get(path string, signature string, contents interface{}) bool {
+	found := false
+	if err := bc.View(func(tx bh.Tx) error {
+		return tx.Bucket([][]byte{[]byte(path)}, func(b bh.Bucket) error {
+			return b.Value([][]byte{cacheSignatureKey}, func(bs bytesp.Slice) error {
+				readSign := string(bs)
+				if readSign != signature {
+					log.Printf("Cached signature for %v is %v, not %v", path, readSign, signature)
+					bi.AddValue(bi.Sum, "crawler.filecache.changed", 1)
+					return nil
+				}
+				return b.Value([][]byte{cacheContentsKey}, func(bs bytesp.Slice) error {
+					found = true
+					return errorsp.WithStacks(gob.NewDecoder(&bs).Decode(contents))
+				})
+			})
+		})
+	}); err != nil {
+		log.Printf("Reading from file cache DB for %v failed: %v", path, err)
+		return false
+	}
+	if found {
+		bi.AddValue(bi.Sum, "crawler.filecache.hit", 1)
+	}
+	return found
+}
+func (bc boltFileCache) Set(path string, signature string, contents interface{}) {
+	if err := bc.Update(func(tx bh.Tx) error {
+		b, err := tx.CreateBucketIfNotExists([][]byte{[]byte(path)})
+		if err != nil {
+			return err
+		}
+		if err := b.Put([][]byte{cacheSignatureKey}, []byte(signature)); err != nil {
+			return err
+		}
+		bi.AddValue(bi.Sum, "crawler.filecache.saved", 1)
+		var bs bytesp.Slice
+		if err := gob.NewEncoder(&bs).Encode(contents); err != nil {
+			return errorsp.WithStacks(err)
+		}
+		return b.Put([][]byte{cacheContentsKey}, bs)
+	}); err != nil {
+		log.Printf("Updateing to file cache DB failed: %v", err)
+	}
+}
+
 func main() {
 	runtime.GOMAXPROCS(2)
 
 	log.Printf("Using personal: %v", gcse.CrawlerGithubPersonal)
 	gcse.GithubSpider = github.NewSpiderWithToken(gcse.CrawlerGithubPersonal)
 
+	if db, err := bh.Open(gcse.DataRoot.Join("filecache.bolt").S(), 0644, nil); err == nil {
+		log.Print("Using file cache!")
+		gcse.GithubSpider.FileCache = boltFileCache{db}
+	} else {
+		log.Printf("Open file cache failed: %v", err)
+	}
+
 	cleanTempDir()
 	defer cleanTempDir()
+
+	defer func() {
+		bi.Flush()
+		bi.Process()
+	}()
 
 	singlePackge := ""
 	singleETag := ""
@@ -157,8 +228,6 @@ func main() {
 	go crawlPersons(httpClient, fpToCrawl.Join(gcse.FnPerson), psnEnd)
 
 	errPkg, errPsn := <-pkgEnd, <-psnEnd
-	bi.Flush()
-	bi.Process()
 	if errPkg != nil || errPsn != nil {
 		log.Fatalf("Some job may failed, package: %v, person: %v", errPkg, errPsn)
 	}

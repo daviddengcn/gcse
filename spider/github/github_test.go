@@ -3,12 +3,11 @@ package github
 import (
 	"testing"
 
-	"github.com/daviddengcn/gcse"
 	"github.com/golangplus/testing/assert"
 )
 
 func TestReadUser(t *testing.T) {
-	s := NewSpiderWithToken(gcse.CrawlerGithubPersonal)
+	s := NewSpiderWithToken("")
 	assert.Should(t, s != nil, "s == nil")
 
 	da, err := s.ReadUser("daviddengcn")
@@ -17,7 +16,7 @@ func TestReadUser(t *testing.T) {
 }
 
 func TestReadRepository(t *testing.T) {
-	s := NewSpiderWithToken(gcse.CrawlerGithubPersonal)
+	s := NewSpiderWithToken("")
 	assert.Should(t, s != nil, "s == nil")
 
 	repo, err := s.ReadRepository("daviddengcn", "gosl", true)
@@ -26,7 +25,7 @@ func TestReadRepository(t *testing.T) {
 }
 
 func TestReadPackage(t *testing.T) {
-	s := NewSpiderWithToken(gcse.CrawlerGithubPersonal)
+	s := NewSpiderWithToken("")
 	assert.Should(t, s != nil, "s == nil")
 
 	pkg, err := s.ReadPackage("daviddengcn", "gosl", "builtin")

@@ -19,8 +19,20 @@ import (
 
 var ErrInvalidPackage = errors.New("the package is not a Go package")
 
+type FileCache interface {
+	Get(path, signature string, contents interface{}) bool
+	Set(path, signature string, contents interface{})
+}
+
+type nullFileCache struct{}
+
+func (nullFileCache) Get(string, string, interface{}) bool { return false }
+func (nullFileCache) Set(string, string, interface{})      {}
+
 type Spider struct {
 	client *github.Client
+
+	FileCache FileCache
 }
 
 func NewSpiderWithToken(token string) *Spider {
@@ -32,7 +44,8 @@ func NewSpiderWithToken(token string) *Spider {
 	}
 	c := github.NewClient(hc)
 	return &Spider{
-		client: c,
+		client:    c,
+		FileCache: nullFileCache{},
 	}
 }
 
@@ -109,6 +122,15 @@ func (s *Spider) ReadRepository(user, name string, scanPackages bool) (*Reposito
 		}
 	}
 	return r, nil
+}
+
+func (s *Spider) getFile(user, repo, path string) ([]byte, error) {
+	c, _, _, err := s.client.Repositories.GetContents(user, repo, path, nil)
+	if err != nil {
+		return nil, errorsp.WithStacks(err)
+	}
+	body, err := c.Decode()
+	return body, errorsp.WithStacks(err)
 }
 
 func isReadmeFile(fn string) bool {
@@ -198,13 +220,34 @@ func (s *Spider) appendPackages(user, repo, path, url string, pkgs []Package) ([
 	return pkgs, nil
 }
 
-func (s *Spider) getFile(user, repo, path string) ([]byte, error) {
-	c, _, _, err := s.client.Repositories.GetContents(user, repo, path, nil)
+type GoFileInfo struct {
+	ParseFailed bool
+
+	Name        string
+	IsTest      bool
+	Imports     []string
+	Description string
+}
+
+func parseGoFile(path string, body []byte) GoFileInfo {
+	var info GoFileInfo
+	fs := token.NewFileSet()
+	goF, err := parser.ParseFile(fs, "", body, parser.ImportsOnly|parser.ParseComments)
 	if err != nil {
-		return nil, errorsp.WithStacks(err)
+		log.Printf("Parsing file %v failed: %v", path, err)
+		info.ParseFailed = true
+		return info
 	}
-	body, err := c.Decode()
-	return body, errorsp.WithStacks(err)
+	info.IsTest = strings.HasSuffix(path, "_test.go")
+	for _, imp := range goF.Imports {
+		p := imp.Path.Value
+		info.Imports = append(info.Imports, p)
+	}
+	info.Name = goF.Name.Name
+	if goF.Doc != nil {
+		info.Description = goF.Doc.Text()
+	}
+	return info
 }
 
 func (s *Spider) ReadPackage(user, repo, path string) (*Package, error) {
@@ -224,41 +267,47 @@ func (s *Spider) ReadPackage(user, repo, path string) (*Package, error) {
 		}
 		fn := getString(c.Name)
 		cPath := path + "/" + fn
+		sha := getString(c.SHA)
 		switch {
 		case strings.HasSuffix(fn, ".go"):
-			body, err := s.getFile(user, repo, cPath)
+			fi, err := func() (GoFileInfo, error) {
+				var cached GoFileInfo
+				if s.FileCache.Get(cPath, sha, &cached) {
+					log.Printf("Cache for %v found!", cPath)
+					return cached, nil
+				}
+				body, err := s.getFile(user, repo, cPath)
+				if err != nil {
+					return GoFileInfo{}, err
+				}
+				fi := parseGoFile(cPath, body)
+				s.FileCache.Set(cPath, sha, fi)
+				return fi, nil
+			}()
 			if err != nil {
 				return nil, err
 			}
-			fs := token.NewFileSet()
-			goF, err := parser.ParseFile(fs, "", body, parser.ImportsOnly|parser.ParseComments)
-			if err != nil {
-				log.Printf("Parsing file %v failed: %v", cPath, err)
-				continue
+			if fi.ParseFailed {
+				return nil, errorsp.WithStacks(ErrInvalidPackage)
 			}
-			isTest := strings.HasSuffix(fn, "_test.go")
-			for _, imp := range goF.Imports {
-				p := imp.Path.Value
-				if isTest {
-					testImports.Add(p)
+			if fi.IsTest {
+				testImports.Add(fi.Imports...)
+			} else {
+				if pkg.Name != "" {
+					if fi.Name != pkg.Name {
+						log.Printf("Conflicting package name processing file %v: %v vs %v", cPath, fi.Name, pkg.Name)
+						return nil, errorsp.WithStacks(ErrInvalidPackage)
+					}
 				} else {
-					imports.Add(p)
+					pkg.Name = fi.Name
 				}
-			}
-			if !isTest {
-				if pkg.Name == "" {
-					pkg.Name = goF.Name.Name
-				} else if pkg.Name != goF.Name.Name {
-					// A folder containing different packages are not ready for importing, ignored.
-					pkg.Name = ""
-					break
-				}
-				if goF.Doc != nil {
+				if fi.Description != "" {
 					if pkg.Description != "" && !strings.HasSuffix(pkg.Description, "\n") {
 						pkg.Description += "\n"
 					}
-					pkg.Description += goF.Doc.Text()
+					pkg.Description += fi.Description
 				}
+				imports.Add(fi.Imports...)
 			}
 		case isReadmeFile(fn):
 			body, err := s.getFile(user, repo, cPath)

@@ -111,6 +111,8 @@ var (
 )
 
 func init() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
 	conf, err := ljconf.Load("conf.json")
 	if err != nil {
 		// we must make sure configuration exist

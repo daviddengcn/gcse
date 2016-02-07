@@ -392,7 +392,7 @@ func CrawlPackage(httpClient doc.HttpClient, pkg string, etag string) (p *Packag
 		return nil, ErrPackageNotModifed
 	}
 	if err != nil {
-		return nil, villa.NestErrorf(err, "CrawlPackage(%s)", pkg)
+		return nil, errorsp.WithStacks(err)
 	}
 
 	if pdoc.StarCount < 0 {
@@ -485,7 +485,7 @@ func CrawlPerson(httpClient doc.HttpClient, id string) (*Person, error) {
 		p, err := doc.GetGithubPerson(httpClient, map[string]string{
 			"owner": username})
 		if err != nil {
-			return nil, villa.NestErrorf(err, "CrawlPerson(%s)", id)
+			return nil, errorsp.WithStacks(err)
 		} else {
 			return &Person{
 				Id:       id,
@@ -496,7 +496,7 @@ func CrawlPerson(httpClient doc.HttpClient, id string) (*Person, error) {
 		p, err := doc.GetBitbucketPerson(httpClient, map[string]string{
 			"owner": username})
 		if err != nil {
-			return nil, villa.NestErrorf(err, "CrawlPerson(%s)", id)
+			return nil, errorsp.WithStacks(err)
 		} else {
 			return &Person{
 				Id:       id,
@@ -509,8 +509,8 @@ func CrawlPerson(httpClient doc.HttpClient, id string) (*Person, error) {
 }
 
 func IsBadPackage(err error) bool {
-	err = villa.DeepestNested(err)
-	return doc.IsNotFound(err) || err == ErrInvalidPackage
+	err = villa.DeepestNested(errorsp.Cause(err))
+	return doc.IsNotFound(err) || err == ErrInvalidPackage || err == github.ErrInvalidPackage
 }
 
 var githubProjectPat = regexp.MustCompile(`href="([^/]+/[^/]+)/stargazers"`)
@@ -555,7 +555,7 @@ func GithubUpdates() (map[string]time.Time, error) {
 		}
 	}
 	if len(updates) == 0 {
-		return nil, errors.New("no updates found")
+		return nil, errorsp.WithStacks(errors.New("no updates found"))
 	}
 	return updates, nil
 }
