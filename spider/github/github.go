@@ -20,14 +20,16 @@ import (
 var ErrInvalidPackage = errors.New("the package is not a Go package")
 
 type FileCache interface {
-	Get(path, signature string, contents interface{}) bool
-	Set(path, signature string, contents interface{})
+	Get(signature string, contents interface{}) bool
+	Set(signature string, contents interface{})
+	SetFolderSignatures(folder string, nameToSignature map[string]string)
 }
 
 type nullFileCache struct{}
 
-func (nullFileCache) Get(string, string, interface{}) bool { return false }
-func (nullFileCache) Set(string, string, interface{})      {}
+func (nullFileCache) Get(string, interface{}) bool                  { return false }
+func (nullFileCache) Set(string, interface{})                       {}
+func (nullFileCache) SetFolderSignatures(string, map[string]string) {}
 
 type Spider struct {
 	client *github.Client
@@ -274,20 +276,22 @@ func (s *Spider) ReadPackage(user, repo, path string) (*Package, error) {
 	var imports stringsp.Set
 	var testImports stringsp.Set
 	// Process files
+	nameToSignature := make(map[string]string)
 	for _, c := range cs {
+		fn := getString(c.Name)
 		if getString(c.Type) != "file" {
+			nameToSignature[fn] = ""
 			continue
 		}
-		fn := getString(c.Name)
-		cPath := path + "/" + fn
 		sha := getString(c.SHA)
+		nameToSignature[fn] = sha
+		cPath := path + "/" + fn
 		switch {
 		case strings.HasSuffix(fn, ".go"):
 			fi, err := func() (GoFileInfo, error) {
 				var cached GoFileInfo
-				fullPath := calcFullPath(user, repo, path, fn)
-				if s.FileCache.Get(fullPath, sha, &cached) {
-					log.Printf("Cache for %v found!", fullPath)
+				if s.FileCache.Get(sha, &cached) {
+					log.Printf("Cache for %v found!", calcFullPath(user, repo, path, fn))
 					return cached, nil
 				}
 				body, err := s.getFile(user, repo, cPath)
@@ -295,7 +299,7 @@ func (s *Spider) ReadPackage(user, repo, path string) (*Package, error) {
 					return GoFileInfo{}, err
 				}
 				fi := parseGoFile(cPath, body)
-				s.FileCache.Set(fullPath, sha, fi)
+				s.FileCache.Set(sha, fi)
 				return fi, nil
 			}()
 			if err != nil {
@@ -333,6 +337,7 @@ func (s *Spider) ReadPackage(user, repo, path string) (*Package, error) {
 			pkg.ReadmeData = string(body)
 		}
 	}
+	s.FileCache.SetFolderSignatures(calcFullPath(user, repo, path, ""), nameToSignature)
 	if pkg.Name == "" {
 		return nil, errorsp.WithStacks(ErrInvalidPackage)
 	}

@@ -5,14 +5,17 @@ package main
 
 import (
 	"encoding/gob"
+	"errors"
 	"flag"
 	"log"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/golangplus/bytes"
 	"github.com/golangplus/errors"
 	"github.com/golangplus/fmt"
+	"github.com/golangplus/strings"
 
 	"github.com/daviddengcn/bolthelper"
 	"github.com/daviddengcn/gcse"
@@ -104,54 +107,164 @@ type boltFileCache struct {
 	bh.DB
 }
 
+// Filecache folders:
+// s/<path>             - signature of this path
+// c/<signature>        - contents of a signagure
+// p/<signature>/<path> - list of paths referencing this signature
+
 var (
 	cacheSignatureKey = []byte("s")
 	cacheContentsKey  = []byte("c")
+	cachePathsKey     = []byte("p")
 )
 
-func (bc boltFileCache) Get(path string, signature string, contents interface{}) bool {
+func (bc boltFileCache) Get(signature string, contents interface{}) bool {
 	found := false
 	if err := bc.View(func(tx bh.Tx) error {
-		return tx.Bucket([][]byte{[]byte(path)}, func(b bh.Bucket) error {
-			return b.Value([][]byte{cacheSignatureKey}, func(bs bytesp.Slice) error {
-				readSign := string(bs)
-				if readSign != signature {
-					log.Printf("Cached signature for %v is %v, not %v", path, readSign, signature)
-					bi.AddValue(bi.Sum, "crawler.filecache.changed", 1)
-					return nil
-				}
-				return b.Value([][]byte{cacheContentsKey}, func(bs bytesp.Slice) error {
-					found = true
-					return errorsp.WithStacks(gob.NewDecoder(&bs).Decode(contents))
-				})
-			})
+		return tx.Value([][]byte{cacheContentsKey, []byte(signature)}, func(v bytesp.Slice) error {
+			found = true
+			return errorsp.WithStacks(gob.NewDecoder(&v).Decode(contents))
 		})
 	}); err != nil {
-		log.Printf("Reading from file cache DB for %v failed: %v", path, err)
+		log.Printf("Reading from file cache DB for %v failed: %v", signature, err)
+		bi.AddValue(bi.Sum, "crawler.filecache.get_error", 1)
 		return false
 	}
 	if found {
 		bi.AddValue(bi.Sum, "crawler.filecache.hit", 1)
+	} else {
+		bi.AddValue(bi.Sum, "crawler.filecache.missed", 1)
 	}
 	return found
 }
-func (bc boltFileCache) Set(path string, signature string, contents interface{}) {
+
+func (bc boltFileCache) Set(signature string, contents interface{}) {
 	if err := bc.Update(func(tx bh.Tx) error {
-		b, err := tx.CreateBucketIfNotExists([][]byte{[]byte(path)})
-		if err != nil {
-			return err
-		}
-		if err := b.Put([][]byte{cacheSignatureKey}, []byte(signature)); err != nil {
-			return err
-		}
-		bi.AddValue(bi.Sum, "crawler.filecache.saved", 1)
 		var bs bytesp.Slice
 		if err := gob.NewEncoder(&bs).Encode(contents); err != nil {
 			return errorsp.WithStacks(err)
 		}
-		return b.Put([][]byte{cacheContentsKey}, bs)
+		return tx.Put([][]byte{cacheContentsKey, []byte(signature)}, bs)
 	}); err != nil {
-		log.Printf("Updateing to file cache DB failed: %v", err)
+		bi.AddValue(bi.Sum, "crawler.filecache.set_error", 1)
+		log.Printf("Updating to file cache DB for %v failed: %v", signature, err)
+	}
+	bi.AddValue(bi.Sum, "crawler.filecache.sign_saved", 1)
+}
+
+var errStop = errors.New("stop")
+
+func (bc boltFileCache) SetFolderSignatures(folder string, nameToSignature map[string]string) {
+	if !strings.HasSuffix(folder, "/") {
+		folder += "/"
+	}
+	log.Printf("nameoSignature: %v", nameToSignature)
+	if err := bc.Update(func(tx bh.Tx) error {
+		// sub path -> current signature
+		toDelete := make(map[string]string)
+		// sub path -> current signature
+		toUpdate := make(map[string]string)
+		var unchanged stringsp.Set
+
+		if err := tx.Cursor([][]byte{cacheSignatureKey}, func(c bh.Cursor) error {
+			for k, v := c.Seek([]byte(folder)); strings.HasPrefix(string(k), folder); k, v = c.Next() {
+				sub := string(k[len(folder):])
+				ps := strings.SplitN(sub, "/", 2)
+				if len(ps) > 1 {
+					// k is a file under a sub folder.
+					if s, ok := nameToSignature[ps[0]]; !ok || s != "" {
+						// if the sub folder no longer exist or is not a folder (i.e. is a
+						// file with signature), delete the current file
+						toDelete[sub] = string(v)
+					}
+				} else if len(ps) == 1 {
+					newS := nameToSignature[sub]
+					if newS == "" {
+						// no longer a file
+						toDelete[sub] = string(v)
+					} else if newS != string(v) {
+						bi.AddValue(bi.Sum, "crawler.filecache.file_changed", 1)
+						// signature changed
+						toUpdate[sub] = string(v)
+					} else {
+						unchanged.Add(sub)
+					}
+				}
+			}
+			return nil
+		}); err != nil {
+			return err
+		}
+		log.Printf("toDelete: %v", toDelete)
+		log.Printf("toUpdate: %v", toUpdate)
+		log.Printf("unchanged: %v", unchanged)
+		// Add new files into toUpdate
+		for name, signature := range nameToSignature {
+			if signature == "" {
+				// folders
+				continue
+			}
+			if _, ok := toUpdate[name]; ok {
+				continue
+			}
+			if unchanged.Contain(name) {
+				continue
+			}
+			bi.AddValue(bi.Sum, "crawler.filecache.file_added", 1)
+			toUpdate[name] = ""
+		}
+		deleteReferenceToSignatureFromPath := func(signature, path string) error {
+			if err := tx.Delete([][]byte{cachePathsKey, []byte(signature), []byte(path)}); err != nil {
+				return err
+			}
+			// Check whether the signature is still referenced by any path.
+			hasKeys := false
+			if err := tx.ForEach([][]byte{cachePathsKey, []byte(signature)}, func(bh.Bucket, bytesp.Slice, bytesp.Slice) error {
+				hasKeys = true
+				return errStop
+			}); err != nil && err != errStop {
+				return err
+			}
+			if !hasKeys {
+				// all references to the signature have been deleted, delete the contents of the signature as well
+				if err := tx.Delete([][]byte{cacheContentsKey, []byte(signature)}); err != nil {
+					return err
+				}
+				bi.AddValue(bi.Sum, "crawler.filecache.sign_deleted", 1)
+			}
+			return nil
+		}
+		for sub, signature := range toDelete {
+			path := folder + sub
+			if err := deleteReferenceToSignatureFromPath(signature, path); err != nil {
+				return nil
+			}
+			// Delete the signature item of the path
+			if err := tx.Delete([][]byte{cacheSignatureKey, []byte(path)}); err != nil {
+				return err
+			}
+		}
+		for sub, oldS := range toUpdate {
+			path := folder + sub
+			if oldS != "" {
+				if err := deleteReferenceToSignatureFromPath(oldS, path); err != nil {
+					return nil
+				}
+			}
+			// Update the signature item of the path
+			newS := nameToSignature[sub]
+			if err := tx.Put([][]byte{cacheSignatureKey, []byte(path)}, []byte(newS)); err != nil {
+				return err
+			}
+			// Add reference to new signature from path
+			if err := tx.Put([][]byte{cachePathsKey, []byte(newS), []byte(path)}, []byte(newS)); err != nil {
+				return err
+			}
+		}
+		return nil
+	}); err != nil {
+		log.Printf("SetFolderSignatures folder %v failed: %v", folder, err)
+		bi.AddValue(bi.Sum, "crawler.filecache.sign_error", 1)
 	}
 }
 
