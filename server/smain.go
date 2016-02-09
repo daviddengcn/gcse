@@ -23,6 +23,7 @@ import (
 	"github.com/daviddengcn/go-easybi"
 	"github.com/daviddengcn/go-index"
 	"github.com/russross/blackfriday"
+	"golang.org/x/net/trace"
 )
 
 type UIUtils struct{}
@@ -381,6 +382,9 @@ mainLoop:
 const itemsPerPage = 10
 
 func pageSearch(w http.ResponseWriter, r *http.Request) {
+	tr := trace.New("pageSearch", r.URL.Path)
+	defer tr.Finish()
+
 	// current page, 1-based
 	p, err := strconv.Atoi(r.FormValue("p"))
 	if err != nil {
@@ -390,12 +394,15 @@ func pageSearch(w http.ResponseWriter, r *http.Request) {
 
 	q := strings.TrimSpace(r.FormValue("q"))
 	db := getDatabase()
-	results, tokens, err := search(db, q)
+	results, tokens, err := search(tr, db, q)
 	if err != nil {
+		tr.LazyPrintf("search failed: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	tr.LazyPrintf("Search success with %d hits and %d tokens", len(results.Hits), len(tokens))
 	showResults := showSearchResults(db, results, tokens, Range{(p - 1) * itemsPerPage, itemsPerPage})
+	tr.LazyPrintf("showSearchResults with %d results", len(showResults.Docs))
 	totalPages := (showResults.TotalEntries + itemsPerPage - 1) / itemsPerPage
 	log.Printf("totalPages: %d", totalPages)
 	var beforePages, afterPages []int
@@ -452,6 +459,8 @@ func pageSearch(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Search results ready")
 	err = templates.ExecuteTemplate(w, "search.html", data)
 	if err != nil {
+		tr.LazyPrintf("ExecuteTemplate failed: %v", err)
+		tr.SetError()
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 	log.Printf("Search results rendered")
@@ -509,6 +518,9 @@ func pageTops(w http.ResponseWriter, r *http.Request) {
 }
 
 func pageApi(w http.ResponseWriter, r *http.Request) {
+	tr := trace.New("pageApi", r.URL.Path)
+	defer tr.Finish()
+
 	action := strings.ToLower(r.FormValue("action"))
 	callback := strings.TrimSpace(r.FormValue("callback"))
 	callback = filterFunc(callback, func(r rune) bool {
@@ -600,7 +612,7 @@ func pageApi(w http.ResponseWriter, r *http.Request) {
 
 	case "search":
 		q := strings.TrimSpace(r.FormValue("q"))
-		results, _, err := search(getDatabase(), q)
+		results, _, err := search(tr, getDatabase(), q)
 		if err != nil {
 			apiContent(w, http.StatusInternalServerError, err.Error(), callback)
 			return

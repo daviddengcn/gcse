@@ -5,6 +5,8 @@ import (
 	"math"
 	"strings"
 
+	"golang.org/x/net/trace"
+
 	"github.com/golangplus/bytes"
 	"github.com/golangplus/sort"
 	"github.com/golangplus/strings"
@@ -38,7 +40,7 @@ func idf(df, N int) float64 {
 	return idf
 }
 
-func search(db database, q string) (*SearchResult, stringsp.Set, error) {
+func search(tr trace.Trace, db database, q string) (*SearchResult, stringsp.Set, error) {
 	tokens := gcse.AppendTokens(nil, []byte(q))
 	tokenList := tokens.Elements()
 	log.Printf("tokens for query %s: %v", q, tokens)
@@ -66,7 +68,7 @@ func search(db database, q string) (*SearchResult, stringsp.Set, error) {
 			hits = append(hits, hit)
 			return nil
 		})
-	log.Printf("Got %d hits for query %q", len(hits), q)
+	tr.LazyPrintf("Got %d hits for query %q", len(hits), q)
 
 	swapHits := func(i, j int) {
 		hits[i], hits[j] = hits[j], hits[i]
@@ -97,6 +99,8 @@ func search(db database, q string) (*SearchResult, stringsp.Set, error) {
 		return pi < pj
 	}, swapHits)
 
+	tr.LazyPrintf("Results sorted")
+
 	if len(hits) < 5000 {
 		// Adjust Score by down ranking duplicated packages
 		pkgCount := make(map[string]int)
@@ -111,6 +115,7 @@ func search(db database, q string) (*SearchResult, stringsp.Set, error) {
 		sortp.BubbleF(len(hits), func(i, j int) bool {
 			return hits[i].Score > hits[j].Score
 		}, swapHits)
+		tr.LazyPrintf("Results reranked")
 	}
 	return &SearchResult{
 		TotalResults: len(hits),
