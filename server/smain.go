@@ -344,12 +344,13 @@ mainLoop:
 		projToIdx[d.Package] = cnt
 		if r.In(cnt) {
 			markedName := markText(d.Name, tokens, markWord)
-			readme := gcse.ReadmeToText(d.ReadmeFn, d.ReadmeData)
-			if len(readme) > 20*1024 {
-				readme = readme[:20*1024]
-			}
+			readme := ""
 			desc := d.Description
 			if hit, found := db.FindFullPackage(d.Package); found {
+				readme := gcse.ReadmeToText(d.ReadmeFn, d.ReadmeData)
+				if len(readme) > 20*1024 {
+					readme = readme[:20*1024]
+				}
 				desc = hit.Description
 			}
 			for _, sent := range d.ImportantSentences {

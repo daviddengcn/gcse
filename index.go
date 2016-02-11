@@ -56,6 +56,58 @@ func filterDocInfo(docInfo *DocInfo) {
 	}
 }
 
+func indexAndSaveHits(ts *index.TokenSetSearcher, hits []HitInfo, idxs []int, saveFullHit func(*HitInfo) error) error {
+	rank := 0
+	var bar *pb.ProgressBar
+	if terminal.IsTerminal(int(os.Stdout.Fd())) {
+		bar = pb.New(len(idxs))
+		bar.Start()
+	}
+	for i := range idxs {
+		hit := &hits[idxs[i]]
+		if i > 0 && hit.StaticScore < hits[idxs[i-1]].StaticScore {
+			rank = i
+		}
+		hit.StaticRank = rank
+
+		if err := saveFullHit(hit); err != nil {
+			return err
+		}
+
+		var desc, readme string
+		desc, hit.Description = hit.Description, ""
+		readme, hit.ReadmeData = hit.ReadmeData, ""
+		hit.Imported = nil
+		hit.TestImported = nil
+
+		var nameTokens stringsp.Set
+		nameTokens = AppendTokens(nameTokens, []byte(hit.Name))
+
+		var tokens stringsp.Set
+		tokens.Add(nameTokens.Elements()...)
+		tokens = AppendTokens(tokens, []byte(hit.Package))
+		tokens = AppendTokens(tokens, []byte(desc))
+		tokens = AppendTokens(tokens, []byte(readme))
+		tokens = AppendTokens(tokens, []byte(hit.Author))
+		for _, word := range hit.Exported {
+			AppendTokens(tokens, []byte(word))
+		}
+		ts.AddDoc(map[string]stringsp.Set{
+			IndexTextField: tokens,
+			IndexNameField: nameTokens,
+			IndexPkgField:  stringsp.NewSet(hit.Package),
+		}, *hit)
+		if bar != nil {
+			bar.Increment()
+		}
+	}
+	if bar != nil {
+		bar.FinishPrint("Indexing finished!")
+	}
+	DumpMemStats()
+	return nil
+}
+
 func Index(docDB mr.Input, outDir string) (*index.TokenSetSearcher, error) {
 	DumpMemStats()
 
@@ -196,56 +248,18 @@ func Index(docDB mr.Input, outDir string) (*index.TokenSetSearcher, error) {
 	ts := &index.TokenSetSearcher{}
 	DumpMemStats()
 	log.Printf("Indexing %d packages to TokenSetSearcher ...", len(idxs))
-	rank := 0
 	hitsArr, err := index.CreateConstArray(path.Join(outDir, HitsArrFn))
 	if err != nil {
 		return nil, err
 	}
 	defer hitsArr.Close()
-	var bar *pb.ProgressBar
-	if terminal.IsTerminal(int(os.Stdout.Fd())) {
-		bar = pb.New(len(idxs))
-		bar.Start()
+
+	if err := indexAndSaveHits(ts, hits, idxs, func(hit *HitInfo) error {
+		_, err := hitsArr.AppendGob(*hit)
+		return err
+	}); err != nil {
+		return nil, err
 	}
-	for i := range idxs {
-		hit := &hits[idxs[i]]
-		if i > 0 && hit.StaticScore < hits[idxs[i-1]].StaticScore {
-			rank = i
-		}
-		hit.StaticRank = rank
 
-		if _, err := hitsArr.AppendGob(hit); err != nil {
-			return nil, err
-		}
-
-		hit.Description = ""
-		hit.Imported = nil
-		hit.TestImported = nil
-
-		var nameTokens stringsp.Set
-		nameTokens = AppendTokens(nameTokens, []byte(hit.Name))
-
-		var tokens stringsp.Set
-		tokens.Add(nameTokens.Elements()...)
-		tokens = AppendTokens(tokens, []byte(hit.Package))
-		tokens = AppendTokens(tokens, []byte(hit.Description))
-		tokens = AppendTokens(tokens, []byte(hit.ReadmeData))
-		tokens = AppendTokens(tokens, []byte(hit.Author))
-		for _, word := range hit.Exported {
-			AppendTokens(tokens, []byte(word))
-		}
-		ts.AddDoc(map[string]stringsp.Set{
-			IndexTextField: tokens,
-			IndexNameField: nameTokens,
-			IndexPkgField:  stringsp.NewSet(hit.Package),
-		}, *hit)
-		if bar != nil {
-			bar.Increment()
-		}
-	}
-	if bar != nil {
-		bar.FinishPrint("Indexing finished!")
-	}
-	DumpMemStats()
 	return ts, nil
 }

@@ -263,7 +263,6 @@ func dbgCalcTestStaticScore(doc *HitInfo) float64 {
 	if author == "" {
 		author = AuthorOfPackage(doc.Package)
 	}
-
 	project := ProjectOfPackage(doc.Package)
 
 	log.Printf("author: %v, project: %v", author, project)
@@ -277,18 +276,15 @@ func dbgCalcTestStaticScore(doc *HitInfo) float64 {
 		if len(desc) > 100 {
 			s += 0.5
 		}
-
 		if strings.HasPrefix(desc, "Package "+doc.Name) || strings.HasPrefix(desc, doc.Name+" package") {
 			s += 0.5
 		} else if strings.HasPrefix(desc, "package "+doc.Name) {
 			s += 0.4
 		}
 	}
-
 	if doc.Name != "" && doc.Name != "main" {
 		s += 0.1
 	}
-
 	starCount := doc.AssignedStarCount - 3
 	if starCount < 0 {
 		starCount = 0
@@ -312,17 +308,14 @@ func matchToken(token string, text string, tokens stringsp.Set) bool {
 	if strings.Index(text, token) >= 0 {
 		return true
 	}
-
 	if tokens.Contain(token) {
 		return true
 	}
-
 	for tk := range tokens {
 		if strings.HasPrefix(tk, token) || strings.HasSuffix(tk, token) {
 			return true
 		}
 	}
-
 	return false
 }
 

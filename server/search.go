@@ -57,12 +57,14 @@ func search(tr trace.Trace, db database, q string) (*SearchResult, stringsp.Set,
 
 	db.Search(map[string]stringsp.Set{gcse.IndexTextField: tokens},
 		func(docID int32, data interface{}) error {
-			hitInfo, _ := data.(gcse.HitInfo)
-			hit := &Hit{
-				HitInfo: hitInfo,
+			hit := &Hit{}
+			var ok bool
+			hit.HitInfo, ok = data.(gcse.HitInfo)
+			if !ok {
+				log.Print("ok = false")
 			}
 
-			hit.MatchScore = gcse.CalcMatchScore(&hitInfo, tokenList, textIdfs, nameIdfs)
+			hit.MatchScore = gcse.CalcMatchScore(&hit.HitInfo, tokenList, textIdfs, nameIdfs)
 			hit.Score = math.Max(hit.StaticScore, hit.TestStaticScore) * hit.MatchScore
 
 			hits = append(hits, hit)

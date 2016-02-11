@@ -268,7 +268,14 @@ func calcFullPath(user, repo, path, fn string) string {
 func (s *Spider) ReadPackage(user, repo, path string) (*Package, error) {
 	_, cs, _, err := s.client.Repositories.GetContents(user, repo, path, nil)
 	if err != nil {
-		return nil, errorsp.WithStacks(err)
+		pkg := calcFullPath(user, repo, path, "")
+		errResp, ok := errorsp.Cause(err).(*github.ErrorResponse)
+		if ok && errResp.Response.StatusCode == http.StatusNotFound {
+			// The package does not exist, clear the cache.
+			s.FileCache.SetFolderSignatures(pkg, nil)
+			return nil, errorsp.WithStacksAndMessage(ErrInvalidPackage, "GetContents %v %v %v returns 404", user, repo, path)
+		}
+		return nil, errorsp.WithStacksAndMessage(err, "GetContents %v %v %v failed", user, repo, path)
 	}
 	pkg := Package{
 		Path: path,
@@ -339,11 +346,9 @@ func (s *Spider) ReadPackage(user, repo, path string) (*Package, error) {
 	}
 	s.FileCache.SetFolderSignatures(calcFullPath(user, repo, path, ""), nameToSignature)
 	if pkg.Name == "" {
-		return nil, errorsp.WithStacks(ErrInvalidPackage)
+		return nil, errorsp.WithStacksAndMessage(ErrInvalidPackage, "package name is not set")
 	}
-	if pkg.Name != "" {
-		pkg.Imports = imports.Elements()
-		pkg.TestImports = testImports.Elements()
-	}
+	pkg.Imports = imports.Elements()
+	pkg.TestImports = testImports.Elements()
 	return &pkg, nil
 }

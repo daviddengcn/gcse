@@ -152,3 +152,44 @@ func TestAppendTokens_filter(t *testing.T) {
 		assert.Equal(t, "Tokens of "+SRC, AppendTokens(nil, []byte(SRC)), DST)
 	}
 }
+
+func search(ts *index.TokenSetSearcher, field string, text string) ([]HitInfo, error) {
+	var hits []HitInfo
+	err := ts.Search(map[string]stringsp.Set{field: AppendTokens(nil, []byte(text))}, func(_ int32, data interface{}) error {
+		hits = append(hits, data.(HitInfo))
+		return nil
+	})
+	return hits, err
+}
+
+func TestIndex_DescNotIndexedBug(t *testing.T) {
+	const (
+		description = "description"
+		readme      = "readme"
+	)
+	hits := []HitInfo{{
+		DocInfo: DocInfo{
+			Package:     "github.com/daviddengcn/gcse",
+			Name:        "gcse",
+			Description: description,
+			ReadmeData:  readme,
+		},
+	}}
+	idxs := []int{0}
+	fullHitSaved := 0
+	ts := &index.TokenSetSearcher{}
+	assert.NoError(t, indexAndSaveHits(ts, hits, idxs, func(hit *HitInfo) error {
+		fullHitSaved++
+		assert.Equal(t, "Description", hit.Description, description)
+		assert.Equal(t, "Readme", hit.ReadmeData, readme)
+		return nil
+	}))
+	assert.Equal(t, "fullHitSaved", fullHitSaved, 1)
+	results, err := search(ts, IndexTextField, description)
+	assert.NoError(t, err)
+	assert.Equal(t, "results", results, hits)
+
+	results, err = search(ts, IndexTextField, readme)
+	assert.NoError(t, err)
+	assert.Equal(t, "results", results, hits)
+}
