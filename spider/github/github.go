@@ -239,15 +239,20 @@ type GoFileInfo struct {
 
 func parseGoFile(path string, body []byte) GoFileInfo {
 	var info GoFileInfo
+	info.IsTest = strings.HasSuffix(path, "_test.go")
+
 	fs := token.NewFileSet()
 	goF, err := parser.ParseFile(fs, "", body, parser.ImportsOnly|parser.ParseComments)
 	if err != nil {
 		log.Printf("Parsing file %v failed: %v", path, err)
-		info.Status = ParseFailed
+		if info.IsTest {
+			info.Status = ShouldIgnored
+		} else {
+			info.Status = ParseFailed
+		}
 		return info
 	}
 	info.Status = ParseSuccess
-	info.IsTest = strings.HasSuffix(path, "_test.go")
 	for _, imp := range goF.Imports {
 		p := imp.Path.Value
 		info.Imports = append(info.Imports, p)
