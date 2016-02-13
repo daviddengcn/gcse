@@ -19,6 +19,8 @@ import (
 
 var ErrInvalidPackage = errors.New("the package is not a Go package")
 
+var ErrInvalidRepository = errors.New("the repository is not found")
+
 type FileCache interface {
 	Get(signature string, contents interface{}) bool
 	Set(signature string, contents interface{})
@@ -107,6 +109,9 @@ type Package struct {
 func (s *Spider) ReadRepository(user, name string, scanPackages bool) (*Repository, error) {
 	repo, _, err := s.client.Repositories.Get(user, name)
 	if err != nil {
+		if isNotFound(err) {
+			return nil, errorsp.WithStacksAndMessage(ErrInvalidRepository, "respository github.com/%v/%v not found", user, name)
+		}
 		return nil, errorsp.WithStacks(err)
 	}
 	r := &Repository{
@@ -290,16 +295,24 @@ func isTooLargeError(err error) bool {
 	return false
 }
 
+func isNotFound(err error) bool {
+	errResp, ok := errorsp.Cause(err).(*github.ErrorResponse)
+	if !ok {
+		return false
+	}
+	return errResp.Response.StatusCode == http.StatusNotFound
+}
+
 func (s *Spider) ReadPackage(user, repo, path string) (*Package, error) {
 	_, cs, _, err := s.client.Repositories.GetContents(user, repo, path, nil)
 	if err != nil {
 		pkg := calcFullPath(user, repo, path, "")
-		errResp, ok := errorsp.Cause(err).(*github.ErrorResponse)
-		if ok && errResp.Response.StatusCode == http.StatusNotFound {
+		if isNotFound(err) {
 			// The package does not exist, clear the cache.
 			s.FileCache.SetFolderSignatures(pkg, nil)
 			return nil, errorsp.WithStacksAndMessage(ErrInvalidPackage, "GetContents %v %v %v returns 404", user, repo, path)
 		}
+		errResp, _ := errorsp.Cause(err).(*github.ErrorResponse)
 		return nil, errorsp.WithStacksAndMessage(err, "GetContents %v %v %v failed: %v", user, repo, path, errResp)
 	}
 	pkg := Package{

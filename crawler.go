@@ -336,6 +336,25 @@ func newDocGet(httpClient doc.HttpClient, pkg string, etag string) (p *doc.Packa
 
 var GithubSpider *github.Spider
 
+var memRepositoryStars = make(map[string]int)
+
+func getGithubStars(user, name string) int {
+	repo := fmt.Sprintf("github.com/%s/%s", user, name)
+	if stars, ok := memRepositoryStars[repo]; ok {
+		return stars
+	}
+	r, err := GithubSpider.ReadRepository(user, name, false)
+	if err != nil {
+		if errorsp.Cause(err) == github.ErrInvalidRepository {
+			log.Printf("ReadRepository %v %v failed: %v", user, name, err)
+			memRepositoryStars[repo] = -1
+		}
+		return -1
+	}
+	memRepositoryStars[repo] = r.Stars
+	return r.Stars
+}
+
 func getGithub(pkg string) (*doc.Package, error) {
 	parts := strings.SplitN(pkg, "/", 4)
 	for len(parts) < 4 {
@@ -344,11 +363,12 @@ func getGithub(pkg string) (*doc.Package, error) {
 	if parts[1] == "" || parts[2] == "" {
 		return nil, errorsp.WithStacks(ErrInvalidPackage)
 	}
+	_ = getGithubStars(parts[1], parts[2])
+
 	p, err := GithubSpider.ReadPackage(parts[1], parts[2], parts[3])
 	if err != nil {
 		return nil, err
 	}
-	r, err := GithubSpider.ReadRepository(parts[1], parts[2], false)
 	return &doc.Package{
 		ImportPath:  pkg,
 		ProjectRoot: strings.Join(parts[:3], "/"),
@@ -360,7 +380,7 @@ func getGithub(pkg string) (*doc.Package, error) {
 
 		Imports:     p.Imports,
 		TestImports: p.TestImports,
-		StarCount:   r.Stars,
+		StarCount:   getGithubStars(parts[1], parts[2]),
 
 		ReadmeFiles: map[string][]byte{p.ReadmeFn: []byte(p.ReadmeData)},
 	}, nil
