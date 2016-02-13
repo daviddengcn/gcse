@@ -289,23 +289,33 @@ func main() {
 		bi.Process()
 	}()
 
-	singlePackge := ""
-	singleETag := ""
-	flag.StringVar(&singlePackge, "pkg", singlePackge, "Crawling single package")
-	flag.StringVar(&singleETag, "etag", singleETag, "ETag for single package crawling")
+	singlePackage := flag.String("pkg", "", "Crawling a single package")
+	singleETag := flag.String("etag", "", "ETag for the single package crawling")
+	singlePerson := flag.String("person", "", "Crawling a single person")
 
 	flag.Parse()
 
 	httpClient := gcse.GenHttpClient("")
 
-	if singlePackge != "" {
-		log.Printf("Crawling single package %s ...", singlePackge)
-		p, err := gcse.CrawlPackage(httpClient, singlePackge, singleETag)
+	if *singlePackage != "" {
+		log.Printf("Crawling single package %s ...", *singlePackage)
+		p, err := gcse.CrawlPackage(httpClient, *singlePackage, *singleETag)
 		if err != nil {
-			fmtp.Printfln("Crawling package %s failured: %v", singlePackge, err)
+			fmtp.Printfln("Crawling package %s failed: %v", *singlePackage, err)
 		} else {
-			fmtp.Printfln("Package %s: %+v", singlePackge, p)
+			fmtp.Printfln("Package %s: %+v", *singlePackage, p)
 		}
+	}
+	if *singlePerson != "" {
+		log.Printf("Crawling single person %s ...", *singlePerson)
+		p, err := gcse.CrawlPerson(httpClient, *singlePerson)
+		if err != nil {
+			fmtp.Printfln("Crawling person %s failed: %v", *singlePerson, err)
+		} else {
+			fmtp.Printfln("Person %s: %+v", *singlePerson, p)
+		}
+	}
+	if *singlePackage != "" || *singlePerson != "" {
 		return
 	}
 

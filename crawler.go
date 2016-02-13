@@ -502,15 +502,29 @@ func CrawlPerson(httpClient doc.HttpClient, id string) (*Person, error) {
 	site, username := ParsePersonId(id)
 	switch site {
 	case "github.com":
-		p, err := doc.GetGithubPerson(httpClient, map[string]string{
-			"owner": username})
-		if err != nil {
-			return nil, errorsp.WithStacks(err)
+		if GithubSpider != nil {
+			u, err := GithubSpider.ReadUser(username)
+			if err != nil {
+				return nil, errorsp.WithStacksAndMessage(err, "ReadUser %s failed", id)
+			}
+			p := &Person{Id: id}
+			for _, r := range u.Repos {
+				repoUrl := fmt.Sprintf("github.com/%s/%s", username, r.Name)
+				p.Packages = append(p.Packages, repoUrl)
+				memRepositoryStars[repoUrl] = r.Stars
+			}
+			return p, nil
 		} else {
-			return &Person{
-				Id:       id,
-				Packages: p.Projects,
-			}, nil
+			p, err := doc.GetGithubPerson(httpClient, map[string]string{
+				"owner": username})
+			if err != nil {
+				return nil, errorsp.WithStacks(err)
+			} else {
+				return &Person{
+					Id:       id,
+					Packages: p.Projects,
+				}, nil
+			}
 		}
 	case "bitbucket.org":
 		p, err := doc.GetBitbucketPerson(httpClient, map[string]string{

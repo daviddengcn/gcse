@@ -67,7 +67,7 @@ type User struct {
 func (s *Spider) ReadUser(name string) (*User, error) {
 	repos, _, err := s.client.Repositories.List(name, nil)
 	if err != nil {
-		return nil, errorsp.WithStacks(err)
+		return nil, errorsp.WithStacksAndMessage(err, "Repositories.List %v failed", name)
 	}
 	user := &User{}
 	for _, repo := range repos {
