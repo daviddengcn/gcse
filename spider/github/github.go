@@ -222,8 +222,14 @@ func (s *Spider) appendPackages(user, repo, path, url string, pkgs []Package) ([
 	return pkgs, nil
 }
 
+const (
+	ParseSuccess = iota
+	ShouldIgnored
+	ParseFailed
+)
+
 type GoFileInfo struct {
-	ParseFailed bool
+	Status int
 
 	Name        string
 	IsTest      bool
@@ -237,9 +243,10 @@ func parseGoFile(path string, body []byte) GoFileInfo {
 	goF, err := parser.ParseFile(fs, "", body, parser.ImportsOnly|parser.ParseComments)
 	if err != nil {
 		log.Printf("Parsing file %v failed: %v", path, err)
-		info.ParseFailed = true
+		info.Status = ParseFailed
 		return info
 	}
+	info.Status = ParseSuccess
 	info.IsTest = strings.HasSuffix(path, "_test.go")
 	for _, imp := range goF.Imports {
 		p := imp.Path.Value
@@ -265,6 +272,19 @@ func calcFullPath(user, repo, path, fn string) string {
 	return full
 }
 
+func isTooLargeError(err error) bool {
+	errResp, ok := errorsp.Cause(err).(*github.ErrorResponse)
+	if !ok {
+		return false
+	}
+	for _, e := range errResp.Errors {
+		if e.Code == "too_large" {
+			return true
+		}
+	}
+	return false
+}
+
 func (s *Spider) ReadPackage(user, repo, path string) (*Package, error) {
 	_, cs, _, err := s.client.Repositories.GetContents(user, repo, path, nil)
 	if err != nil {
@@ -275,7 +295,7 @@ func (s *Spider) ReadPackage(user, repo, path string) (*Package, error) {
 			s.FileCache.SetFolderSignatures(pkg, nil)
 			return nil, errorsp.WithStacksAndMessage(ErrInvalidPackage, "GetContents %v %v %v returns 404", user, repo, path)
 		}
-		return nil, errorsp.WithStacksAndMessage(err, "GetContents %v %v %v failed", user, repo, path)
+		return nil, errorsp.WithStacksAndMessage(err, "GetContents %v %v %v failed: %v", user, repo, path, errResp)
 	}
 	pkg := Package{
 		Path: path,
@@ -302,18 +322,27 @@ func (s *Spider) ReadPackage(user, repo, path string) (*Package, error) {
 					return cached, nil
 				}
 				body, err := s.getFile(user, repo, cPath)
+				var fi GoFileInfo
 				if err != nil {
-					return GoFileInfo{}, err
+					if isTooLargeError(err) {
+						fi.Status = ShouldIgnored
+					} else {
+						return GoFileInfo{}, err
+					}
+				} else {
+					fi = parseGoFile(cPath, body)
 				}
-				fi := parseGoFile(cPath, body)
 				s.FileCache.Set(sha, fi)
 				return fi, nil
 			}()
 			if err != nil {
 				return nil, err
 			}
-			if fi.ParseFailed {
+			if fi.Status == ParseFailed {
 				return nil, errorsp.WithStacks(ErrInvalidPackage)
+			}
+			if fi.Status == ShouldIgnored {
+				continue
 			}
 			if fi.IsTest {
 				testImports.Add(fi.Imports...)

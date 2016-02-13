@@ -184,5 +184,6 @@ func loadIndexLoop() {
 			log.Printf("loadIndex failed: %v", err)
 		}
 		bi.AddValue(bi.Max, "search.age_in_hours", int(time.Now().Sub(getDatabase().IndexUpdated()).Hours()))
+		bi.AddValue(bi.Max, "search.age_in_mins", int(time.Now().Sub(getDatabase().IndexUpdated()).Minutes()))
 	}
 }
