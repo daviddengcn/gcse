@@ -24,6 +24,7 @@ import (
 
 	"github.com/daviddengcn/gcse/spider/github"
 	"github.com/daviddengcn/gddo/doc"
+	"github.com/daviddengcn/go-easybi"
 	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/go-villa"
 	"github.com/daviddengcn/sophie"
@@ -341,8 +342,10 @@ var memRepositoryStars = make(map[string]int)
 func getGithubStars(user, name string) int {
 	repo := fmt.Sprintf("github.com/%s/%s", user, name)
 	if stars, ok := memRepositoryStars[repo]; ok {
+		bi.Inc("crawler.repostarcache.hit")
 		return stars
 	}
+	bi.Inc("crawler.repostarcache.miss")
 	r, err := GithubSpider.ReadRepository(user, name, false)
 	if err != nil {
 		if errorsp.Cause(err) == github.ErrInvalidRepository {

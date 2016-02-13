@@ -297,15 +297,6 @@ func main() {
 
 	httpClient := gcse.GenHttpClient("")
 
-	if *singlePackage != "" {
-		log.Printf("Crawling single package %s ...", *singlePackage)
-		p, err := gcse.CrawlPackage(httpClient, *singlePackage, *singleETag)
-		if err != nil {
-			fmtp.Printfln("Crawling package %s failed: %v", *singlePackage, err)
-		} else {
-			fmtp.Printfln("Package %s: %+v", *singlePackage, p)
-		}
-	}
 	if *singlePerson != "" {
 		log.Printf("Crawling single person %s ...", *singlePerson)
 		p, err := gcse.CrawlPerson(httpClient, *singlePerson)
@@ -313,6 +304,15 @@ func main() {
 			fmtp.Printfln("Crawling person %s failed: %v", *singlePerson, err)
 		} else {
 			fmtp.Printfln("Person %s: %+v", *singlePerson, p)
+		}
+	}
+	if *singlePackage != "" {
+		log.Printf("Crawling single package %s ...", *singlePackage)
+		p, err := gcse.CrawlPackage(httpClient, *singlePackage, *singleETag)
+		if err != nil {
+			fmtp.Printfln("Crawling package %s failed: %v", *singlePackage, err)
+		} else {
+			fmtp.Printfln("Package %s: %+v", *singlePackage, p)
 		}
 	}
 	if *singlePackage != "" || *singlePerson != "" {
