@@ -80,7 +80,7 @@ func (s *Spider) ReadUser(name string) (*User, error) {
 			Name:        repoName,
 			Description: getString(repo.Description),
 			Stars:       getInt(repo.StargazersCount),
-			PushedAt:    repo.PushedAt.Time,
+			PushedAt:    getTimestamp(repo.PushedAt).Time,
 		})
 	}
 	return user, nil
