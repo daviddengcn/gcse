@@ -2,6 +2,7 @@ package github
 
 import (
 	"errors"
+	"go/ast"
 	"go/parser"
 	"go/token"
 	"log"
@@ -247,20 +248,44 @@ type GoFileInfo struct {
 	Description string
 }
 
+var buildTags stringsp.Set = stringsp.NewSet("linux", "386", "darwin", "cgo")
+
+func buildIgnored(comments []*ast.CommentGroup) bool {
+	for _, g := range comments {
+		for _, c := range g.List {
+			items, ok := stringsp.MatchPrefix(c.Text, "// +build ")
+			if !ok {
+				continue
+			}
+			for _, item := range strings.Split(items, " ") {
+				for _, tag := range strings.Split(item, ",") {
+					tag, _ = stringsp.MatchPrefix(tag, "!")
+					if strings.HasPrefix(tag, "go") || buildTags.Contain(tag) {
+						continue
+					}
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
 func parseGoFile(path string, body []byte) GoFileInfo {
 	var info GoFileInfo
 	info.IsTest = strings.HasSuffix(path, "_test.go")
-
 	fs := token.NewFileSet()
 	goF, err := parser.ParseFile(fs, "", body, parser.ImportsOnly|parser.ParseComments)
 	if err != nil {
 		log.Printf("Parsing file %v failed: %v", path, err)
 		if info.IsTest {
-			info.Status = ShouldIgnored
+			return GoFileInfo{Status: ShouldIgnored}
 		} else {
-			info.Status = ParseFailed
+			return GoFileInfo{Status: ParseFailed}
 		}
-		return info
+	}
+	if buildIgnored(goF.Comments) {
+		return GoFileInfo{Status: ShouldIgnored}
 	}
 	info.Status = ParseSuccess
 	for _, imp := range goF.Imports {
@@ -362,7 +387,7 @@ func (s *Spider) ReadPackage(user, repo, path string) (*Package, error) {
 				return nil, err
 			}
 			if fi.Status == ParseFailed {
-				return nil, errorsp.WithStacks(ErrInvalidPackage)
+				return nil, errorsp.WithStacksAndMessage(ErrInvalidPackage, "fi.Status is ParseFailed")
 			}
 			if fi.Status == ShouldIgnored {
 				continue
@@ -372,8 +397,8 @@ func (s *Spider) ReadPackage(user, repo, path string) (*Package, error) {
 			} else {
 				if pkg.Name != "" {
 					if fi.Name != pkg.Name {
-						log.Printf("Conflicting package name processing file %v: %v vs %v", cPath, fi.Name, pkg.Name)
-						return nil, errorsp.WithStacks(ErrInvalidPackage)
+						return nil, errorsp.WithStacksAndMessage(ErrInvalidPackage,
+							"conflicting package name processing file %v: %v vs %v", cPath, fi.Name, pkg.Name)
 					}
 				} else {
 					pkg.Name = fi.Name

@@ -41,3 +41,10 @@ func TestSearchRepositories(t *testing.T) {
 	assert.NoErrorOrDie(t, err)
 	assert.ValueShould(t, "len(rs)", len(rs), len(rs) > 0, "> 0")
 }
+
+func TestParseGoFile(t *testing.T) {
+	assert.Equal(t, "parseGoFile", parseGoFile("g.go", []byte(`
+package main
+// +build ignore
+	`)), GoFileInfo{Status: ShouldIgnored})
+}
