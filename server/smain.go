@@ -4,6 +4,7 @@
 package main
 
 import (
+	"compress/gzip"
 	"fmt"
 	godoc "go/doc"
 	"html/template"
@@ -95,13 +96,32 @@ func pageLoadTemplate(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Tempates loaded."))
 }
 
-type LogHandler struct{}
+type globalHandler struct{}
 
-func (hdl LogHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+type gzipResponseWriter struct {
+	http.ResponseWriter
+	gzipWriter *gzip.Writer
+}
+
+func (gzr gzipResponseWriter) Write(bs []byte) (int, error) {
+	return gzr.gzipWriter.Write(bs)
+}
+
+func (hdl globalHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	reloadTemplates()
 
 	log.Printf("[B] %s %v %s %v %v %v", r.Method, r.RequestURI, r.RemoteAddr, r.Header.Get("X-Forwarded-For"), r.Header.Get("Referer"), r.Header.Get("User-Agent"))
-	http.DefaultServeMux.ServeHTTP(w, r)
+	if strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
+		w.Header().Set("Content-Encoding", "gzip")
+		gzr := gzipResponseWriter{
+			ResponseWriter: w,
+			gzipWriter:     gzip.NewWriter(w),
+		}
+		defer gzr.gzipWriter.Close()
+		http.DefaultServeMux.ServeHTTP(gzr, r)
+	} else {
+		http.DefaultServeMux.ServeHTTP(w, r)
+	}
 	log.Printf("[E] %s %v %s %v %v %v", r.Method, r.RequestURI, r.RemoteAddr, r.Header.Get("X-Forwarded-For"), r.Header.Get("Referer"), r.Header.Get("User-Agent"))
 }
 
@@ -125,7 +145,7 @@ func main() {
 
 	log.Printf("ListenAndServe at %s ...", gcse.ServerAddr)
 
-	log.Fatal(http.ListenAndServe(gcse.ServerAddr, LogHandler{}))
+	log.Fatal(http.ListenAndServe(gcse.ServerAddr, globalHandler{}))
 }
 
 type SimpleDuration time.Duration
@@ -154,6 +174,7 @@ func (sd SimpleDuration) String() string {
 }
 
 func pageRoot(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
 	if r.URL.Path != "/" {
 		w.WriteHeader(http.StatusNotFound)
 		if err := templates.ExecuteTemplate(w, "404.html", struct {
@@ -207,6 +228,8 @@ func filterPackages(pkgs []string) (res []string) {
 }
 
 func pageAdd(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
+
 	pkgsStr := r.FormValue("pkg")
 	pkgMessage := ""
 	msgCls := "success"
@@ -383,6 +406,8 @@ mainLoop:
 const itemsPerPage = 10
 
 func pageSearch(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
+
 	tr := trace.New("pageSearch", r.URL.Path)
 	defer tr.Finish()
 
@@ -468,6 +493,8 @@ func pageSearch(w http.ResponseWriter, r *http.Request) {
 }
 
 func pageView(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
+
 	id := strings.TrimSpace(r.FormValue("id"))
 	if id != "" {
 		db := getDatabase()
@@ -502,6 +529,8 @@ func pageView(w http.ResponseWriter, r *http.Request) {
 }
 
 func pageTops(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
+
 	N, _ := strconv.Atoi(r.FormValue("len"))
 	if N < 20 {
 		N = 20
@@ -519,6 +548,7 @@ func pageTops(w http.ResponseWriter, r *http.Request) {
 }
 
 func pageBadgePage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
 	id := strings.TrimSpace(r.FormValue("id"))
 	if id != "" {
 		doc, found := getDatabase().FindFullPackage(id)
