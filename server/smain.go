@@ -207,6 +207,8 @@ func pageRoot(w http.ResponseWriter, r *http.Request) {
 
 func staticPage(tempName string) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+
 		if err := templates.ExecuteTemplate(w, tempName, struct {
 			UIUtils
 		}{}); err != nil {
