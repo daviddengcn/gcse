@@ -566,7 +566,6 @@ func GithubUpdates() (map[string]time.Time, error) {
 		if err != nil {
 			return nil, err
 		}
-
 		for {
 			m := githubProjectPat.FindSubmatchIndex(p)
 			if m == nil {
@@ -580,7 +579,6 @@ func GithubUpdates() (map[string]time.Time, error) {
 			if m == nil {
 				return nil, fmt.Errorf("updated not found for %s", ownerRepo)
 			}
-
 			// Mon Jan 2 15:04:05 -0700 MST 2006
 			updated, _ := time.Parse("2006-01-02T15:04:05-07:00",
 				string(p[m[2]:m[3]]))

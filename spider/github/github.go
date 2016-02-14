@@ -106,6 +106,18 @@ type Package struct {
 	URL         string
 }
 
+func repositoryFromGithub(gr *github.Repository) *Repository {
+	r := &Repository{
+		Description: getString(gr.Description),
+		Stars:       getInt(gr.StargazersCount),
+		PushedAt:    gr.PushedAt.Time,
+	}
+	if gr.Source != nil {
+		r.Source = getString(gr.Source.Name)
+	}
+	return r
+}
+
 func (s *Spider) ReadRepository(user, name string, scanPackages bool) (*Repository, error) {
 	repo, _, err := s.client.Repositories.Get(user, name)
 	if err != nil {
@@ -114,14 +126,7 @@ func (s *Spider) ReadRepository(user, name string, scanPackages bool) (*Reposito
 		}
 		return nil, errorsp.WithStacks(err)
 	}
-	r := &Repository{
-		Description: getString(repo.Description),
-		Stars:       getInt(repo.StargazersCount),
-		PushedAt:    repo.PushedAt.Time,
-	}
-	if repo.Source != nil {
-		r.Source = getString(repo.Source.Name)
-	}
+	r := repositoryFromGithub(repo)
 	if scanPackages {
 		r.Packages, err = s.appendPackages(user, name, "", getString(repo.HTMLURL), nil)
 		if err != nil {
@@ -398,4 +403,16 @@ func (s *Spider) ReadPackage(user, repo, path string) (*Package, error) {
 	pkg.Imports = imports.Elements()
 	pkg.TestImports = testImports.Elements()
 	return &pkg, nil
+}
+
+func (s *Spider) SearchRepositories(q string) ([]github.Repository, error) {
+	if !strings.Contains(q, "language:go") {
+		q += " language:go"
+		q = strings.TrimSpace(q)
+	}
+	res, _, err := s.client.Search.Repositories(q, &github.SearchOptions{})
+	if err != nil {
+		return nil, errorsp.WithStacksAndMessage(err, "Search.Repositories %q failed: %+v", q, err)
+	}
+	return res.Repositories, nil
 }

@@ -91,14 +91,15 @@ Returns an array of dependency information of all packages. [link](/api?action=p
 * Return values
 
 An array of the following struct:
-    Field         | Type       | Value
-    --------------|------------|-----------------------------------------------
-    `Package`     | `string`   | Import path, ID of a package in GS
-    `Name`        | `string`   | Package name
-    `TestImported`| `[]string` | List of packages that imports this package only in test cases.
-    `Imported`    | `[]string` | List of packages that imports this package
-    `TestImports` | `[]string` | List of packages this package (only) test imports
-    `Imports`     | `[]string` | List of packages that imports this package
+
+   Field         | Type       | Value
+  ---------------|------------|-----------------------------------------------------------------
+   `Package`     | `string`   | Import path, ID of a package in GS
+   `Name`        | `string`   | Package name
+   `TestImported`| `[]string` | List of packages that imports this package only in test cases.
+   `Imported`    | `[]string` | List of packages that imports this package
+   `TestImports` | `[]string` | List of packages this package (only) test imports
+   `Imports`     | `[]string` | List of packages that imports this package
 
 
 ### "search" Action
