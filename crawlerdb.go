@@ -42,8 +42,7 @@ func (cdb *CrawlerDB) Sync() error {
 }
 
 // SchedulePackage schedules a package to be crawled at a specific time.
-func (cdb *CrawlerDB) SchedulePackage(pkg string, sTime time.Time,
-	etag string) error {
+func (cdb *CrawlerDB) SchedulePackage(pkg string, sTime time.Time, etag string) error {
 	ent := CrawlingEntry{
 		ScheduleTime: sTime,
 		Version:      CrawlerVersion,
@@ -63,14 +62,12 @@ func TrimPackageName(pkg string) string {
 }
 
 // AppendPackage appends a package. If the package did not exist in either
-// PackageDB or Docs, shedulet it (immediately).
-func (cdb *CrawlerDB) AppendPackage(pkg string,
-	inDocs func(pkg string) bool) {
+// PackageDB or Docs, schedule it (immediately).
+func (cdb *CrawlerDB) AppendPackage(pkg string, inDocs func(pkg string) bool) {
 	pkg = TrimPackageName(pkg)
 	if !doc.IsValidRemotePath(pkg) {
 		return
 	}
-
 	var ent CrawlingEntry
 	exists := cdb.PackageDB.Get(pkg, &ent)
 	if exists {
@@ -78,9 +75,10 @@ func (cdb *CrawlerDB) AppendPackage(pkg string,
 			return
 		}
 		// if the docs is missing in Docs, still schedule it now
+		log.Printf("Scheduling a package with missing docs: %v", pkg)
+	} else {
+		log.Printf("Scheduling new package: %v", pkg)
 	}
-
-	// if the package doesn't exist in docDB, Etag is discarded
 	cdb.SchedulePackage(pkg, time.Now(), "")
 }
 

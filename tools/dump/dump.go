@@ -14,11 +14,11 @@ import (
 )
 
 func help() {
-	fmt.Fprintln(os.Stderr, `Usage: dump docs|index`)
+	fmt.Fprintln(os.Stderr, `Usage: dump docs|index|crawler [keys...]`)
 }
 
 func dumpDocs(keys []string) {
-	path := "data/docs"
+	path := gcse.DataRoot.Join(gcse.FnDocs).S()
 	kvDir := kv.DirInput(sophie.LocalFsPath(path))
 	cnt, err := kvDir.PartCount()
 	if err != nil {
@@ -102,12 +102,26 @@ func dumpIndex(keys []string) {
 	}
 }
 
-func main() {
-	s := `qrt` + "\xEF\xBB\xBF"
-	for i, c := range s {
-		fmtp.Printfln("%d: %x", i, c)
+func dumpCrawler(keys []string) {
+	cDB := gcse.LoadCrawlerDB()
+	if len(keys) == 0 {
+		// Full dump
+		log.Printf("Dumping PackageDB...")
+		cDB.PackageDB.Iterate(func(k string, v interface{}) error {
+			fmtp.Printfln("Package %v: %+v", k, v)
+			return nil
+		})
+		return
 	}
+	for _, key := range keys {
+		var ent gcse.CrawlingEntry
+		if cDB.PackageDB.Get(key, &ent) {
+			fmtp.Printfln("Package %v: %+v", key, ent)
+		}
+	}
+}
 
+func main() {
 	if len(os.Args) < 2 {
 		help()
 		return
@@ -118,5 +132,9 @@ func main() {
 		dumpDocs(os.Args[2:])
 	case "index":
 		dumpIndex(os.Args[2:])
+	case "crawler":
+		dumpCrawler(os.Args[2:])
+	default:
+		help()
 	}
 }

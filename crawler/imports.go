@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/daviddengcn/gcse"
 	"log"
+
+	"github.com/daviddengcn/gcse"
 )
 
 // processing sumitted packages (from go-search.org/add path)
@@ -11,7 +12,6 @@ func processImports() error {
 	if err != nil {
 		return err
 	}
-
 	for _, segm := range dones {
 		log.Printf("Processing done segment %v ...", segm)
 		pkgs, err := gcse.ReadPackages(segm)
@@ -28,6 +28,7 @@ func processImports() error {
 			log.Printf("Remove %v failed: %v", segm, err)
 		}
 	}
+	syncDatabases()
 
 	return nil
 }

@@ -126,9 +126,9 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter, c []sophie.Collector
 			cDB.PackageDB.Delete(pkg)
 			log.Printf("[Part %d] Remove wrong package %s", pc.part, pkg)
 		} else {
-			bi.AddValue(bi.Sum, "crawler.package.failed", 1)
+			bi.Inc("crawler.package.failed")
 			if strings.HasPrefix(pkg, "github.com/") {
-				bi.AddValue(bi.Sum, "crawler.package.failed.github", 1)
+				bi.Inc("crawler.package.failed.github")
 			}
 			pc.failCount++
 
