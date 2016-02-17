@@ -13,6 +13,7 @@ import (
 
 	"github.com/golangplus/errors"
 	"github.com/golangplus/strings"
+	"github.com/golangplus/time"
 
 	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
@@ -65,7 +66,21 @@ type User struct {
 	Repos []RepoInfo
 }
 
+func (s *Spider) waitForRate() {
+	r := s.client.Rate()
+	if r.Limit == 0 {
+		// no rate info yet
+		return
+	}
+	if r.Remaining > 0 {
+		return
+	}
+	log.Printf("Quota used up, sleep until %v", r.Reset.Time)
+	timep.SleepUntil(r.Reset.Time)
+}
+
 func (s *Spider) ReadUser(name string) (*User, error) {
+	s.waitForRate()
 	repos, _, err := s.client.Repositories.List(name, nil)
 	if err != nil {
 		return nil, errorsp.WithStacksAndMessage(err, "Repositories.List %v failed", name)
@@ -120,6 +135,7 @@ func repositoryFromGithub(gr *github.Repository) *Repository {
 }
 
 func (s *Spider) ReadRepository(user, name string, scanPackages bool) (*Repository, error) {
+	s.waitForRate()
 	repo, _, err := s.client.Repositories.Get(user, name)
 	if err != nil {
 		if isNotFound(err) {
@@ -138,6 +154,7 @@ func (s *Spider) ReadRepository(user, name string, scanPackages bool) (*Reposito
 }
 
 func (s *Spider) getFile(user, repo, path string) ([]byte, error) {
+	s.waitForRate()
 	c, _, _, err := s.client.Repositories.GetContents(user, repo, path, nil)
 	if err != nil {
 		return nil, errorsp.WithStacks(err)
@@ -152,6 +169,7 @@ func isReadmeFile(fn string) bool {
 }
 
 func (s *Spider) appendPackages(user, repo, path, url string, pkgs []Package) ([]Package, error) {
+	s.waitForRate()
 	_, cs, _, err := s.client.Repositories.GetContents(user, repo, path, nil)
 	if err != nil {
 		return nil, errorsp.WithStacks(err)
@@ -334,6 +352,7 @@ func isNotFound(err error) bool {
 }
 
 func (s *Spider) ReadPackage(user, repo, path string) (*Package, error) {
+	s.waitForRate()
 	_, cs, _, err := s.client.Repositories.GetContents(user, repo, path, nil)
 	if err != nil {
 		pkg := calcFullPath(user, repo, path, "")
@@ -435,6 +454,7 @@ func (s *Spider) SearchRepositories(q string) ([]github.Repository, error) {
 		q += " language:go"
 		q = strings.TrimSpace(q)
 	}
+	s.waitForRate()
 	res, _, err := s.client.Search.Repositories(q, &github.SearchOptions{})
 	if err != nil {
 		return nil, errorsp.WithStacksAndMessage(err, "Search.Repositories %q failed: %+v", q, err)

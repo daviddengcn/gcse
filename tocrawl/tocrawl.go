@@ -46,30 +46,26 @@ func loadPackageUpdateTimes(fpDocs sophie.FsPath) (map[string]time.Time, error) 
 	return pkgUTs, nil
 }
 
-func generateCrawlEntries(db *gcse.MemDB, hostFromID func(id string) string,
-	out kv.DirOutput) error {
+func generateCrawlEntries(db *gcse.MemDB, hostFromID func(id string) string, out kv.DirOutput) error {
 	now := time.Now()
 	groups := make(map[string]sophie.CollectCloser)
 	count := 0
+	oldies := make(map[string]gcse.CrawlingEntry)
 	if err := db.Iterate(func(id string, val interface{}) error {
 		ent, ok := val.(gcse.CrawlingEntry)
 		if !ok {
 			log.Printf("Wrong entry: %+v", ent)
 			return nil
 		}
-
-		if ent.Version == gcse.CrawlerVersion &&
-			ent.ScheduleTime.After(now) {
+		if ent.Version == gcse.CrawlerVersion && ent.ScheduleTime.After(now) {
 			return nil
 		}
-
 		host := hostFromID(id)
 
 		// check host black list
 		if gcse.NonCrawlHosts.Contain(host) {
 			return nil
 		}
-
 		c, ok := groups[host]
 		if !ok {
 			index := len(groups)
@@ -80,22 +76,24 @@ func generateCrawlEntries(db *gcse.MemDB, hostFromID func(id string) string,
 			}
 			groups[host] = c
 		}
-
 		if rand.Intn(10) == 0 {
 			// randomly set Etag to empty to fetch stars
 			ent.Etag = ""
 		}
-
+		if oe, ok := oldies[host]; !ok || ent.ScheduleTime.Before(oe.ScheduleTime) {
+			oldies[host] = ent
+		}
 		count++
 		return c.Collect(sophie.RawString(id), &ent)
 	}); err != nil {
 		return err
 	}
-
 	for _, c := range groups {
 		c.Close()
 	}
-
+	for host, ent := range oldies {
+		log.Printf("oldiest: %s -> %+v", host, ent)
+	}
 	log.Printf("%d entries to crawl for folder %v", count, out.Path)
 	return nil
 }

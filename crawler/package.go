@@ -171,7 +171,10 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter, c []sophie.Collector
 	c[0].Collect(sophie.RawString(pkg), &nda)
 	log.Printf("[Part %d] Package %s saved!", pc.part, pkg)
 
-	time.Sleep(10 * time.Second)
+	if !strings.HasPrefix(pkg, "github.com/") {
+		// github.com throttling is done within the GithubSpider.
+		time.Sleep(10 * time.Second)
+	}
 
 	return nil
 }
