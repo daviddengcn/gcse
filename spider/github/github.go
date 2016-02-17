@@ -378,10 +378,10 @@ func (s *Spider) ReadPackage(user, repo, path string) (*Package, error) {
 			continue
 		}
 		sha := getString(c.SHA)
-		nameToSignature[fn] = sha
 		cPath := path + "/" + fn
 		switch {
 		case strings.HasSuffix(fn, ".go"):
+			nameToSignature[fn] = sha
 			fi, err := func() (GoFileInfo, error) {
 				var cached GoFileInfo
 				if s.FileCache.Get(sha, &cached) {
