@@ -93,6 +93,11 @@ func generateCrawlEntries(db *gcse.MemDB, hostFromID func(id string) string, out
 	}
 	for host, ent := range oldies {
 		log.Printf("oldiest: %s -> %+v", host, ent)
+		if host == "github.com" {
+			due := now.Sub(ent.ScheduleTime)
+			gcse.AddBiValueAndProcess(bi.Average, "crawler.github_oldest.hours", int(due.Hours()))
+			gcse.AddBiValueAndProcess(bi.Average, "crawler.github_oldest.days", int(due.Hours()/24))
+		}
 	}
 	log.Printf("%d entries to crawl for folder %v", count, out.Path)
 	return nil
