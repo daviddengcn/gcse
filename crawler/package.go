@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/golangplus/strings"
+	"github.com/golangplus/time"
 
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/gddo/doc"
@@ -18,7 +19,7 @@ import (
 )
 
 const (
-	DefaultPackageAge = 10 * 24 * time.Hour
+	DefaultPackageAge = 10 * timep.Day
 )
 
 var (
@@ -175,7 +176,6 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter, c []sophie.Collector
 		// github.com throttling is done within the GithubSpider.
 		time.Sleep(10 * time.Second)
 	}
-
 	return nil
 }
 
@@ -186,7 +186,6 @@ func crawlPackages(httpClient doc.HttpClient, fpToCrawlPkg,
 	time.AfterFunc(gcse.CrawlerDuePerRun+time.Minute*10, func() {
 		end <- errors.New("Crawling packages timeout!")
 	})
-
 	end <- func() error {
 		outNewDocs := kv.DirOutput(fpOutNewDocs)
 		outNewDocs.Clean()
@@ -194,19 +193,16 @@ func crawlPackages(httpClient doc.HttpClient, fpToCrawlPkg,
 			Source: []mr.Input{
 				kv.DirInput(fpToCrawlPkg),
 			},
-
 			NewMapperF: func(src, part int) mr.OnlyMapper {
 				return &PackageCrawler{
 					part:       part,
 					httpClient: httpClient,
 				}
 			},
-
 			Dest: []mr.Output{
 				outNewDocs,
 			},
 		}
-
 		if err := job.Run(); err != nil {
 			log.Printf("crawlPackages: job.Run failed: %v", err)
 			return err

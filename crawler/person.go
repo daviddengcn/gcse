@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golangplus/time"
+
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/gddo/doc"
 	"github.com/daviddengcn/go-easybi"
@@ -16,7 +18,7 @@ import (
 )
 
 const (
-	DefaultPersonAge = 10 * 24 * time.Hour
+	DefaultPersonAge = 100 * timep.Day
 )
 
 type PersonCrawler struct {

@@ -4,12 +4,15 @@ import (
 	"log"
 	"math/rand"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/go-easybi"
 	"github.com/daviddengcn/sophie"
 	"github.com/daviddengcn/sophie/kv"
+	"github.com/golangplus/errors"
+	"github.com/golangplus/time"
 )
 
 var (
@@ -50,7 +53,14 @@ func generateCrawlEntries(db *gcse.MemDB, hostFromID func(id string) string, out
 	now := time.Now()
 	groups := make(map[string]sophie.CollectCloser)
 	count := 0
-	oldies := make(map[string]gcse.CrawlingEntry)
+	type nameAndAges struct {
+		maxName string
+		maxAge  time.Duration
+
+		sumAgeHours float64
+		cnt         int
+	}
+	ages := make(map[string]nameAndAges)
 	if err := db.Iterate(func(id string, val interface{}) error {
 		ent, ok := val.(gcse.CrawlingEntry)
 		if !ok {
@@ -80,23 +90,31 @@ func generateCrawlEntries(db *gcse.MemDB, hostFromID func(id string) string, out
 			// randomly set Etag to empty to fetch stars
 			ent.Etag = ""
 		}
-		if oe, ok := oldies[host]; !ok || ent.ScheduleTime.Before(oe.ScheduleTime) {
-			oldies[host] = ent
+		age := now.Sub(ent.ScheduleTime)
+		na := ages[host]
+		if age > na.maxAge {
+			na.maxName, na.maxAge = id, age
 		}
+		na.sumAgeHours += age.Hours()
+		na.cnt++
+		ages[host] = na
+
 		count++
 		return c.Collect(sophie.RawString(id), &ent)
 	}); err != nil {
-		return err
+		return errorsp.WithStacks(err)
 	}
 	for _, c := range groups {
 		c.Close()
 	}
-	for host, ent := range oldies {
-		log.Printf("oldiest: %s -> %+v", host, ent)
-		if host == "github.com" {
-			due := now.Sub(ent.ScheduleTime)
-			gcse.AddBiValueAndProcess(bi.Average, "crawler.github_oldest.hours", int(due.Hours()))
-			gcse.AddBiValueAndProcess(bi.Average, "crawler.github_oldest.days", int(due.Hours()/24))
+	for host, na := range ages {
+		aveAge := time.Duration(na.sumAgeHours / float64(na.cnt) * float64(time.Hour))
+		log.Printf("%s age: max -> %v(%s), ave -> %v", host, na.maxAge, na.maxName, aveAge)
+		if host == "github.com" && strings.Contains(out.Path, gcse.FnPackage) {
+			gcse.AddBiValueAndProcess(bi.Average, "crawler.github_max_age.hours", int(na.maxAge.Hours()))
+			gcse.AddBiValueAndProcess(bi.Average, "crawler.github_max_age.days", int(na.maxAge/timep.Day))
+			gcse.AddBiValueAndProcess(bi.Average, "crawler.github_ave_age.hours", int(aveAge.Hours()))
+			gcse.AddBiValueAndProcess(bi.Average, "crawler.github_ave_age.days", int(aveAge/timep.Day))
 		}
 	}
 	log.Printf("%d entries to crawl for folder %v", count, out.Path)
