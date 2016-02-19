@@ -284,11 +284,6 @@ func main() {
 	cleanTempDir()
 	defer cleanTempDir()
 
-	defer func() {
-		bi.Flush()
-		bi.Process()
-	}()
-
 	singlePackage := flag.String("pkg", "", "Crawling a single package")
 	singleETag := flag.String("etag", "", "ETag for the single package crawling")
 	singlePerson := flag.String("person", "", "Crawling a single person")
@@ -355,9 +350,11 @@ func main() {
 	go crawlPersons(httpClient, fpToCrawl.Join(gcse.FnPerson), psnEnd)
 
 	errPkg, errPsn := <-pkgEnd, <-psnEnd
+	bi.Flush()
+	bi.Process()
+	syncDatabases()
 	if errPkg != nil || errPsn != nil {
 		log.Fatalf("Some job may failed, package: %v, person: %v", errPkg, errPsn)
 	}
-	syncDatabases()
 	log.Println("crawler stopped...")
 }

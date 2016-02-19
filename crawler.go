@@ -21,6 +21,7 @@ import (
 	"github.com/golangplus/bytes"
 	"github.com/golangplus/errors"
 	"github.com/golangplus/strings"
+	"github.com/golangplus/time"
 
 	"github.com/daviddengcn/gcse/spider/github"
 	"github.com/daviddengcn/gddo/doc"
@@ -337,25 +338,45 @@ func newDocGet(httpClient doc.HttpClient, pkg string, etag string) (p *doc.Packa
 
 var GithubSpider *github.Spider
 
-var memRepositoryStars = make(map[string]int)
+const maxRepoInfoAge = timep.Day
 
-func getGithubStars(user, name string) int {
-	repo := fmt.Sprintf("github.com/%s/%s", user, name)
-	if stars, ok := memRepositoryStars[repo]; ok {
-		bi.Inc("crawler.repostarcache.hit")
-		return stars
+func CrawlRepoInfo(site, user, name string) *RepoInfo {
+	r, err := FetchRepoInfo(site, user, name)
+	if err != nil {
+		log.Printf("FetchRepoInfo %v %v %v failed: %v", site, user, name, err)
+	} else {
+		if r != nil && r.Age() < maxRepoInfoAge {
+			bi.Inc("crawler.repocache.hit")
+			return r
+		}
 	}
-	bi.Inc("crawler.repostarcache.miss")
-	r, err := GithubSpider.ReadRepository(user, name, false)
+	bi.Inc("crawler.repocache.miss")
+	rp, err := GithubSpider.ReadRepository(user, name, false)
 	if err != nil {
 		if errorsp.Cause(err) == github.ErrInvalidRepository {
-			log.Printf("ReadRepository %v %v failed: %v", user, name, err)
-			memRepositoryStars[repo] = -1
+			if err := DeleteRepoInfo(site, user, name); err != nil {
+				log.Printf("DeleteRepoInfo %v %v %v failed: %v", site, user, name, err)
+			}
 		}
-		return -1
+		return nil
 	}
-	memRepositoryStars[repo] = r.Stars
-	return r.Stars
+	r = &RepoInfo{
+		LastUpdated: time.Now(),
+		Stars:       rp.Stars,
+		Description: rp.Description,
+	}
+	if err := SaveRepoInfo(site, user, name, *r); err != nil {
+		log.Printf("SaveRepoInfo %v %v %v failed: %v", site, user, name, err)
+	}
+	return r
+}
+
+func getGithubStars(user, name string) int {
+	r := CrawlRepoInfo("github.com", user, name)
+	if r != nil {
+		return r.Stars
+	}
+	return -1
 }
 
 func getGithub(pkg string) (*doc.Package, error) {
@@ -514,7 +535,14 @@ func CrawlPerson(httpClient doc.HttpClient, id string) (*Person, error) {
 			for _, r := range u.Repos {
 				repoUrl := fmt.Sprintf("github.com/%s/%s", username, r.Name)
 				p.Packages = append(p.Packages, repoUrl)
-				memRepositoryStars[repoUrl] = r.Stars
+				if err := SaveRepoInfo(site, username, r.Name, RepoInfo{
+					LastUpdated: time.Now(),
+
+					Stars:       r.Stars,
+					Description: r.Description,
+				}); err != nil {
+					log.Printf("SaveRepoInfo %v %v %v failed: %v", site, username, r.Name)
+				}
 			}
 			return p, nil
 		} else {
