@@ -7,12 +7,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golangplus/errors"
+	"github.com/golangplus/sort"
+	"github.com/golangplus/time"
+
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/go-easybi"
 	"github.com/daviddengcn/sophie"
 	"github.com/daviddengcn/sophie/kv"
-	"github.com/golangplus/errors"
-	"github.com/golangplus/time"
 )
 
 var (
@@ -51,7 +53,11 @@ func loadPackageUpdateTimes(fpDocs sophie.FsPath) (map[string]time.Time, error) 
 
 func generateCrawlEntries(db *gcse.MemDB, hostFromID func(id string) string, out kv.DirOutput) error {
 	now := time.Now()
-	groups := make(map[string]sophie.CollectCloser)
+	type idAndCrawlingEntry struct {
+		id  string
+		ent *gcse.CrawlingEntry
+	}
+	groups := make(map[string][]idAndCrawlingEntry)
 	count := 0
 	type nameAndAges struct {
 		maxName string
@@ -76,20 +82,12 @@ func generateCrawlEntries(db *gcse.MemDB, hostFromID func(id string) string, out
 		if gcse.NonCrawlHosts.Contain(host) {
 			return nil
 		}
-		c, ok := groups[host]
-		if !ok {
-			index := len(groups)
-			var err error
-			c, err = out.Collector(index)
-			if err != nil {
-				return err
-			}
-			groups[host] = c
-		}
 		if rand.Intn(10) == 0 {
 			// randomly set Etag to empty to fetch stars
 			ent.Etag = ""
 		}
+		groups[host] = append(groups[host], idAndCrawlingEntry{id, &ent})
+
 		age := now.Sub(ent.ScheduleTime)
 		na := ages[host]
 		if age > na.maxAge {
@@ -100,12 +98,34 @@ func generateCrawlEntries(db *gcse.MemDB, hostFromID func(id string) string, out
 		ages[host] = na
 
 		count++
-		return c.Collect(sophie.RawString(id), &ent)
+		return nil
 	}); err != nil {
 		return errorsp.WithStacks(err)
 	}
-	for _, c := range groups {
-		c.Close()
+	index := 0
+	for _, g := range groups {
+		sortp.SortF(len(g), func(i, j int) bool {
+			return g[i].ent.ScheduleTime.Before(g[j].ent.ScheduleTime)
+		}, func(i, j int) {
+			g[i], g[j] = g[j], g[i]
+		})
+		if err := func(index int, ies []idAndCrawlingEntry) error {
+			c, err := out.Collector(index)
+			if err != nil {
+				return err
+			}
+			defer c.Close()
+
+			for _, ie := range ies {
+				if err := c.Collect(sophie.RawString(ie.id), ie.ent); err != nil {
+					return err
+				}
+			}
+			return nil
+		}(index, g); err != nil {
+			log.Printf("Saving ents failed: %v", err)
+		}
+		index++
 	}
 	for host, na := range ages {
 		aveAge := time.Duration(na.sumAgeHours / float64(na.cnt) * float64(time.Hour))

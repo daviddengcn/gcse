@@ -71,10 +71,10 @@ func (cdb *CrawlerDB) AppendPackage(pkg string, inDocs func(pkg string) bool) {
 	var ent CrawlingEntry
 	exists := cdb.PackageDB.Get(pkg, &ent)
 	if exists {
-		if inDocs(pkg) {
+		if ent.ScheduleTime.After(time.Now()) || inDocs(pkg) {
 			return
 		}
-		// if the docs is missing in Docs, still schedule it now
+		// if the docs is missing in Docs, schedule it earlier
 		log.Printf("Scheduling a package with missing docs: %v", pkg)
 	} else {
 		log.Printf("Scheduling new package: %v", pkg)

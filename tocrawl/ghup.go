@@ -11,8 +11,7 @@ import (
 
 // touchPackage forces a package to update if it was not crawled before a
 // specific time.
-func touchPackage(pkg string, crawledBefore time.Time,
-	pkgUTs map[string]time.Time) {
+func touchPackage(pkg string, crawledBefore time.Time, pkgUTs map[string]time.Time) {
 	pkg = strings.TrimSpace(pkg)
 	if !doc.IsValidRemotePath(pkg) {
 		//log.Printf("  [touchPackage] Not a valid remote path: %s", pkg)
