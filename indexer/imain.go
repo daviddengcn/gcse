@@ -9,7 +9,6 @@ import (
 
 func main() {
 	runtime.GOMAXPROCS(2)
-	gcse.Init()
 	log.Println("indexer started...")
 
 	if err := gcse.IndexSegments.ClearUndones(); err != nil {

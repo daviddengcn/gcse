@@ -1,4 +1,4 @@
-#!/bin/gosl
+#!/bin/env gosl
 
 for {
   Bash("server")

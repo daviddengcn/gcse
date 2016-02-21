@@ -10,6 +10,7 @@ import (
 	"github.com/golangplus/time"
 
 	"github.com/daviddengcn/gcse"
+	"github.com/daviddengcn/gcse/configs"
 	"github.com/daviddengcn/gddo/doc"
 	"github.com/daviddengcn/go-easybi"
 	"github.com/daviddengcn/sophie"
@@ -89,7 +90,7 @@ func (pcf PeresonCrawlerFactory) NewMapper(part int) mr.OnlyMapper {
 
 // crawl packages, send error back to end
 func crawlPersons(httpClient doc.HttpClient, fpToCrawlPsn sophie.FsPath, end chan error) {
-	time.AfterFunc(gcse.CrawlerDuePerRun+time.Minute*10, func() {
+	time.AfterFunc(configs.CrawlerDuePerRun+time.Minute*10, func() {
 		end <- errors.New("Crawling persons timeout!")
 	})
 	end <- func() error {

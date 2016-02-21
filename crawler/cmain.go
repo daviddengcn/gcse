@@ -19,6 +19,7 @@ import (
 
 	"github.com/daviddengcn/bolthelper"
 	"github.com/daviddengcn/gcse"
+	"github.com/daviddengcn/gcse/configs"
 	"github.com/daviddengcn/gcse/spider/github"
 	"github.com/daviddengcn/gddo/doc"
 	"github.com/daviddengcn/go-easybi"
@@ -33,10 +34,10 @@ var (
 )
 
 func init() {
-	if gcse.CrawlerGithubClientID != "" {
-		log.Printf("Github clientid: %s", gcse.CrawlerGithubClientID)
-		log.Printf("Github clientsecret: %s", gcse.CrawlerGithubClientSecret)
-		doc.SetGithubCredentials(gcse.CrawlerGithubClientID, gcse.CrawlerGithubClientSecret)
+	if configs.CrawlerGithubClientID != "" {
+		log.Printf("Github clientid: %s", configs.CrawlerGithubClientID)
+		log.Printf("Github clientsecret: %s", configs.CrawlerGithubClientSecret)
+		doc.SetGithubCredentials(configs.CrawlerGithubClientID, configs.CrawlerGithubClientSecret)
 	}
 	doc.SetUserAgent("Go-Search(http://go-search.org/)")
 }
@@ -271,10 +272,10 @@ func (bc boltFileCache) SetFolderSignatures(folder string, nameToSignature map[s
 func main() {
 	runtime.GOMAXPROCS(2)
 
-	log.Printf("Using personal: %v", gcse.CrawlerGithubPersonal)
-	gcse.GithubSpider = github.NewSpiderWithToken(gcse.CrawlerGithubPersonal)
+	log.Printf("Using personal: %v", configs.CrawlerGithubPersonal)
+	gcse.GithubSpider = github.NewSpiderWithToken(configs.CrawlerGithubPersonal)
 
-	if db, err := bh.Open(gcse.DataRoot.Join("filecache.bolt").S(), 0644, nil); err == nil {
+	if db, err := bh.Open(configs.DataRoot.Join("filecache.bolt").S(), 0644, nil); err == nil {
 		log.Print("Using file cache!")
 		gcse.GithubSpider.FileCache = boltFileCache{db}
 	} else {
@@ -321,22 +322,22 @@ func main() {
 
 	fpDataRoot := sophie.FsPath{
 		Fs:   sophie.LocalFS,
-		Path: gcse.DataRoot.S(),
+		Path: configs.DataRoot.S(),
 	}
 
-	fpDocs := fpDataRoot.Join(gcse.FnDocs)
+	fpDocs := fpDataRoot.Join(configs.FnDocs)
 	if err := loadAllDocsPkgs(kv.DirInput(fpDocs)); err != nil {
 		log.Fatalf("loadAllDocsPkgs: %v", err)
 	}
 	log.Printf("%d docs loaded!", len(allDocsPkgs))
 
-	AppStopTime = time.Now().Add(gcse.CrawlerDuePerRun)
+	AppStopTime = time.Now().Add(configs.CrawlerDuePerRun)
 
 	//pathToCrawl := gcse.DataRoot.Join(gcse.FnToCrawl)
-	fpCrawler := fpDataRoot.Join(gcse.FnCrawlerDB)
-	fpToCrawl := fpDataRoot.Join(gcse.FnToCrawl)
+	fpCrawler := fpDataRoot.Join(configs.FnCrawlerDB)
+	fpToCrawl := fpDataRoot.Join(configs.FnToCrawl)
 
-	fpNewDocs := fpCrawler.Join(gcse.FnNewDocs)
+	fpNewDocs := fpCrawler.Join(configs.FnNewDocs)
 	fpNewDocs.Remove()
 
 	if err := processImports(); err != nil {
@@ -344,10 +345,10 @@ func main() {
 	}
 
 	pkgEnd := make(chan error, 1)
-	go crawlPackages(httpClient, fpToCrawl.Join(gcse.FnPackage), fpNewDocs, pkgEnd)
+	go crawlPackages(httpClient, fpToCrawl.Join(configs.FnPackage), fpNewDocs, pkgEnd)
 
 	psnEnd := make(chan error, 1)
-	go crawlPersons(httpClient, fpToCrawl.Join(gcse.FnPerson), psnEnd)
+	go crawlPersons(httpClient, fpToCrawl.Join(configs.FnPerson), psnEnd)
 
 	errPkg, errPsn := <-pkgEnd, <-psnEnd
 	bi.Flush()

@@ -5,6 +5,7 @@ import (
 	"runtime"
 
 	"github.com/daviddengcn/gcse"
+	"github.com/daviddengcn/gcse/configs"
 	"github.com/daviddengcn/go-easybi"
 	"github.com/daviddengcn/sophie"
 	"github.com/daviddengcn/sophie/kv"
@@ -47,7 +48,7 @@ func doIndex() bool {
 
 	log.Printf("Indexing to %v ...", idxSegm)
 
-	fpDocDB := sophie.LocalFsPath(gcse.DocsDBPath.S())
+	fpDocDB := sophie.LocalFsPath(configs.DocsDBPath().S())
 	ts, err := gcse.Index(kv.DirInput(fpDocDB), idxSegm.Join("").S())
 	if err != nil {
 		log.Printf("Indexing failed: %v", err)

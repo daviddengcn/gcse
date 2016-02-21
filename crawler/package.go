@@ -11,6 +11,7 @@ import (
 	"github.com/golangplus/time"
 
 	"github.com/daviddengcn/gcse"
+	"github.com/daviddengcn/gcse/configs"
 	"github.com/daviddengcn/gddo/doc"
 	"github.com/daviddengcn/go-easybi"
 	"github.com/daviddengcn/sophie"
@@ -183,7 +184,7 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter, c []sophie.Collector
 func crawlPackages(httpClient doc.HttpClient, fpToCrawlPkg,
 	fpOutNewDocs sophie.FsPath, end chan error) {
 
-	time.AfterFunc(gcse.CrawlerDuePerRun+time.Minute*10, func() {
+	time.AfterFunc(configs.CrawlerDuePerRun+time.Minute*10, func() {
 		end <- errors.New("Crawling packages timeout!")
 	})
 	end <- func() error {

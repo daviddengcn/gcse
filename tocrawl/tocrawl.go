@@ -12,6 +12,7 @@ import (
 	"github.com/golangplus/time"
 
 	"github.com/daviddengcn/gcse"
+	"github.com/daviddengcn/gcse/configs"
 	"github.com/daviddengcn/go-easybi"
 	"github.com/daviddengcn/sophie"
 	"github.com/daviddengcn/sophie/kv"
@@ -79,7 +80,7 @@ func generateCrawlEntries(db *gcse.MemDB, hostFromID func(id string) string, out
 		host := hostFromID(id)
 
 		// check host black list
-		if gcse.NonCrawlHosts.Contain(host) {
+		if configs.NonCrawlHosts.Contain(host) {
 			return nil
 		}
 		if rand.Intn(10) == 0 {
@@ -130,7 +131,7 @@ func generateCrawlEntries(db *gcse.MemDB, hostFromID func(id string) string, out
 	for host, na := range ages {
 		aveAge := time.Duration(na.sumAgeHours / float64(na.cnt) * float64(time.Hour))
 		log.Printf("%s age: max -> %v(%s), ave -> %v", host, na.maxAge, na.maxName, aveAge)
-		if host == "github.com" && strings.Contains(out.Path, gcse.FnPackage) {
+		if host == "github.com" && strings.Contains(out.Path, configs.FnPackage) {
 			gcse.AddBiValueAndProcess(bi.Average, "crawler.github_max_age.hours", int(na.maxAge.Hours()))
 			gcse.AddBiValueAndProcess(bi.Average, "crawler.github_max_age.days", int(na.maxAge/timep.Day))
 			gcse.AddBiValueAndProcess(bi.Average, "crawler.github_ave_age.hours", int(aveAge.Hours()))
@@ -154,25 +155,25 @@ func syncDatabases() {
 
 func main() {
 	log.Println("Running tocrawl tool, to generate crawling list")
-	log.Println("NonCrawlHosts: ", gcse.NonCrawlHosts)
-	log.Println("CrawlGithubUpdate: ", gcse.CrawlGithubUpdate)
-	log.Println("CrawlByGodocApi: ", gcse.CrawlByGodocApi)
+	log.Println("NonCrawlHosts: ", configs.NonCrawlHosts)
+	log.Println("CrawlGithubUpdate: ", configs.CrawlGithubUpdate)
+	log.Println("CrawlByGodocApi: ", configs.CrawlByGodocApi)
 	// Load CrawlerDB
 	cDB = gcse.LoadCrawlerDB()
 
-	if gcse.CrawlGithubUpdate || gcse.CrawlByGodocApi {
+	if configs.CrawlGithubUpdate || configs.CrawlByGodocApi {
 		// load pkgUTs
 		pkgUTs, err := loadPackageUpdateTimes(
-			sophie.LocalFsPath(gcse.DocsDBPath.S()))
+			sophie.LocalFsPath(configs.DocsDBPath().S()))
 		if err != nil {
 			log.Fatalf("loadPackageUpdateTimes failed: %v", err)
 		}
 
-		if gcse.CrawlGithubUpdate {
+		if configs.CrawlGithubUpdate {
 			touchByGithubUpdates(pkgUTs)
 		}
 
-		if gcse.CrawlByGodocApi {
+		if configs.CrawlByGodocApi {
 			httpClient := gcse.GenHttpClient("")
 			pkgs, err := gcse.FetchAllPackagesInGodoc(httpClient)
 			if err != nil {
@@ -193,17 +194,17 @@ func main() {
 	log.Printf("Package DB: %d entries", cDB.PackageDB.Count())
 	log.Printf("Person DB: %d entries", cDB.PersonDB.Count())
 
-	pathToCrawl := gcse.DataRoot.Join(gcse.FnToCrawl)
+	pathToCrawl := configs.DataRoot.Join(configs.FnToCrawl)
 
 	kvPackage := kv.DirOutput(sophie.LocalFsPath(
-		pathToCrawl.Join(gcse.FnPackage).S()))
+		pathToCrawl.Join(configs.FnPackage).S()))
 	kvPackage.Clean()
 	if err := generateCrawlEntries(cDB.PackageDB, gcse.HostOfPackage, kvPackage); err != nil {
 		log.Fatalf("generateCrawlEntries %v failed: %v", kvPackage.Path, err)
 	}
 
 	kvPerson := kv.DirOutput(sophie.LocalFsPath(
-		pathToCrawl.Join(gcse.FnPerson).S()))
+		pathToCrawl.Join(configs.FnPerson).S()))
 
 	kvPerson.Clean()
 	if err := generateCrawlEntries(cDB.PersonDB, func(id string) string {

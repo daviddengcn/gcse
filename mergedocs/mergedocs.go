@@ -9,6 +9,7 @@ import (
 	"github.com/golangplus/strings"
 
 	"github.com/daviddengcn/gcse"
+	"github.com/daviddengcn/gcse/configs"
 	"github.com/daviddengcn/sophie"
 	"github.com/daviddengcn/sophie/kv"
 	"github.com/daviddengcn/sophie/mr"
@@ -18,14 +19,14 @@ func main() {
 	log.Println("Merging new crawled docs back...")
 
 	var nonStorePackage *regexp.Regexp
-	if len(gcse.NonStorePackageRegexps) > 0 {
+	if len(configs.NonStorePackageRegexps) > 0 {
 		nonStorePackage = regexp.MustCompile(
-			stringsp.FullJoin(gcse.NonStorePackageRegexps, "(", ")|(", ")"))
+			stringsp.FullJoin(configs.NonStorePackageRegexps, "(", ")|(", ")"))
 	}
 
-	fpDataRoot := sophie.LocalFsPath(gcse.DataRoot.S())
+	fpDataRoot := sophie.LocalFsPath(configs.DataRoot.S())
 
-	fpCrawler := fpDataRoot.Join(gcse.FnCrawlerDB)
+	fpCrawler := fpDataRoot.Join(configs.FnCrawlerDB)
 	outDocsUpdated := kv.DirOutput(fpDataRoot.Join("docs-updated"))
 	outDocsUpdated.Clean()
 
@@ -33,8 +34,8 @@ func main() {
 
 	job := mr.MrJob{
 		Source: []mr.Input{
-			kv.DirInput(fpDataRoot.Join(gcse.FnDocs)),   // 0
-			kv.DirInput(fpCrawler.Join(gcse.FnNewDocs)), // 1
+			kv.DirInput(fpDataRoot.Join(configs.FnDocs)),   // 0
+			kv.DirInput(fpCrawler.Join(configs.FnNewDocs)), // 1
 		},
 
 		NewMapperF: func(src, part int) mr.Mapper {
@@ -153,9 +154,9 @@ func main() {
 	log.Printf("New:       %v", cntNew)
 	log.Printf("Unchanged: %v", cntUnchanged)
 
-	pDocs := gcse.DataRoot.Join(gcse.FnDocs)
-	pUpdated := gcse.DataRoot.Join("docs-updated")
-	pTmp := gcse.DataRoot.Join("docs-tmp")
+	pDocs := configs.DataRoot.Join(configs.FnDocs)
+	pUpdated := configs.DataRoot.Join("docs-updated")
+	pTmp := configs.DataRoot.Join("docs-tmp")
 
 	pTmp.RemoveAll()
 	if err := pDocs.Rename(pTmp); err != nil {

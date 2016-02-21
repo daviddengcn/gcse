@@ -20,6 +20,7 @@ import (
 
 	"github.com/ajstarks/svgo"
 	"github.com/daviddengcn/gcse"
+	"github.com/daviddengcn/gcse/configs"
 	"github.com/daviddengcn/gddo/doc"
 	"github.com/daviddengcn/go-easybi"
 	"github.com/daviddengcn/go-index"
@@ -48,11 +49,11 @@ func Markdown(templ string) template.HTML {
 func loadTemplates() {
 	templates = template.Must(template.New("templates").Funcs(template.FuncMap{
 		"markdown": Markdown,
-	}).ParseGlob(gcse.ServerRoot.Join(`web/*`).S()))
+	}).ParseGlob(configs.ServerRoot.Join(`web/*`).S()))
 }
 
 func reloadTemplates() {
-	if gcse.AutoLoadTemplate {
+	if configs.AutoLoadTemplate {
 		loadTemplates()
 	}
 }
@@ -62,12 +63,12 @@ func init() {
 
 	loadTemplates()
 
-	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir(gcse.ServerRoot.Join("css").S()))))
-	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir(gcse.ServerRoot.Join("js").S()))))
-	http.Handle("/images/", http.StripPrefix("/images/", http.FileServer(http.Dir(gcse.ServerRoot.Join("images").S()))))
-	http.Handle("/img/", http.StripPrefix("/img/", http.FileServer(http.Dir(gcse.ServerRoot.Join("images").S()))))
-	http.Handle("/robots.txt", http.FileServer(http.Dir(gcse.ServerRoot.Join("static").S())))
-	http.Handle("/clippy.swf", http.FileServer(http.Dir(gcse.ServerRoot.Join("static").S())))
+	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir(configs.ServerRoot.Join("css").S()))))
+	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir(configs.ServerRoot.Join("js").S()))))
+	http.Handle("/images/", http.StripPrefix("/images/", http.FileServer(http.Dir(configs.ServerRoot.Join("images").S()))))
+	http.Handle("/img/", http.StripPrefix("/img/", http.FileServer(http.Dir(configs.ServerRoot.Join("images").S()))))
+	http.Handle("/robots.txt", http.FileServer(http.Dir(configs.ServerRoot.Join("static").S())))
+	http.Handle("/clippy.swf", http.FileServer(http.Dir(configs.ServerRoot.Join("static").S())))
 
 	http.HandleFunc("/add", pageAdd)
 	http.HandleFunc("/search", pageSearch)
@@ -79,15 +80,15 @@ func init() {
 	http.HandleFunc("/loadtemplates", pageLoadTemplate)
 	http.HandleFunc("/badge", pageBadge)
 	http.HandleFunc("/badgepage", pageBadgePage)
-	bi.HandleRequest(gcse.BiWebPath)
+	bi.HandleRequest(configs.BiWebPath)
 
 	http.HandleFunc("/", pageRoot)
 }
 
 func pageLoadTemplate(w http.ResponseWriter, r *http.Request) {
-	if gcse.LoadTemplatePass != "" {
+	if configs.LoadTemplatePass != "" {
 		pass := r.FormValue("pass")
-		if pass != gcse.LoadTemplatePass {
+		if pass != configs.LoadTemplatePass {
 			w.Write([]byte("Incorrect password!"))
 			return
 		}
@@ -143,9 +144,9 @@ func main() {
 	go loadIndexLoop()
 	go processBi()
 
-	log.Printf("ListenAndServe at %s ...", gcse.ServerAddr)
+	log.Printf("ListenAndServe at %s ...", configs.ServerAddr)
 
-	log.Fatal(http.ListenAndServe(gcse.ServerAddr, globalHandler{}))
+	log.Fatal(http.ListenAndServe(configs.ServerAddr, globalHandler{}))
 }
 
 type SimpleDuration time.Duration
