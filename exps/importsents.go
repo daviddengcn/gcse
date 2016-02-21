@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
+	"log"
+
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/go-villa"
-	"log"
 )
 
 const (

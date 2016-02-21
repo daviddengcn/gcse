@@ -26,6 +26,7 @@ var ErrInvalidRepository = errors.New("the repository is not found")
 type FileCache interface {
 	Get(signature string, contents interface{}) bool
 	Set(signature string, contents interface{})
+	// nameToSignature: folder map to ""
 	SetFolderSignatures(folder string, nameToSignature map[string]string)
 }
 
@@ -373,6 +374,8 @@ func (s *Spider) ReadPackage(user, repo, path string) (*Package, error) {
 	nameToSignature := make(map[string]string)
 	for _, c := range cs {
 		fn := getString(c.Name)
+		if getString(c.Type) == "dir" {
+		}
 		if getString(c.Type) != "file" {
 			nameToSignature[fn] = ""
 			continue

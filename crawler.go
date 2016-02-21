@@ -24,6 +24,7 @@ import (
 	"github.com/golangplus/time"
 
 	"github.com/daviddengcn/gcse/spider/github"
+	"github.com/daviddengcn/gcse/store"
 	"github.com/daviddengcn/gddo/doc"
 	"github.com/daviddengcn/go-easybi"
 	"github.com/daviddengcn/go-index"
@@ -35,6 +36,21 @@ import (
 
 const (
 	fnLinks = "links.json"
+
+	/*
+		Increase this to ignore etag of last versions to crawl and parse all
+		packages.
+
+		ChangeLog:
+		    0    First version
+		    1    Add TestImports/XTestImports to Imports
+		    2    Parse markdown readme to text before selecting synopsis
+			     from it
+			3    Add exported tokens to indexes
+			4    Move TestImports/XTestImports out of Imports, to TestImports
+			4    A bug of checking CrawlerVersion is fixed
+	*/
+	CrawlerVersion = 5
 )
 
 // AppendPackages appends a list packages to imports folder for crawler
@@ -340,8 +356,8 @@ var GithubSpider *github.Spider
 
 const maxRepoInfoAge = timep.Day
 
-func CrawlRepoInfo(site, user, name string) *RepoInfo {
-	r, err := FetchRepoInfo(site, user, name)
+func CrawlRepoInfo(site, user, name string) *store.RepoInfo {
+	r, err := store.FetchRepoInfo(site, user, name)
 	if err != nil {
 		log.Printf("FetchRepoInfo %v %v %v failed: %v", site, user, name, err)
 	} else {
@@ -354,18 +370,18 @@ func CrawlRepoInfo(site, user, name string) *RepoInfo {
 	rp, err := GithubSpider.ReadRepository(user, name, false)
 	if err != nil {
 		if errorsp.Cause(err) == github.ErrInvalidRepository {
-			if err := DeleteRepoInfo(site, user, name); err != nil {
+			if err := store.DeleteRepoInfo(site, user, name); err != nil {
 				log.Printf("DeleteRepoInfo %v %v %v failed: %v", site, user, name, err)
 			}
 		}
 		return nil
 	}
-	r = &RepoInfo{
+	r = &store.RepoInfo{
 		LastUpdated: time.Now(),
 		Stars:       rp.Stars,
 		Description: rp.Description,
 	}
-	if err := SaveRepoInfo(site, user, name, *r); err != nil {
+	if err := store.SaveRepoInfo(site, user, name, *r); err != nil {
 		log.Printf("SaveRepoInfo %v %v %v failed: %v", site, user, name, err)
 	}
 	return r
@@ -535,7 +551,7 @@ func CrawlPerson(httpClient doc.HttpClient, id string) (*Person, error) {
 			for _, r := range u.Repos {
 				repoUrl := fmt.Sprintf("github.com/%s/%s", username, r.Name)
 				p.Packages = append(p.Packages, repoUrl)
-				if err := SaveRepoInfo(site, username, r.Name, RepoInfo{
+				if err := store.SaveRepoInfo(site, username, r.Name, store.RepoInfo{
 					LastUpdated: time.Now(),
 
 					Stars:       r.Stars,

@@ -10,6 +10,7 @@ import (
 	"github.com/golangplus/bytes"
 	"github.com/golangplus/testing/assert"
 
+	"github.com/daviddengcn/gcse/configs"
 	"github.com/daviddengcn/gddo/doc"
 	"github.com/daviddengcn/go-villa"
 )
@@ -58,10 +59,10 @@ func TestLikeButton(t *testing.T) {
 }
 
 func TestCrawlPackage(t *testing.T) {
-	if CrawlerGithubClientID != "" {
-		t.Logf("Github clientid: %s", CrawlerGithubClientID)
-		t.Logf("Github clientsecret: %s", CrawlerGithubClientSecret)
-		doc.SetGithubCredentials(CrawlerGithubClientID, CrawlerGithubClientSecret)
+	if configs.CrawlerGithubClientID != "" {
+		t.Logf("Github clientid: %s", configs.CrawlerGithubClientID)
+		t.Logf("Github clientsecret: %s", configs.CrawlerGithubClientSecret)
+		doc.SetGithubCredentials(configs.CrawlerGithubClientID, configs.CrawlerGithubClientSecret)
 	}
 
 	pkg := "github.com/daviddengcn/gcse"

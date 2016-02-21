@@ -18,6 +18,8 @@ import (
 )
 
 const (
+	HitsArrFn = "hits"
+
 	IndexTextField = "text"
 	IndexNameField = "name"
 	IndexPkgField  = "pkg"

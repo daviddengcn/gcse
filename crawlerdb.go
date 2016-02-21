@@ -5,7 +5,17 @@ import (
 	"strings"
 	"time"
 
+	"github.com/daviddengcn/gcse/configs"
 	"github.com/daviddengcn/gddo/doc"
+)
+
+const (
+	KindIndex   = "index"
+	KindDocDB   = "docdb"
+	KindPackage = "package"
+	KindPerson  = "person"
+	KindToCheck = "tocheck"
+	IndexFn     = KindIndex + ".gob"
 )
 
 /*
@@ -18,11 +28,11 @@ type CrawlerDB struct {
 
 // LoadCrawlerDB loads PackageDB and PersonDB and returns a new *CrawlerDB
 func LoadCrawlerDB() *CrawlerDB {
-	CrawlerDBPath := DataRoot.Join(FnCrawlerDB)
+	root := configs.CrawlerDBPath()
 
 	return &CrawlerDB{
-		PackageDB: NewMemDB(CrawlerDBPath, KindPackage),
-		PersonDB:  NewMemDB(CrawlerDBPath, KindPerson),
+		PackageDB: NewMemDB(root, KindPackage),
+		PersonDB:  NewMemDB(root, KindPerson),
 	}
 }
 
@@ -71,7 +81,7 @@ func (cdb *CrawlerDB) AppendPackage(pkg string, inDocs func(pkg string) bool) {
 	var ent CrawlingEntry
 	exists := cdb.PackageDB.Get(pkg, &ent)
 	if exists {
-		if ent.ScheduleTime.After(time.Now()) || inDocs(pkg) {
+		if ent.ScheduleTime.Before(time.Now()) || inDocs(pkg) {
 			return
 		}
 		// if the docs is missing in Docs, schedule it earlier

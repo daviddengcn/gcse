@@ -182,7 +182,7 @@ func (s segments) GenNewSegment() (Segment, error) {
 			continue
 		}
 
-		path := ImportPath.Join(fn)
+		path := villa.Path(s).Join(fn)
 		path.MkdirAll(0755)
 		return newSegment(path), nil
 	}
