@@ -1,4 +1,4 @@
-#!/bin/env gosl
+#!/usr/bin/env gosl
 
 const GCSE = "github.com/daviddengcn/gcse"
 APPS := []string {

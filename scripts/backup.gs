@@ -1,4 +1,4 @@
-#!/bin/gosl
+#!/usr/bin/env gosl
 
 import "flag"
 import "github.com/daviddengcn/go-villa"

@@ -1,4 +1,4 @@
-#!/bin/gosl
+#!/usr/bin/env gosl
 
 APPS := []string {
   "tocrawl", "crawler", "mergedocs", "indexer",
