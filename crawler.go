@@ -7,12 +7,10 @@ import (
 	"errors"
 	"fmt"
 	godoc "go/doc"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 	"regexp"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -354,9 +352,10 @@ func newDocGet(httpClient doc.HttpClient, pkg string, etag string) (p *doc.Packa
 
 var GithubSpider *github.Spider
 
-const maxRepoInfoAge = timep.Day
+const maxRepoInfoAge = 2 * timep.Day
 
 func CrawlRepoInfo(site, user, name string) *store.RepoInfo {
+	// Check cache in store.
 	r, err := store.FetchRepoInfo(site, user, name)
 	if err != nil {
 		log.Printf("FetchRepoInfo %v %v %v failed: %v", site, user, name, err)
@@ -557,33 +556,29 @@ func CrawlPerson(httpClient doc.HttpClient, id string) (*Person, error) {
 					Stars:       r.Stars,
 					Description: r.Description,
 				}); err != nil {
-					log.Printf("SaveRepoInfo %v %v %v failed: %v", site, username, r.Name)
+					log.Printf("SaveRepoInfo %v %v %v failed: %v", site, username, r.Name, err)
 				}
 			}
 			return p, nil
 		} else {
-			p, err := doc.GetGithubPerson(httpClient, map[string]string{
-				"owner": username})
+			p, err := doc.GetGithubPerson(httpClient, map[string]string{"owner": username})
 			if err != nil {
 				return nil, errorsp.WithStacks(err)
-			} else {
-				return &Person{
-					Id:       id,
-					Packages: p.Projects,
-				}, nil
 			}
-		}
-	case "bitbucket.org":
-		p, err := doc.GetBitbucketPerson(httpClient, map[string]string{
-			"owner": username})
-		if err != nil {
-			return nil, errorsp.WithStacks(err)
-		} else {
 			return &Person{
 				Id:       id,
 				Packages: p.Projects,
 			}, nil
 		}
+	case "bitbucket.org":
+		p, err := doc.GetBitbucketPerson(httpClient, map[string]string{"owner": username})
+		if err != nil {
+			return nil, errorsp.WithStacks(err)
+		}
+		return &Person{
+			Id:       id,
+			Packages: p.Projects,
+		}, nil
 	}
 
 	return nil, nil
@@ -592,51 +587,6 @@ func CrawlPerson(httpClient doc.HttpClient, id string) (*Person, error) {
 func IsBadPackage(err error) bool {
 	err = villa.DeepestNested(errorsp.Cause(err))
 	return doc.IsNotFound(err) || err == ErrInvalidPackage || err == github.ErrInvalidPackage
-}
-
-var githubProjectPat = regexp.MustCompile(`href="([^/]+/[^/]+)/stargazers"`)
-var githubUpdatedPat = regexp.MustCompile(`datetime="([^"]+)"`)
-
-const githubSearchURL = "https://github.com/search?l=go&o=desc&q=stars%3A%3E%3D0&s=updated&type=Repositories&p="
-
-func GithubUpdates() (map[string]time.Time, error) {
-	updates := make(map[string]time.Time)
-	for i := 0; i < 2; i++ {
-		resp, err := http.Get(githubSearchURL + strconv.Itoa(i+1))
-		if err != nil {
-			return nil, err
-		}
-		p, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return nil, err
-		}
-		for {
-			m := githubProjectPat.FindSubmatchIndex(p)
-			if m == nil {
-				break
-			}
-			ownerRepo := "github.com/" + string(p[m[2]:m[3]])
-
-			p = p[m[1]:]
-
-			m = githubUpdatedPat.FindSubmatchIndex(p)
-			if m == nil {
-				return nil, fmt.Errorf("updated not found for %s", ownerRepo)
-			}
-			// Mon Jan 2 15:04:05 -0700 MST 2006
-			updated, _ := time.Parse("2006-01-02T15:04:05-07:00",
-				string(p[m[2]:m[3]]))
-			p = p[m[1]:]
-
-			if _, found := updates[ownerRepo]; !found {
-				updates[ownerRepo] = updated
-			}
-		}
-	}
-	if len(updates) == 0 {
-		return nil, errorsp.WithStacks(errors.New("no updates found"))
-	}
-	return updates, nil
 }
 
 type DocDB interface {

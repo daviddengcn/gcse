@@ -45,6 +45,6 @@ func TestSearchRepositories(t *testing.T) {
 func TestParseGoFile(t *testing.T) {
 	assert.Equal(t, "parseGoFile", parseGoFile("g.go", []byte(`
 package main
-// +build ignore
+`+`// +build ignore
 	`)), GoFileInfo{Status: ShouldIgnored})
 }

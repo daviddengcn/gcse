@@ -17,6 +17,8 @@ import (
 
 	"github.com/golangplus/bytes"
 	"github.com/golangplus/strings"
+	"github.com/golangplus/time"
+	"golang.org/x/net/trace"
 
 	"github.com/ajstarks/svgo"
 	"github.com/daviddengcn/gcse"
@@ -25,7 +27,6 @@ import (
 	"github.com/daviddengcn/go-easybi"
 	"github.com/daviddengcn/go-index"
 	"github.com/russross/blackfriday"
-	"golang.org/x/net/trace"
 )
 
 type UIUtils struct{}
@@ -153,22 +154,22 @@ type SimpleDuration time.Duration
 
 func (sd SimpleDuration) String() string {
 	d := time.Duration(sd)
-	if d.Hours() > 24 {
+	if d > timep.Day {
 		return fmt.Sprintf("%.0f days", d.Hours()/24)
 	}
-	if d.Hours() >= 1 {
+	if d >= time.Hour {
 		return fmt.Sprintf("%.0f hours", d.Hours())
 	}
-	if d.Minutes() >= 1 {
+	if d >= time.Minute {
 		return fmt.Sprintf("%.0f mins", d.Minutes())
 	}
-	if d.Seconds() >= 1 {
+	if d >= time.Second {
 		return fmt.Sprintf("%.0f sec", d.Seconds())
 	}
-	if d.Nanoseconds() >= 1e6 {
+	if d >= time.Millisecond {
 		return fmt.Sprintf("%d ms", d.Nanoseconds()/1e6)
 	}
-	if d.Nanoseconds() >= 1e3 {
+	if d >= time.Microsecond {
 		return fmt.Sprintf("%d us", d.Nanoseconds()/1e3)
 	}
 	return fmt.Sprintf("%d ns", d.Nanoseconds())

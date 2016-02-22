@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/daviddengcn/gcse"
+	"github.com/daviddengcn/gcse/configs"
 	"github.com/daviddengcn/go-villa"
 )
 
@@ -19,7 +20,7 @@ var (
 )
 
 func init() {
-	DocDBPath = gcse.DataRoot.Join(fnDocDB)
+	DocDBPath = configs.DataRoot.Join(fnDocDB)
 	//	CrawlerDBPath = gcse.DataRoot.Join(fnCrawlerDB)
 }
 

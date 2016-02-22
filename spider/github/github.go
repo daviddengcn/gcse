@@ -14,9 +14,9 @@ import (
 	"github.com/golangplus/errors"
 	"github.com/golangplus/strings"
 	"github.com/golangplus/time"
+	"golang.org/x/oauth2"
 
 	"github.com/google/go-github/github"
-	"golang.org/x/oauth2"
 )
 
 var ErrInvalidPackage = errors.New("the package is not a Go package")
@@ -88,7 +88,7 @@ func (s *Spider) ReadUser(name string) (*User, error) {
 	}
 	user := &User{}
 	for _, repo := range repos {
-		repoName := getString(repo.Name)
+		repoName := stringsp.Get(repo.Name)
 		if repoName == "" {
 			continue
 		}

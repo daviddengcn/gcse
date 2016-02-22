@@ -1,12 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"strings"
 	"time"
 
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/gddo/doc"
+	"github.com/golangplus/strings"
 )
 
 // touchPackage forces a package to update if it was not crawled before a
@@ -30,14 +32,23 @@ func touchPackage(pkg string, crawledBefore time.Time, pkgUTs map[string]time.Ti
 func touchByGithubUpdates(pkgUTs map[string]time.Time) {
 	log.Printf("touchByGithubUpdates ...")
 
-	updates, err := gcse.GithubUpdates()
+	rs, err := gcse.GithubSpider.SearchRepositories("")
 	if err != nil {
-		log.Printf("GithubUpdates failed: %v", err)
+		log.Printf("SearchRepositories failed: %v", err)
+		return
 	}
-
-	log.Printf("%d updates found!", len(updates))
-
-	for pkg, ut := range updates {
-		touchPackage(pkg, ut, pkgUTs)
+	count := 0
+	for _, r := range rs {
+		if r.Owner == nil || r.UpdatedAt == nil {
+			continue
+		}
+		user := stringsp.Get(r.Owner.Name)
+		path := stringsp.Get(r.Name)
+		if user == "" || path == "" {
+			continue
+		}
+		touchPackage(fmt.Sprintf("github.com/%s/%s", user, path), r.UpdatedAt.Time, pkgUTs)
+		count++
 	}
+	log.Printf("%d updates found!", count)
 }

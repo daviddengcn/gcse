@@ -8,6 +8,7 @@ import (
 	"github.com/golangplus/fmt"
 
 	"github.com/daviddengcn/gcse"
+	"github.com/daviddengcn/gcse/configs"
 	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/sophie"
 	"github.com/daviddengcn/sophie/kv"
@@ -18,7 +19,7 @@ func help() {
 }
 
 func dumpDocs(keys []string) {
-	path := gcse.DataRoot.Join(gcse.FnDocs).S()
+	path := configs.DataRoot.Join(configs.FnDocs).S()
 	kvDir := kv.DirInput(sophie.LocalFsPath(path))
 	cnt, err := kvDir.PartCount()
 	if err != nil {

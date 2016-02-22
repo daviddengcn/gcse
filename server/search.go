@@ -5,11 +5,10 @@ import (
 	"math"
 	"strings"
 
-	"golang.org/x/net/trace"
-
 	"github.com/golangplus/bytes"
 	"github.com/golangplus/sort"
 	"github.com/golangplus/strings"
+	"golang.org/x/net/trace"
 
 	"github.com/daviddengcn/gcse"
 )

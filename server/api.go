@@ -8,12 +8,12 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/golangplus/bytes"
+	"github.com/golangplus/encoding/json"
 	"golang.org/x/net/trace"
 
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/go-easybi"
-	"github.com/golangplus/bytes"
-	"github.com/golangplus/encoding/json"
 )
 
 func filterFunc(s string, f func(r rune) bool) string {
