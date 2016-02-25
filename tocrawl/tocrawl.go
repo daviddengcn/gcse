@@ -13,6 +13,7 @@ import (
 
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/gcse/configs"
+	"github.com/daviddengcn/gcse/spider/github"
 	"github.com/daviddengcn/go-easybi"
 	"github.com/daviddengcn/sophie"
 	"github.com/daviddengcn/sophie/kv"
@@ -158,6 +159,10 @@ func main() {
 	log.Println("NonCrawlHosts: ", configs.NonCrawlHosts)
 	log.Println("CrawlGithubUpdate: ", configs.CrawlGithubUpdate)
 	log.Println("CrawlByGodocApi: ", configs.CrawlByGodocApi)
+
+	log.Printf("Using personal: %v", configs.CrawlerGithubPersonal)
+	gcse.GithubSpider = github.NewSpiderWithToken(configs.CrawlerGithubPersonal)
+
 	// Load CrawlerDB
 	cDB = gcse.LoadCrawlerDB()
 

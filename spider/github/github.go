@@ -121,6 +121,8 @@ type Package struct {
 	Imports     []string
 	TestImports []string
 	URL         string
+
+	Folders []string // any folders under this package
 }
 
 func repositoryFromGithub(gr *github.Repository) *Repository {
