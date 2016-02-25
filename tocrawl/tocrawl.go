@@ -80,11 +80,6 @@ func generateCrawlEntries(db *gcse.MemDB, hostFromID func(id string) string, out
 		}
 		host := hostFromID(id)
 
-		if host != "github.com" {
-			// Temporarily only crawl github.com
-			return nil
-		}
-
 		// check host black list
 		if configs.NonCrawlHosts.Contain(host) {
 			return nil
