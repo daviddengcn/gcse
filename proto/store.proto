@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package gcse.proto;
+
+import "github.com/daviddengcn/gcse/proto/google/timestamp.proto";
+
+message RepoInfo {
+	google.protobuf.Timestamp LastUpdated = 1;
+
+	int32  stars       = 2;
+	string description = 3;
+}

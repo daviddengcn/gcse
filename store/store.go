@@ -1,13 +1,16 @@
 package store
 
 import (
-	"encoding/gob"
-	"time"
+	"log"
 
 	"github.com/golangplus/bytes"
+	"github.com/golangplus/errors"
 
 	"github.com/daviddengcn/bolthelper"
 	"github.com/daviddengcn/gcse/configs"
+	"github.com/golang/protobuf/proto"
+
+	spb "github.com/daviddengcn/gcse/proto"
 )
 
 var (
@@ -16,58 +19,50 @@ var (
 	repoRoot = []byte("repo")
 )
 
-type RepoInfo struct {
-	LastUpdated time.Time
-
-	RepoUpdated time.Time
-	Stars       int
-	Description string
-}
-
-func (r RepoInfo) Age() time.Duration {
-	return time.Now().Sub(r.LastUpdated)
-}
-
-func init() {
-	gob.Register(RepoInfo{})
-}
-
 var box = bh.RefCountBox{
 	DataPath: func() string {
 		return configs.DataRoot.Join("store.bolt").S()
 	},
 }
 
-func FetchRepoInfo(site, user, path string) (*RepoInfo, error) {
-	var r RepoInfo
+func FetchRepoInfo(site, user, path string) (*spb.RepoInfo, error) {
+	var r *spb.RepoInfo
 	if err := box.View(func(tx bh.Tx) error {
-		return tx.GobValue([][]byte{repoRoot, []byte(site), []byte(user), []byte(path)}, func(v interface{}) error {
-			r, _ = v.(RepoInfo)
-			return nil
+		return tx.Value([][]byte{repoRoot, []byte(site), []byte(user), []byte(path)}, func(v bytesp.Slice) error {
+			r = &spb.RepoInfo{}
+			return errorsp.WithStacksAndMessage(proto.Unmarshal(v, r), "len = %d", len(v))
 		})
 	}); err != nil {
 		return nil, err
 	}
-	return &r, nil
+	return r, nil
 }
 
-func ForEachReposInSite(site string, f func(user, path string, info RepoInfo) error) error {
+func ForEachReposInSite(site string, f func(user, path string, info *spb.RepoInfo) error) error {
 	return box.View(func(tx bh.Tx) error {
 		return tx.ForEach([][]byte{repoRoot, []byte(site)}, func(b bh.Bucket, user, v bytesp.Slice) error {
 			if v != nil {
 				return nil
 			}
-			return b.ForEachGob([][]byte{user}, func(path bytesp.Slice, v interface{}) error {
-				info, _ := v.(RepoInfo)
-				return f(string(user), string(path), info)
+			return b.ForEach([][]byte{user}, func(path bytesp.Slice, v bytesp.Slice) error {
+				r := &spb.RepoInfo{}
+				if err := errorsp.WithStacksAndMessage(proto.Unmarshal(v, r), "len = %d", len(v)); err != nil {
+					log.Printf("Unmarshal RepoInfo for %s failed: %v, ignored", string(path), err)
+					return nil
+				}
+				return f(string(user), string(path), r)
 			})
 		})
 	})
 }
 
-func SaveRepoInfo(site, user, path string, r RepoInfo) error {
+func SaveRepoInfo(site, user, path string, r *spb.RepoInfo) error {
 	return box.Update(func(tx bh.Tx) error {
-		return tx.PutGob([][]byte{repoRoot, []byte(site), []byte(user), []byte(path)}, &r)
+		bs, err := proto.Marshal(r)
+		if err != nil {
+			return errorsp.WithStacksAndMessage(err, "marshal %v", r)
+		}
+		return tx.Put([][]byte{repoRoot, []byte(site), []byte(user), []byte(path)}, bs)
 	})
 }
 

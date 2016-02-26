@@ -81,7 +81,7 @@ func doIndex() bool {
 	}
 
 	log.Printf("Indexing success: %s (%d)", idxSegm, ts.DocCount())
-	gcse.AddBiValueAndProcess(bi.Max, "index.doc-count", ts.DocCount())
+	gcse.AddBiValueAndProcess(bi.Average, "index.doc-count", ts.DocCount())
 
 	ts = nil
 	gcse.DumpMemStats()

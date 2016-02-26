@@ -17,6 +17,8 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/google/go-github/github"
+
+	spb "github.com/daviddengcn/gcse/proto/spider"
 )
 
 var ErrInvalidPackage = errors.New("the package is not a Go package")
@@ -122,7 +124,7 @@ type Package struct {
 	TestImports []string
 	URL         string
 
-	Folders []string // any folders under this package
+	Folders []*spb.FolderInfo // any folders under this package
 }
 
 func repositoryFromGithub(gr *github.Repository) *Repository {
@@ -354,6 +356,15 @@ func isNotFound(err error) bool {
 	return errResp.Response.StatusCode == http.StatusNotFound
 }
 
+func folderInfoFromGithub(rc *github.RepositoryContent) *spb.FolderInfo {
+	return &spb.FolderInfo{
+		Name:    getString(rc.Name),
+		Path:    getString(rc.Path),
+		Sha:     getString(rc.SHA),
+		HtmlUrl: getString(rc.HTMLURL),
+	}
+}
+
 func (s *Spider) ReadPackage(user, repo, path string) (*Package, error) {
 	s.waitForRate()
 	_, cs, _, err := s.client.Repositories.GetContents(user, repo, path, nil)
@@ -377,6 +388,8 @@ func (s *Spider) ReadPackage(user, repo, path string) (*Package, error) {
 	for _, c := range cs {
 		fn := getString(c.Name)
 		if getString(c.Type) == "dir" {
+			pkg.Folders = append(pkg.Folders, folderInfoFromGithub(c))
+			continue
 		}
 		if getString(c.Type) != "file" {
 			nameToSignature[fn] = ""

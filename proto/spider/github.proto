@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package gcse.spider.proto;
+
+message FolderInfo {
+	// E.g. "spider"
+	string name = 1;
+
+	// E.g. "spider/github"
+	string path = 2;
+
+	string sha = 3;
+	string html_url = 4;
+}
