@@ -304,11 +304,11 @@ func main() {
 	}
 	if *singlePackage != "" {
 		log.Printf("Crawling single package %s ...", *singlePackage)
-		p, err := gcse.CrawlPackage(httpClient, *singlePackage, *singleETag)
+		p, flds, err := gcse.CrawlPackage(httpClient, *singlePackage, *singleETag)
 		if err != nil {
-			fmtp.Printfln("Crawling package %s failed: %v", *singlePackage, err)
+			fmtp.Printfln("Crawling package %s failed: %v, folders: %v", *singlePackage, err, flds)
 		} else {
-			fmtp.Printfln("Package %s: %+v", *singlePackage, p)
+			fmtp.Printfln("Package %s: %+v, folders: %v", *singlePackage, p, flds)
 		}
 	}
 	if *singlePackage != "" || *singlePerson != "" {

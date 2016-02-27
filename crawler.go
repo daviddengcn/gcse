@@ -30,6 +30,10 @@ import (
 	"github.com/daviddengcn/sophie"
 	glgddo "github.com/golang/gddo/doc"
 	"github.com/golang/gddo/gosrc"
+	"github.com/golang/protobuf/ptypes"
+
+	sppb "github.com/daviddengcn/gcse/proto/spider"
+	stpb "github.com/daviddengcn/gcse/proto/store"
 )
 
 const (
@@ -354,13 +358,13 @@ var GithubSpider *github.Spider
 
 const maxRepoInfoAge = 2 * timep.Day
 
-func CrawlRepoInfo(site, user, name string) *store.RepoInfo {
+func CrawlRepoInfo(site, user, name string) *stpb.RepoInfo {
 	// Check cache in store.
 	r, err := store.FetchRepoInfo(site, user, name)
 	if err != nil {
 		log.Printf("FetchRepoInfo %v %v %v failed: %v", site, user, name, err)
 	} else {
-		if r != nil && r.Age() < maxRepoInfoAge {
+		if r != nil && store.RepoInfoAge(r) < maxRepoInfoAge {
 			bi.Inc("crawler.repocache.hit")
 			return r
 		}
@@ -375,12 +379,12 @@ func CrawlRepoInfo(site, user, name string) *store.RepoInfo {
 		}
 		return nil
 	}
-	r = &store.RepoInfo{
-		LastUpdated: time.Now(),
-		Stars:       rp.Stars,
+	r = &stpb.RepoInfo{
+		Stars:       int32(rp.Stars),
 		Description: rp.Description,
 	}
-	if err := store.SaveRepoInfo(site, user, name, *r); err != nil {
+	r.LastCrawled, _ = ptypes.TimestampProto(time.Now())
+	if err := store.SaveRepoInfo(site, user, name, r); err != nil {
 		log.Printf("SaveRepoInfo %v %v %v failed: %v", site, user, name, err)
 	}
 	return r
@@ -389,24 +393,22 @@ func CrawlRepoInfo(site, user, name string) *store.RepoInfo {
 func getGithubStars(user, name string) int {
 	r := CrawlRepoInfo("github.com", user, name)
 	if r != nil {
-		return r.Stars
+		return int(r.Stars)
 	}
 	return -1
 }
 
-func getGithub(pkg string) (*doc.Package, error) {
+func getGithub(pkg string) (*doc.Package, []*sppb.FolderInfo, error) {
 	parts := strings.SplitN(pkg, "/", 4)
 	for len(parts) < 4 {
 		parts = append(parts, "")
 	}
 	if parts[1] == "" || parts[2] == "" {
-		return nil, errorsp.WithStacks(ErrInvalidPackage)
+		return nil, nil, errorsp.WithStacks(ErrInvalidPackage)
 	}
-	_ = getGithubStars(parts[1], parts[2])
-
-	p, err := GithubSpider.ReadPackage(parts[1], parts[2], parts[3])
+	p, folders, err := GithubSpider.ReadPackage(parts[1], parts[2], parts[3])
 	if err != nil {
-		return nil, err
+		return nil, folders, err
 	}
 	return &doc.Package{
 		ImportPath:  pkg,
@@ -422,14 +424,13 @@ func getGithub(pkg string) (*doc.Package, error) {
 		StarCount:   getGithubStars(parts[1], parts[2]),
 
 		ReadmeFiles: map[string][]byte{p.ReadmeFn: []byte(p.ReadmeData)},
-	}, nil
+	}, folders, nil
 }
 
-func CrawlPackage(httpClient doc.HttpClient, pkg string, etag string) (p *Package, err error) {
+func CrawlPackage(httpClient doc.HttpClient, pkg string, etag string) (p *Package, folders []*sppb.FolderInfo, err error) {
 	defer func() {
 		if err := recover(); err != nil {
-			p, err = nil, errors.New(fmt.Sprintf(
-				"Panic when crawling package %s: %v", pkg, err))
+			p, err = nil, errorsp.WithStacks(fmt.Errorf("Panic when crawling package %s: %v", pkg, err))
 			log.Printf("Panic when crawling package %s: %v", pkg, err)
 		}
 	}()
@@ -437,10 +438,10 @@ func CrawlPackage(httpClient doc.HttpClient, pkg string, etag string) (p *Packag
 	var pdoc *doc.Package
 
 	if strings.HasPrefix(pkg, "thezombie.net") {
-		return nil, ErrInvalidPackage
+		return nil, folders, ErrInvalidPackage
 	} else if strings.HasPrefix(pkg, "github.com/") {
 		if GithubSpider != nil {
-			pdoc, err = getGithub(pkg)
+			pdoc, folders, err = getGithub(pkg)
 		} else {
 			pdoc, err = doc.Get(httpClient, pkg, etag)
 		}
@@ -448,10 +449,10 @@ func CrawlPackage(httpClient doc.HttpClient, pkg string, etag string) (p *Packag
 		pdoc, err = newDocGet(httpClient, pkg, etag)
 	}
 	if err == doc.ErrNotModified {
-		return nil, ErrPackageNotModifed
+		return nil, folders, ErrPackageNotModifed
 	}
 	if err != nil {
-		return nil, errorsp.WithStacks(err)
+		return nil, folders, errorsp.WithStacks(err)
 	}
 
 	if pdoc.StarCount < 0 {
@@ -520,7 +521,7 @@ func CrawlPackage(httpClient doc.HttpClient, pkg string, etag string) (p *Packag
 
 		References: pdoc.References,
 		Etag:       pdoc.Etag,
-	}, nil
+	}, folders, nil
 }
 
 func IdOfPerson(site, username string) string {
@@ -550,10 +551,10 @@ func CrawlPerson(httpClient doc.HttpClient, id string) (*Person, error) {
 			for _, r := range u.Repos {
 				repoUrl := fmt.Sprintf("github.com/%s/%s", username, r.Name)
 				p.Packages = append(p.Packages, repoUrl)
-				if err := store.SaveRepoInfo(site, username, r.Name, store.RepoInfo{
-					LastUpdated: time.Now(),
+				if err := store.SaveRepoInfo(site, username, r.Name, &stpb.RepoInfo{
+					LastCrawled: store.TimestampProto(time.Now()),
 
-					Stars:       r.Stars,
+					Stars:       int32(r.Stars),
 					Description: r.Description,
 				}); err != nil {
 					log.Printf("SaveRepoInfo %v %v %v failed: %v", site, username, r.Name, err)

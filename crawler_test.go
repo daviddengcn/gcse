@@ -59,7 +59,7 @@ func TestCrawlPackage(t *testing.T) {
 
 	pkg := "github.com/daviddengcn/gcse"
 	httpClient := GenHttpClient("")
-	p, err := CrawlPackage(httpClient, pkg, "")
+	p, _, err := CrawlPackage(httpClient, pkg, "")
 	if err != nil {
 		if strings.Index(err.Error(), "403") == -1 {
 			t.Error(err)
@@ -79,7 +79,7 @@ func TestCrawlPackage(t *testing.T) {
 	//	}
 
 	pkg = "thezombie.net/libgojira"
-	p, err = CrawlPackage(httpClient, pkg, "")
+	p, _, err = CrawlPackage(httpClient, pkg, "")
 	if err != nil {
 		if !IsBadPackage(err) {
 			t.Errorf("%s should be an invalid package", pkg)

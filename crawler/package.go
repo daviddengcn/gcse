@@ -114,8 +114,10 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter, c []sophie.Collector
 	}
 	log.Printf("[Part %d] Crawling package %v with etag %s\n", pc.part, pkg, ent.Etag)
 
-	p, err := gcse.CrawlPackage(pc.httpClient, pkg, ent.Etag)
-	_ = p
+	p, flds, err := gcse.CrawlPackage(pc.httpClient, pkg, ent.Etag)
+	for _, fld := range flds {
+		appendPackage(pkg + "/" + fld.Path)
+	}
 	if err != nil && err != gcse.ErrPackageNotModifed {
 		log.Printf("[Part %d] Crawling pkg %s failed: %v", pc.part, pkg, err)
 		if gcse.IsBadPackage(err) {
