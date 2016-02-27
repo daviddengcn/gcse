@@ -28,9 +28,11 @@ func TestReadPackage(t *testing.T) {
 	s := NewSpiderWithToken("")
 	assert.Should(t, s != nil, "s == nil")
 
-	pkg, err := s.ReadPackage("daviddengcn", "gosl", "builtin")
+	pkg, folders, err := s.ReadPackage("daviddengcn", "gcse", "spider/github")
 	assert.NoErrorOrDie(t, err)
 	assert.ValueShould(t, "len(pkg.Imports)", len(pkg.Imports), len(pkg.Imports) > 0, "> 0")
+	assert.ValueShould(t, "len(pkg.TestImports)", len(pkg.TestImports), len(pkg.TestImports) > 0, "> 0")
+	assert.Equal(t, "len(folders)", len(folders), 1)
 }
 
 func TestSearchRepositories(t *testing.T) {

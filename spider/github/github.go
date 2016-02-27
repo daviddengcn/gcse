@@ -123,8 +123,6 @@ type Package struct {
 	Imports     []string
 	TestImports []string
 	URL         string
-
-	Folders []*spb.FolderInfo // any folders under this package
 }
 
 func repositoryFromGithub(gr *github.Repository) *Repository {
@@ -365,7 +363,8 @@ func folderInfoFromGithub(rc *github.RepositoryContent) *spb.FolderInfo {
 	}
 }
 
-func (s *Spider) ReadPackage(user, repo, path string) (*Package, error) {
+// Even an error is returned, the folders may still contain useful elements.
+func (s *Spider) ReadPackage(user, repo, path string) (*Package, []*spb.FolderInfo, error) {
 	s.waitForRate()
 	_, cs, _, err := s.client.Repositories.GetContents(user, repo, path, nil)
 	if err != nil {
@@ -373,10 +372,17 @@ func (s *Spider) ReadPackage(user, repo, path string) (*Package, error) {
 		if isNotFound(err) {
 			// The package does not exist, clear the cache.
 			s.FileCache.SetFolderSignatures(pkg, nil)
-			return nil, errorsp.WithStacksAndMessage(ErrInvalidPackage, "GetContents %v %v %v returns 404", user, repo, path)
+			return nil, nil, errorsp.WithStacksAndMessage(ErrInvalidPackage, "GetContents %v %v %v returns 404", user, repo, path)
 		}
 		errResp, _ := errorsp.Cause(err).(*github.ErrorResponse)
-		return nil, errorsp.WithStacksAndMessage(err, "GetContents %v %v %v failed: %v", user, repo, path, errResp)
+		return nil, nil, errorsp.WithStacksAndMessage(err, "GetContents %v %v %v failed: %v", user, repo, path, errResp)
+	}
+	var folders []*spb.FolderInfo
+	for _, c := range cs {
+		if getString(c.Type) != "dir" {
+			continue
+		}
+		folders = append(folders, folderInfoFromGithub(c))
 	}
 	pkg := Package{
 		Path: path,
@@ -387,10 +393,6 @@ func (s *Spider) ReadPackage(user, repo, path string) (*Package, error) {
 	nameToSignature := make(map[string]string)
 	for _, c := range cs {
 		fn := getString(c.Name)
-		if getString(c.Type) == "dir" {
-			pkg.Folders = append(pkg.Folders, folderInfoFromGithub(c))
-			continue
-		}
 		if getString(c.Type) != "file" {
 			nameToSignature[fn] = ""
 			continue
@@ -412,6 +414,7 @@ func (s *Spider) ReadPackage(user, repo, path string) (*Package, error) {
 					if isTooLargeError(err) {
 						fi.Status = ShouldIgnored
 					} else {
+						// Temporary error
 						return GoFileInfo{}, err
 					}
 				} else {
@@ -421,10 +424,10 @@ func (s *Spider) ReadPackage(user, repo, path string) (*Package, error) {
 				return fi, nil
 			}()
 			if err != nil {
-				return nil, err
+				return nil, folders, err
 			}
 			if fi.Status == ParseFailed {
-				return nil, errorsp.WithStacksAndMessage(ErrInvalidPackage, "fi.Status is ParseFailed")
+				return nil, folders, errorsp.WithStacksAndMessage(ErrInvalidPackage, "fi.Status is ParseFailed")
 			}
 			if fi.Status == ShouldIgnored {
 				continue
@@ -434,7 +437,7 @@ func (s *Spider) ReadPackage(user, repo, path string) (*Package, error) {
 			} else {
 				if pkg.Name != "" {
 					if fi.Name != pkg.Name {
-						return nil, errorsp.WithStacksAndMessage(ErrInvalidPackage,
+						return nil, folders, errorsp.WithStacksAndMessage(ErrInvalidPackage,
 							"conflicting package name processing file %v: %v vs %v", cPath, fi.Name, pkg.Name)
 					}
 				} else {
@@ -460,11 +463,11 @@ func (s *Spider) ReadPackage(user, repo, path string) (*Package, error) {
 	}
 	s.FileCache.SetFolderSignatures(calcFullPath(user, repo, path, ""), nameToSignature)
 	if pkg.Name == "" {
-		return nil, errorsp.WithStacksAndMessage(ErrInvalidPackage, "package name is not set")
+		return nil, folders, errorsp.WithStacksAndMessage(ErrInvalidPackage, "package name is not set")
 	}
 	pkg.Imports = imports.Elements()
 	pkg.TestImports = testImports.Elements()
-	return &pkg, nil
+	return &pkg, folders, nil
 }
 
 func (s *Spider) SearchRepositories(q string) ([]github.Repository, error) {

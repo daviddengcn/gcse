@@ -10,7 +10,7 @@ import (
 	"github.com/daviddengcn/gcse/configs"
 	"github.com/golang/protobuf/proto"
 
-	spb "github.com/daviddengcn/gcse/proto"
+	stpb "github.com/daviddengcn/gcse/proto/store"
 )
 
 var (
@@ -25,7 +25,7 @@ var box = bh.RefCountBox{
 	},
 }
 
-func FetchRepoInfo(site, user, path string) (*spb.RepoInfo, error) {
+func FetchRepoInfo(site, user, path string) (*stpb.RepoInfo, error) {
 	var r *spb.RepoInfo
 	if err := box.View(func(tx bh.Tx) error {
 		return tx.Value([][]byte{repoRoot, []byte(site), []byte(user), []byte(path)}, func(v bytesp.Slice) error {
@@ -56,7 +56,7 @@ func ForEachReposInSite(site string, f func(user, path string, info *spb.RepoInf
 	})
 }
 
-func SaveRepoInfo(site, user, path string, r *spb.RepoInfo) error {
+func SaveRepoInfo(site, user, path string, r *stpb.RepoInfo) error {
 	return box.Update(func(tx bh.Tx) error {
 		bs, err := proto.Marshal(r)
 		if err != nil {
