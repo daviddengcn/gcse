@@ -17,32 +17,21 @@ import (
 	"github.com/golangplus/time"
 	"golang.org/x/oauth2"
 
-	"github.com/google/go-github/github"
+	sppb "github.com/daviddengcn/gcse/proto/spider"
+	gpb "github.com/daviddengcn/gcse/proto/spider/github"
 
-	spb "github.com/daviddengcn/gcse/proto/spider"
+	"github.com/daviddengcn/gcse/spider"
+	"github.com/google/go-github/github"
 )
 
 var ErrInvalidPackage = errors.New("the package is not a Go package")
 
 var ErrInvalidRepository = errors.New("the repository is not found")
 
-type FileCache interface {
-	Get(signature string, contents interface{}) bool
-	Set(signature string, contents interface{})
-	// nameToSignature: folder map to ""
-	SetFolderSignatures(folder string, nameToSignature map[string]string)
-}
-
-type nullFileCache struct{}
-
-func (nullFileCache) Get(string, interface{}) bool                  { return false }
-func (nullFileCache) Set(string, interface{})                       {}
-func (nullFileCache) SetFolderSignatures(string, map[string]string) {}
-
 type Spider struct {
 	client *github.Client
 
-	FileCache FileCache
+	FileCache spider.FileCache
 }
 
 func NewSpiderWithToken(token string) *Spider {
@@ -55,7 +44,7 @@ func NewSpiderWithToken(token string) *Spider {
 	c := github.NewClient(hc)
 	return &Spider{
 		client:    c,
-		FileCache: nullFileCache{},
+		FileCache: spider.NullFileCache{},
 	}
 }
 
@@ -255,21 +244,6 @@ func (s *Spider) appendPackages(user, repo, path, url string, pkgs []Package) ([
 	return pkgs, nil
 }
 
-const (
-	ParseSuccess = iota
-	ShouldIgnored
-	ParseFailed
-)
-
-type GoFileInfo struct {
-	Status int
-
-	Name        string
-	IsTest      bool
-	Imports     []string
-	Description string
-}
-
 var buildTags stringsp.Set = stringsp.NewSet("linux", "386", "darwin", "cgo")
 
 func buildIgnored(comments []*ast.CommentGroup) bool {
@@ -293,23 +267,29 @@ func buildIgnored(comments []*ast.CommentGroup) bool {
 	return false
 }
 
-func parseGoFile(path string, body []byte) GoFileInfo {
-	var info GoFileInfo
+var (
+	goFileInfo_ShouldIgnore = sppb.GoFileInfo{Status: sppb.GoFileInfo_ShouldIgnore}
+	goFileInfo_ParseFailed  = sppb.GoFileInfo{Status: sppb.GoFileInfo_ParseFailed}
+)
+
+func parseGoFile(path string, body []byte, info *sppb.GoFileInfo) {
 	info.IsTest = strings.HasSuffix(path, "_test.go")
 	fs := token.NewFileSet()
 	goF, err := parser.ParseFile(fs, "", body, parser.ImportsOnly|parser.ParseComments)
 	if err != nil {
 		log.Printf("Parsing file %v failed: %v", path, err)
 		if info.IsTest {
-			return GoFileInfo{Status: ShouldIgnored}
+			*info = goFileInfo_ShouldIgnore
 		} else {
-			return GoFileInfo{Status: ParseFailed}
+			*info = goFileInfo_ParseFailed
 		}
+		return
 	}
 	if buildIgnored(goF.Comments) {
-		return GoFileInfo{Status: ShouldIgnored}
+		*info = goFileInfo_ShouldIgnore
+		return
 	}
-	info.Status = ParseSuccess
+	info.Status = sppb.GoFileInfo_ParseSuccess
 	for _, imp := range goF.Imports {
 		p, _ := strconv.Unquote(imp.Path.Value)
 		info.Imports = append(info.Imports, p)
@@ -318,7 +298,6 @@ func parseGoFile(path string, body []byte) GoFileInfo {
 	if goF.Doc != nil {
 		info.Description = goF.Doc.Text()
 	}
-	return info
 }
 
 func calcFullPath(user, repo, path, fn string) string {
@@ -355,8 +334,8 @@ func isNotFound(err error) bool {
 	return errResp.Response.StatusCode == http.StatusNotFound
 }
 
-func folderInfoFromGithub(rc *github.RepositoryContent) *spb.FolderInfo {
-	return &spb.FolderInfo{
+func folderInfoFromGithub(rc *github.RepositoryContent) *gpb.FolderInfo {
+	return &gpb.FolderInfo{
 		Name:    getString(rc.Name),
 		Path:    getString(rc.Path),
 		Sha:     getString(rc.SHA),
@@ -365,7 +344,7 @@ func folderInfoFromGithub(rc *github.RepositoryContent) *spb.FolderInfo {
 }
 
 // Even an error is returned, the folders may still contain useful elements.
-func (s *Spider) ReadPackage(user, repo, path string) (*Package, []*spb.FolderInfo, error) {
+func (s *Spider) ReadPackage(user, repo, path string) (*Package, []*gpb.FolderInfo, error) {
 	s.waitForRate()
 	_, cs, _, err := s.client.Repositories.GetContents(user, repo, path, nil)
 	if err != nil {
@@ -378,7 +357,7 @@ func (s *Spider) ReadPackage(user, repo, path string) (*Package, []*spb.FolderIn
 		errResp, _ := errorsp.Cause(err).(*github.ErrorResponse)
 		return nil, nil, errorsp.WithStacksAndMessage(err, "GetContents %v %v %v failed: %v", user, repo, path, errResp)
 	}
-	var folders []*spb.FolderInfo
+	var folders []*gpb.FolderInfo
 	for _, c := range cs {
 		if getString(c.Type) != "dir" {
 			continue
@@ -403,23 +382,22 @@ func (s *Spider) ReadPackage(user, repo, path string) (*Package, []*spb.FolderIn
 		switch {
 		case strings.HasSuffix(fn, ".go"):
 			nameToSignature[fn] = sha
-			fi, err := func() (GoFileInfo, error) {
-				var cached GoFileInfo
-				if s.FileCache.Get(sha, &cached) {
+			fi, err := func() (*sppb.GoFileInfo, error) {
+				fi := &sppb.GoFileInfo{}
+				if s.FileCache.Get(sha, fi) {
 					log.Printf("Cache for %v found!", calcFullPath(user, repo, path, fn))
-					return cached, nil
+					return fi, nil
 				}
 				body, err := s.getFile(user, repo, cPath)
-				var fi GoFileInfo
 				if err != nil {
 					if isTooLargeError(err) {
-						fi.Status = ShouldIgnored
+						*fi = goFileInfo_ShouldIgnore
 					} else {
 						// Temporary error
-						return GoFileInfo{}, err
+						return nil, err
 					}
 				} else {
-					fi = parseGoFile(cPath, body)
+					parseGoFile(cPath, body, fi)
 				}
 				s.FileCache.Set(sha, fi)
 				return fi, nil
@@ -427,10 +405,10 @@ func (s *Spider) ReadPackage(user, repo, path string) (*Package, []*spb.FolderIn
 			if err != nil {
 				return nil, folders, err
 			}
-			if fi.Status == ParseFailed {
+			if fi.Status == sppb.GoFileInfo_ParseFailed {
 				return nil, folders, errorsp.WithStacksAndMessage(ErrInvalidPackage, "fi.Status is ParseFailed")
 			}
-			if fi.Status == ShouldIgnored {
+			if fi.Status == sppb.GoFileInfo_ShouldIgnore {
 				continue
 			}
 			if fi.IsTest {

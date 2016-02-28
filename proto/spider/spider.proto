@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package gcse.spider;
+
+message GoFileInfo {
+	enum Status {
+		Unknown      = 0;
+		ParseSuccess = 1;
+		ParseFailed  = 2;
+		ShouldIgnore = 3;
+	}
+
+	Status status = 1;
+
+	string          name        = 2;
+	string          description = 3;
+	bool            is_test     = 4;
+	repeated string imports     = 5;
+}

@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package gcse.store;
+
+import "github.com/golang/protobuf/ptypes/timestamp/timestamp.proto";
+
+message RepoInfo {
+	google.protobuf.Timestamp last_crawled = 1;
+
+	int32  stars       = 2;
+	string description = 3;
+}

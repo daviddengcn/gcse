@@ -28,12 +28,12 @@ import (
 	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/go-villa"
 	"github.com/daviddengcn/sophie"
-	glgddo "github.com/golang/gddo/doc"
 	"github.com/golang/gddo/gosrc"
 	"github.com/golang/protobuf/ptypes"
 
-	sppb "github.com/daviddengcn/gcse/proto/spider"
+	gpb "github.com/daviddengcn/gcse/proto/spider/github"
 	stpb "github.com/daviddengcn/gcse/proto/store"
+	glgddo "github.com/golang/gddo/doc"
 )
 
 const (
@@ -398,7 +398,7 @@ func getGithubStars(user, name string) int {
 	return -1
 }
 
-func getGithub(pkg string) (*doc.Package, []*sppb.FolderInfo, error) {
+func getGithub(pkg string) (*doc.Package, []*gpb.FolderInfo, error) {
 	parts := strings.SplitN(pkg, "/", 4)
 	for len(parts) < 4 {
 		parts = append(parts, "")
@@ -427,7 +427,7 @@ func getGithub(pkg string) (*doc.Package, []*sppb.FolderInfo, error) {
 	}, folders, nil
 }
 
-func CrawlPackage(httpClient doc.HttpClient, pkg string, etag string) (p *Package, folders []*sppb.FolderInfo, err error) {
+func CrawlPackage(httpClient doc.HttpClient, pkg string, etag string) (p *Package, folders []*gpb.FolderInfo, err error) {
 	defer func() {
 		if err := recover(); err != nil {
 			p, err = nil, errorsp.WithStacks(fmt.Errorf("Panic when crawling package %s: %v", pkg, err))

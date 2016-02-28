@@ -1,9 +1,12 @@
 package github
 
 import (
+	"sort"
 	"testing"
 
 	"github.com/golangplus/testing/assert"
+
+	sppb "github.com/daviddengcn/gcse/proto/spider"
 )
 
 func TestReadUser(t *testing.T) {
@@ -31,6 +34,7 @@ func TestReadPackage(t *testing.T) {
 	pkg, folders, err := s.ReadPackage("daviddengcn", "gcse", "spider/github/testdata")
 	assert.NoErrorOrDie(t, err)
 	assert.Equal(t, "pkg.Name", pkg.Name, "pkg")
+	sort.Strings(pkg.Imports)
 	assert.Equal(t, "pkg.Imports", pkg.Imports, []string{
 		"github.com/daviddengcn/gcse/spider/github",
 		"github.com/golangplus/strings",
@@ -51,8 +55,10 @@ func TestSearchRepositories(t *testing.T) {
 }
 
 func TestParseGoFile(t *testing.T) {
-	assert.Equal(t, "parseGoFile", parseGoFile("g.go", []byte(`
+	fi := &sppb.GoFileInfo{}
+	parseGoFile("g.go", []byte(`
 package main
 `+`// +build ignore
-	`)), GoFileInfo{Status: ShouldIgnored})
+	`), fi)
+	assert.Equal(t, "fi", fi, &sppb.GoFileInfo{Status: sppb.GoFileInfo_ShouldIgnore})
 }

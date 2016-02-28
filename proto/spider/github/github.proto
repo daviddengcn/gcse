@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package gcse.spider;
+package gcse.spider.github;
 
 message FolderInfo {
 	// E.g. "spider"
