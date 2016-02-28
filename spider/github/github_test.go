@@ -28,11 +28,17 @@ func TestReadPackage(t *testing.T) {
 	s := NewSpiderWithToken("")
 	assert.Should(t, s != nil, "s == nil")
 
-	pkg, folders, err := s.ReadPackage("daviddengcn", "gcse", "spider/github")
+	pkg, folders, err := s.ReadPackage("daviddengcn", "gcse", "spider/github/testdata")
 	assert.NoErrorOrDie(t, err)
-	assert.ValueShould(t, "len(pkg.Imports)", len(pkg.Imports), len(pkg.Imports) > 0, "> 0")
-	assert.ValueShould(t, "len(pkg.TestImports)", len(pkg.TestImports), len(pkg.TestImports) > 0, "> 0")
+	assert.Equal(t, "pkg.Name", pkg.Name, "pkg")
+	assert.Equal(t, "pkg.Imports", pkg.Imports, []string{
+		"github.com/daviddengcn/gcse/spider/github",
+		"github.com/golangplus/strings",
+	})
+	assert.Equal(t, "pkg.TestImports", pkg.TestImports, []string{"github.com/golangplus/testing/assert"})
 	assert.Equal(t, "len(folders)", len(folders), 1)
+	assert.Equal(t, "folders[0].Name", folders[0].Name, "sub")
+	assert.Equal(t, "folders[0].Path", folders[0].Path, "spider/github/testdata/sub")
 }
 
 func TestSearchRepositories(t *testing.T) {

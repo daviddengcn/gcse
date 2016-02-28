@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 
@@ -203,7 +204,7 @@ func (s *Spider) appendPackages(user, repo, path, url string, pkgs []Package) ([
 			}
 			isTest := strings.HasSuffix(fn, "_test.go")
 			for _, imp := range goF.Imports {
-				p := imp.Path.Value
+				p, _ := strconv.Unquote(imp.Path.Value)
 				if isTest {
 					testImports.Add(p)
 				} else {
@@ -310,7 +311,7 @@ func parseGoFile(path string, body []byte) GoFileInfo {
 	}
 	info.Status = ParseSuccess
 	for _, imp := range goF.Imports {
-		p := imp.Path.Value
+		p, _ := strconv.Unquote(imp.Path.Value)
 		info.Imports = append(info.Imports, p)
 	}
 	info.Name = goF.Name.Name
