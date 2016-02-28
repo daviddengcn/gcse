@@ -3,7 +3,7 @@
 GCSE := "github.com/daviddengcn/gcse"
 
 APPS := []string {
-  "server", "tocrawl", "crawler", "mergedocs", "indexer", "store",
+  "server", "tocrawl", "crawler", "mergedocs", "indexer", "store", "spider",
 }
 
 Exec("go", "fmt", GCSE)

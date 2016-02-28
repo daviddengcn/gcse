@@ -385,7 +385,7 @@ func (s *Spider) ReadPackage(user, repo, path string) (*Package, []*gpb.FolderIn
 			fi, err := func() (*sppb.GoFileInfo, error) {
 				fi := &sppb.GoFileInfo{}
 				if s.FileCache.Get(sha, fi) {
-					log.Printf("Cache for %v found!", calcFullPath(user, repo, path, fn))
+					log.Printf("Cache for %v found(sha:%q)", calcFullPath(user, repo, path, fn), sha)
 					return fi, nil
 				}
 				body, err := s.getFile(user, repo, cPath)
@@ -400,6 +400,7 @@ func (s *Spider) ReadPackage(user, repo, path string) (*Package, []*gpb.FolderIn
 					parseGoFile(cPath, body, fi)
 				}
 				s.FileCache.Set(sha, fi)
+				log.Printf("Save file cache for %v (sha:%q)", calcFullPath(user, repo, path, fn), sha)
 				return fi, nil
 			}()
 			if err != nil {
