@@ -14,6 +14,7 @@ for _, app := range APPS {
 
 Println("go test -a")
 MustSucc(Bash("go test -a"))
+Println("go test store/*.go -a")
 MustSucc(Bash("go test store/*.go -a"))
 
 for _, app := range APPS {

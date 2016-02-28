@@ -365,6 +365,7 @@ func CrawlRepoInfo(site, user, name string) *stpb.RepoInfo {
 		log.Printf("FetchRepoInfo %v %v %v failed: %v", site, user, name, err)
 	} else {
 		if r != nil && store.RepoInfoAge(r) < maxRepoInfoAge {
+			log.Printf("Repo cache of %s/%s/%s hit", site, user, name)
 			bi.Inc("crawler.repocache.hit")
 			return r
 		}
@@ -387,6 +388,7 @@ func CrawlRepoInfo(site, user, name string) *stpb.RepoInfo {
 	if err := store.SaveRepoInfo(site, user, name, r); err != nil {
 		log.Printf("SaveRepoInfo %v %v %v failed: %v", site, user, name, err)
 	}
+	log.Printf("Repo cache of %s/%s/%s saved", site, user, name)
 	return r
 }
 
@@ -558,6 +560,8 @@ func CrawlPerson(httpClient doc.HttpClient, id string) (*Person, error) {
 					Description: r.Description,
 				}); err != nil {
 					log.Printf("SaveRepoInfo %v %v %v failed: %v", site, username, r.Name, err)
+				} else {
+					log.Printf("Repo cache of %s/%s/%s saved", site, username, r.Name)
 				}
 			}
 			return p, nil
