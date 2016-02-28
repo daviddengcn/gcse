@@ -10,7 +10,7 @@ import (
 	"github.com/daviddengcn/gcse/configs"
 	"github.com/daviddengcn/go-villa"
 
-	stpb "github.com/daviddengcn/gcse/proto"
+	stpb "github.com/daviddengcn/gcse/proto/store"
 )
 
 func init() {
@@ -30,12 +30,12 @@ func TestStoreDeleteRepoInfo(t *testing.T) {
 	assert.NoError(t, SaveRepoInfo(site, user, path, &stpb.RepoInfo{Stars: 123, Description: "hello"}))
 	r, err := FetchRepoInfo(site, user, path)
 	assert.NoError(t, err)
-	assert.Equal(t, "r", r, &stpb.RepoInfo{Stars: 123, Description: "helloa"})
+	assert.Equal(t, "r", r, &stpb.RepoInfo{Stars: 123, Description: "hello"})
 
 	assert.NoError(t, DeleteRepoInfo(site, user, path))
 	r, err = FetchRepoInfo("example.com", user, path)
 	assert.NoError(t, err)
-	assert.Equal(t, "r", r, stpb.RepoInfo{})
+	assert.Equal(t, "r", r, (*stpb.RepoInfo)(nil))
 }
 
 func TestForEachReposInSite(t *testing.T) {

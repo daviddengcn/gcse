@@ -38,6 +38,7 @@ func TimestampProto(t time.Time) *tspb.Timestamp {
 	return ts
 }
 
+// return nil without error if cache not found.
 func FetchRepoInfo(site, user, path string) (*stpb.RepoInfo, error) {
 	var r *stpb.RepoInfo
 	if err := box.View(func(tx bh.Tx) error {
