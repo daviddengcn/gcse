@@ -12,14 +12,15 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 
+	sppb "github.com/daviddengcn/gcse/proto/spider"
 	stpb "github.com/daviddengcn/gcse/proto/store"
-	tspb "github.com/golang/protobuf/ptypes/timestamp"
 )
 
 var (
-	// repo
-	//   - <repo-path> -> RepoInfo
-	repoRoot = []byte("repo")
+	// pkgs
+	//   - <site>
+	//     - <path> -> PackageInfo
+	pkgsRoot = []byte("pkgs")
 )
 
 var box = bh.RefCountBox{
@@ -28,60 +29,59 @@ var box = bh.RefCountBox{
 	},
 }
 
-func RepoInfoAge(r *stpb.RepoInfo) time.Duration {
+func RepoInfoAge(r *sppb.RepoInfo) time.Duration {
 	t, _ := ptypes.Timestamp(r.LastCrawled)
 	return time.Now().Sub(t)
 }
 
-func TimestampProto(t time.Time) *tspb.Timestamp {
-	ts, _ := ptypes.TimestampProto(t)
-	return ts
-}
-
-// return nil without error if cache not found.
-func FetchRepoInfo(site, user, path string) (*stpb.RepoInfo, error) {
-	var r *stpb.RepoInfo
+// Returns an empty (non-nil) PackageInfo if not found.
+func ReadPackage(site, path string) (*stpb.PackageInfo, error) {
+	info := &stpb.PackageInfo{}
 	if err := box.View(func(tx bh.Tx) error {
-		return tx.Value([][]byte{repoRoot, []byte(site), []byte(user), []byte(path)}, func(v bytesp.Slice) error {
-			r = &stpb.RepoInfo{}
-			return errorsp.WithStacksAndMessage(proto.Unmarshal(v, r), "len = %d", len(v))
+		return tx.Value([][]byte{pkgsRoot, []byte(site), []byte(path)}, func(bs bytesp.Slice) error {
+			if err := errorsp.WithStacksAndMessage(proto.Unmarshal(bs, info), "Unmarshal %d bytes failed", len(bs)); err != nil {
+				log.Printf("Unmarshal failed: %v", err)
+				*info = stpb.PackageInfo{}
+			}
+			return nil
 		})
 	}); err != nil {
 		return nil, err
 	}
-	return r, nil
+	return info, nil
 }
 
-func ForEachReposInSite(site string, f func(user, path string, info *stpb.RepoInfo) error) error {
-	return box.View(func(tx bh.Tx) error {
-		return tx.ForEach([][]byte{repoRoot, []byte(site)}, func(b bh.Bucket, user, v bytesp.Slice) error {
-			if v != nil {
-				return nil
-			}
-			return b.ForEach([][]byte{user}, func(path bytesp.Slice, v bytesp.Slice) error {
-				r := &stpb.RepoInfo{}
-				if err := errorsp.WithStacksAndMessage(proto.Unmarshal(v, r), "len = %d", len(v)); err != nil {
-					log.Printf("Unmarshal RepoInfo for %s failed: %v, ignored", string(path), err)
-					return nil
-				}
-				return f(string(user), string(path), r)
-			})
-		})
-	})
-}
-
-func SaveRepoInfo(site, user, path string, r *stpb.RepoInfo) error {
+func UpdatePackage(site, path string, f func(*stpb.PackageInfo) error) error {
 	return box.Update(func(tx bh.Tx) error {
-		bs, err := proto.Marshal(r)
+		b, err := tx.CreateBucketIfNotExists([][]byte{pkgsRoot, []byte(site)})
 		if err != nil {
-			return errorsp.WithStacksAndMessage(err, "marshal %v", r)
+			return err
 		}
-		return tx.Put([][]byte{repoRoot, []byte(site), []byte(user), []byte(path)}, bs)
+		info := &stpb.PackageInfo{}
+		if err := b.Value([][]byte{[]byte(path)}, func(bs bytesp.Slice) error {
+			err := errorsp.WithStacksAndMessage(proto.Unmarshal(bs, info), "Unmarshal %d bytes", len(bs))
+			if err != nil {
+				log.Printf("Unmarshaling failed: %v", err)
+				*info = stpb.PackageInfo{}
+			}
+			return nil
+		}); err != nil {
+			return err
+		}
+		if err := errorsp.WithStacks(f(info)); err != nil {
+			return err
+		}
+		bs, err := proto.Marshal(info)
+		if err != nil {
+			return errorsp.WithStacksAndMessage(err, "marshaling %v failed: %v", info, err)
+		}
+		return b.Put([][]byte{[]byte(path)}, bs)
 	})
 }
 
-func DeleteRepoInfo(site, user, path string) error {
+func DeletePackage(site, path string) error {
+	// TODO delete sub folders as well
 	return box.Update(func(tx bh.Tx) error {
-		return tx.Delete([][]byte{repoRoot, []byte(site), []byte(user), []byte(path)})
+		return tx.Delete([][]byte{pkgsRoot, []byte(site), []byte(path)})
 	})
 }

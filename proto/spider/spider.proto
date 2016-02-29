@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package gcse.spider;
 
+import "github.com/golang/protobuf/ptypes/timestamp/timestamp.proto";
+
 message GoFileInfo {
 	enum Status {
 		Unknown      = 0;
@@ -9,11 +11,35 @@ message GoFileInfo {
 		ParseFailed  = 2;
 		ShouldIgnore = 3;
 	}
-
 	Status status = 1;
 
 	string          name        = 2;
 	string          description = 3;
 	bool            is_test     = 4;
 	repeated string imports     = 5;
+}
+
+message RepoInfo {
+	google.protobuf.Timestamp last_crawled = 1;
+
+	int32  stars       = 2;
+	string description = 3;
+	// Where this project was forked from, full path
+	string source      = 5;
+	google.protobuf.Timestamp last_updated = 4;
+}
+
+// Information for non-repository folder.
+message FolderInfo {
+	// E.g. "spider"
+	string name = 1;
+
+	// E.g. "spider/github"
+	string path = 2;
+
+	string sha = 3;
+	string html_url = 4;
+
+	// The timestamp this folder-info is crawled
+	google.protobuf.Timestamp crawling_time = 5;
 }

@@ -3,10 +3,27 @@ syntax = "proto3";
 package gcse.store;
 
 import "github.com/golang/protobuf/ptypes/timestamp/timestamp.proto";
+import "github.com/daviddengcn/gcse/proto/spider/spider.proto";
 
-message RepoInfo {
-	google.protobuf.Timestamp last_crawled = 1;
+message PackageInfo {
+	string name = 1;
+	string package = 2;
+	string author = 3;
+	int32 stars = 4;
+	string synopsis = 5;
+	string description = 6;
+	string project_url = 7;
+	string readme_fn = 8;
+	string readme_data = 9;
+	repeated string imports = 10;
+	repeated string test_imports = 11;
+	repeated string exported = 12;
 
-	int32  stars       = 2;
-	string description = 3;
+	google.protobuf.Timestamp last_crawled = 13;
+
+	// Available if the package is the repo's root.
+	gcse.spider.FolderInfo folder_info = 14;
+
+	// Available if the package is a repo's root.
+	gcse.spider.RepoInfo repo_info = 15;
 }

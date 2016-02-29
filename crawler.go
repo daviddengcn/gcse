@@ -29,16 +29,14 @@ import (
 	"github.com/daviddengcn/go-villa"
 	"github.com/daviddengcn/sophie"
 	"github.com/golang/gddo/gosrc"
-	"github.com/golang/protobuf/ptypes"
 
-	gpb "github.com/daviddengcn/gcse/proto/spider/github"
+	sppb "github.com/daviddengcn/gcse/proto/spider"
 	stpb "github.com/daviddengcn/gcse/proto/store"
 	glgddo "github.com/golang/gddo/doc"
 )
 
 const (
 	fnLinks = "links.json"
-
 	/*
 		Increase this to ignore etag of last versions to crawl and parse all
 		packages.
@@ -358,38 +356,38 @@ var GithubSpider *github.Spider
 
 const maxRepoInfoAge = 2 * timep.Day
 
-func CrawlRepoInfo(site, user, name string) *stpb.RepoInfo {
+func CrawlRepoInfo(site, user, name string) *sppb.RepoInfo {
 	// Check cache in store.
-	r, err := store.FetchRepoInfo(site, user, name)
+	path := user + "/" + name
+	p, err := store.ReadPackage(site, path)
 	if err != nil {
-		log.Printf("FetchRepoInfo %v %v %v failed: %v", site, user, name, err)
+		log.Printf("ReadPackage %v %v failed: %v", site, path, err)
 	} else {
-		if r != nil && store.RepoInfoAge(r) < maxRepoInfoAge {
-			log.Printf("Repo cache of %s/%s/%s hit", site, user, name)
+		if p.RepoInfo != nil && store.RepoInfoAge(p.RepoInfo) < maxRepoInfoAge {
+			log.Printf("Repo cache of %s/%s hit", site, path)
 			bi.Inc("crawler.repocache.hit")
-			return r
+			return p.RepoInfo
 		}
 	}
 	bi.Inc("crawler.repocache.miss")
-	rp, err := GithubSpider.ReadRepository(user, name, false)
+	ri, err := GithubSpider.ReadRepository(user, name)
 	if err != nil {
 		if errorsp.Cause(err) == github.ErrInvalidRepository {
-			if err := store.DeleteRepoInfo(site, user, name); err != nil {
-				log.Printf("DeleteRepoInfo %v %v %v failed: %v", site, user, name, err)
+			if err := store.DeletePackage(site, path); err != nil {
+				log.Printf("DeleteRepoInfo %v %v failed: %v", site, path, err)
 			}
 		}
 		return nil
 	}
-	r = &stpb.RepoInfo{
-		Stars:       int32(rp.Stars),
-		Description: rp.Description,
+	if err := store.UpdatePackage(site, path, func(info *stpb.PackageInfo) error {
+		info.RepoInfo = ri
+		return nil
+	}); err != nil {
+		log.Printf("UpdatePackage %v %v failed: %v", site, path, err)
+	} else {
+		log.Printf("UpdatePackage %s %s success", site, path)
 	}
-	r.LastCrawled, _ = ptypes.TimestampProto(time.Now())
-	if err := store.SaveRepoInfo(site, user, name, r); err != nil {
-		log.Printf("SaveRepoInfo %v %v %v failed: %v", site, user, name, err)
-	}
-	log.Printf("Repo cache of %s/%s/%s saved", site, user, name)
-	return r
+	return ri
 }
 
 func getGithubStars(user, name string) int {
@@ -400,7 +398,7 @@ func getGithubStars(user, name string) int {
 	return -1
 }
 
-func getGithub(pkg string) (*doc.Package, []*gpb.FolderInfo, error) {
+func getGithub(pkg string) (*doc.Package, []*sppb.FolderInfo, error) {
 	parts := strings.SplitN(pkg, "/", 4)
 	for len(parts) < 4 {
 		parts = append(parts, "")
@@ -429,7 +427,7 @@ func getGithub(pkg string) (*doc.Package, []*gpb.FolderInfo, error) {
 	}, folders, nil
 }
 
-func CrawlPackage(httpClient doc.HttpClient, pkg string, etag string) (p *Package, folders []*gpb.FolderInfo, err error) {
+func CrawlPackage(httpClient doc.HttpClient, pkg string, etag string) (p *Package, folders []*sppb.FolderInfo, err error) {
 	defer func() {
 		if err := recover(); err != nil {
 			p, err = nil, errorsp.WithStacks(fmt.Errorf("Panic when crawling package %s: %v", pkg, err))
@@ -541,42 +539,29 @@ type Person struct {
 }
 
 func CrawlPerson(httpClient doc.HttpClient, id string) (*Person, error) {
-	site, username := ParsePersonId(id)
+	site, user := ParsePersonId(id)
 	switch site {
 	case "github.com":
-		if GithubSpider != nil {
-			u, err := GithubSpider.ReadUser(username)
-			if err != nil {
-				return nil, errorsp.WithStacksAndMessage(err, "ReadUser %s failed", id)
-			}
-			p := &Person{Id: id}
-			for _, r := range u.Repos {
-				repoUrl := fmt.Sprintf("github.com/%s/%s", username, r.Name)
-				p.Packages = append(p.Packages, repoUrl)
-				if err := store.SaveRepoInfo(site, username, r.Name, &stpb.RepoInfo{
-					LastCrawled: store.TimestampProto(time.Now()),
-
-					Stars:       int32(r.Stars),
-					Description: r.Description,
-				}); err != nil {
-					log.Printf("SaveRepoInfo %v %v %v failed: %v", site, username, r.Name, err)
-				} else {
-					log.Printf("Repo cache of %s/%s/%s saved", site, username, r.Name)
-				}
-			}
-			return p, nil
-		} else {
-			p, err := doc.GetGithubPerson(httpClient, map[string]string{"owner": username})
-			if err != nil {
-				return nil, errorsp.WithStacks(err)
-			}
-			return &Person{
-				Id:       id,
-				Packages: p.Projects,
-			}, nil
+		u, err := GithubSpider.ReadUser(user)
+		if err != nil {
+			return nil, errorsp.WithStacksAndMessage(err, "ReadUser %s failed", id)
 		}
+		p := &Person{Id: id}
+		for name, ri := range u.Repos {
+			path := user + "/" + name
+			p.Packages = append(p.Packages, "github.com/"+path)
+			if err := store.UpdatePackage(site, path, func(info *stpb.PackageInfo) error {
+				info.RepoInfo = ri
+				return nil
+			}); err != nil {
+				log.Printf("UpdatePackage %v %v failed: %v", site, path, err)
+			} else {
+				log.Printf("UpdatePackage %v %v success", site, path)
+			}
+		}
+		return p, nil
 	case "bitbucket.org":
-		p, err := doc.GetBitbucketPerson(httpClient, map[string]string{"owner": username})
+		p, err := doc.GetBitbucketPerson(httpClient, map[string]string{"owner": user})
 		if err != nil {
 			return nil, errorsp.WithStacks(err)
 		}
@@ -585,7 +570,6 @@ func CrawlPerson(httpClient doc.HttpClient, id string) (*Person, error) {
 			Packages: p.Projects,
 		}, nil
 	}
-
 	return nil, nil
 }
 

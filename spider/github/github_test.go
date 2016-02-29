@@ -22,9 +22,9 @@ func TestReadRepository(t *testing.T) {
 	s := NewSpiderWithToken("")
 	assert.Should(t, s != nil, "s == nil")
 
-	repo, err := s.ReadRepository("daviddengcn", "gosl", true)
+	repo, err := s.ReadRepository("daviddengcn", "gosl")
 	assert.NoErrorOrDie(t, err)
-	assert.ValueShould(t, "len(repo.Packages)", len(repo.Packages), len(repo.Packages) > 0, "> 0")
+	assert.ValueShould(t, "repo.Stars", repo.Stars, repo.Stars > 0, "> 0")
 }
 
 func TestReadPackage(t *testing.T) {

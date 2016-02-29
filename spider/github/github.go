@@ -12,13 +12,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang/protobuf/ptypes"
 	"github.com/golangplus/errors"
 	"github.com/golangplus/strings"
 	"github.com/golangplus/time"
 	"golang.org/x/oauth2"
 
 	sppb "github.com/daviddengcn/gcse/proto/spider"
-	gpb "github.com/daviddengcn/gcse/proto/spider/github"
 
 	"github.com/daviddengcn/gcse/spider"
 	"github.com/google/go-github/github"
@@ -48,15 +48,8 @@ func NewSpiderWithToken(token string) *Spider {
 	}
 }
 
-type RepoInfo struct {
-	Name        string
-	Description string
-	Stars       int
-	PushedAt    time.Time
-}
-
 type User struct {
-	Repos []RepoInfo
+	Repos map[string]*sppb.RepoInfo
 }
 
 func (s *Spider) waitForRate() {
@@ -72,6 +65,19 @@ func (s *Spider) waitForRate() {
 	timep.SleepUntil(r.Reset.Time)
 }
 
+func repoInfoFromGithub(repo *github.Repository) *sppb.RepoInfo {
+	ri := &sppb.RepoInfo{
+		Description: stringsp.Get(repo.Description),
+		Stars:       int32(getInt(repo.StargazersCount)),
+	}
+	ri.LastCrawled, _ = ptypes.TimestampProto(time.Now())
+	ri.LastUpdated, _ = ptypes.TimestampProto(getTimestamp(repo.PushedAt).Time)
+	if repo.Source != nil {
+		ri.Source = stringsp.Get(repo.Source.Name)
+	}
+	return ri
+}
+
 func (s *Spider) ReadUser(name string) (*User, error) {
 	s.waitForRate()
 	repos, _, err := s.client.Repositories.List(name, nil)
@@ -84,50 +90,15 @@ func (s *Spider) ReadUser(name string) (*User, error) {
 		if repoName == "" {
 			continue
 		}
-		user.Repos = append(user.Repos, RepoInfo{
-			Name:        repoName,
-			Description: getString(repo.Description),
-			Stars:       getInt(repo.StargazersCount),
-			PushedAt:    getTimestamp(repo.PushedAt).Time,
-		})
+		if user.Repos == nil {
+			user.Repos = make(map[string]*sppb.RepoInfo)
+		}
+		user.Repos[repoName] = repoInfoFromGithub(&repo)
 	}
 	return user, nil
 }
 
-type Repository struct {
-	Description string
-	Stars       int
-	PushedAt    time.Time
-
-	Source string // Where this project was forked from, full path
-
-	Packages []Package
-}
-
-type Package struct {
-	Name        string // package "name"
-	Path        string // Relative path to the repository
-	Description string
-	ReadmeFn    string // No directory info
-	ReadmeData  string // Raw content, cound be md, txt, etc.
-	Imports     []string
-	TestImports []string
-	URL         string
-}
-
-func repositoryFromGithub(gr *github.Repository) *Repository {
-	r := &Repository{
-		Description: getString(gr.Description),
-		Stars:       getInt(gr.StargazersCount),
-		PushedAt:    gr.PushedAt.Time,
-	}
-	if gr.Source != nil {
-		r.Source = getString(gr.Source.Name)
-	}
-	return r
-}
-
-func (s *Spider) ReadRepository(user, name string, scanPackages bool) (*Repository, error) {
+func (s *Spider) ReadRepository(user, name string) (*sppb.RepoInfo, error) {
 	s.waitForRate()
 	repo, _, err := s.client.Repositories.Get(user, name)
 	if err != nil {
@@ -136,14 +107,7 @@ func (s *Spider) ReadRepository(user, name string, scanPackages bool) (*Reposito
 		}
 		return nil, errorsp.WithStacks(err)
 	}
-	r := repositoryFromGithub(repo)
-	if scanPackages {
-		r.Packages, err = s.appendPackages(user, name, "", getString(repo.HTMLURL), nil)
-		if err != nil {
-			return nil, errorsp.WithStacks(err)
-		}
-	}
-	return r, nil
+	return repoInfoFromGithub(repo), nil
 }
 
 func (s *Spider) getFile(user, repo, path string) ([]byte, error) {
@@ -159,89 +123,6 @@ func (s *Spider) getFile(user, repo, path string) ([]byte, error) {
 func isReadmeFile(fn string) bool {
 	fn = fn[:len(fn)-len(path.Ext(fn))]
 	return strings.ToLower(fn) == "readme"
-}
-
-func (s *Spider) appendPackages(user, repo, path, url string, pkgs []Package) ([]Package, error) {
-	s.waitForRate()
-	_, cs, _, err := s.client.Repositories.GetContents(user, repo, path, nil)
-	if err != nil {
-		return nil, errorsp.WithStacks(err)
-	}
-	pkg := Package{
-		Path: path,
-		URL:  url,
-	}
-	var imports stringsp.Set
-	var testImports stringsp.Set
-	// Process files
-	for _, c := range cs {
-		if getString(c.Type) != "file" {
-			continue
-		}
-		fn := getString(c.Name)
-		cPath := path + "/" + fn
-		switch {
-		case strings.HasSuffix(fn, ".go"):
-			body, err := s.getFile(user, repo, cPath)
-			if err != nil {
-				return nil, err
-			}
-			fs := token.NewFileSet()
-			goF, err := parser.ParseFile(fs, "", body, parser.ImportsOnly|parser.ParseComments)
-			if err != nil {
-				continue
-			}
-			isTest := strings.HasSuffix(fn, "_test.go")
-			for _, imp := range goF.Imports {
-				p, _ := strconv.Unquote(imp.Path.Value)
-				if isTest {
-					testImports.Add(p)
-				} else {
-					imports.Add(p)
-				}
-			}
-			if !isTest {
-				if pkg.Name == "" {
-					pkg.Name = goF.Name.Name
-				} else if pkg.Name != goF.Name.Name {
-					// A folder containing different packages are not ready for importing, ignored.
-					pkg.Name = ""
-					break
-				}
-				if goF.Doc != nil {
-					if pkg.Description != "" && !strings.HasSuffix(pkg.Description, "\n") {
-						pkg.Description += "\n"
-					}
-					pkg.Description += goF.Doc.Text()
-				}
-			}
-		case isReadmeFile(fn):
-			body, err := s.getFile(user, repo, cPath)
-			if err != nil {
-				log.Printf("Get file %v failed: %v", cPath, err)
-				continue
-			}
-			pkg.ReadmeFn = fn
-			pkg.ReadmeData = string(body)
-		}
-	}
-	if pkg.Name != "" {
-		pkg.Imports = imports.Elements()
-		pkg.TestImports = testImports.Elements()
-		pkgs = append(pkgs, pkg)
-	}
-	// Process directories
-	for _, c := range cs {
-		if getString(c.Type) != "dir" {
-			continue
-		}
-		var err error
-		pkgs, err = s.appendPackages(user, repo, path+"/"+getString(c.Name), getString(c.HTMLURL), pkgs)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return pkgs, nil
 }
 
 var buildTags stringsp.Set = stringsp.NewSet("linux", "386", "darwin", "cgo")
@@ -334,8 +215,8 @@ func isNotFound(err error) bool {
 	return errResp.Response.StatusCode == http.StatusNotFound
 }
 
-func folderInfoFromGithub(rc *github.RepositoryContent) *gpb.FolderInfo {
-	return &gpb.FolderInfo{
+func folderInfoFromGithub(rc *github.RepositoryContent) *sppb.FolderInfo {
+	return &sppb.FolderInfo{
 		Name:    getString(rc.Name),
 		Path:    getString(rc.Path),
 		Sha:     getString(rc.SHA),
@@ -343,8 +224,18 @@ func folderInfoFromGithub(rc *github.RepositoryContent) *gpb.FolderInfo {
 	}
 }
 
+type Package struct {
+	Name        string // package "name"
+	Path        string // Relative path to the repository
+	Description string
+	ReadmeFn    string // No directory info
+	ReadmeData  string // Raw content, cound be md, txt, etc.
+	Imports     []string
+	TestImports []string
+}
+
 // Even an error is returned, the folders may still contain useful elements.
-func (s *Spider) ReadPackage(user, repo, path string) (*Package, []*gpb.FolderInfo, error) {
+func (s *Spider) ReadPackage(user, repo, path string) (*Package, []*sppb.FolderInfo, error) {
 	s.waitForRate()
 	_, cs, _, err := s.client.Repositories.GetContents(user, repo, path, nil)
 	if err != nil {
@@ -357,7 +248,7 @@ func (s *Spider) ReadPackage(user, repo, path string) (*Package, []*gpb.FolderIn
 		errResp, _ := errorsp.Cause(err).(*github.ErrorResponse)
 		return nil, nil, errorsp.WithStacksAndMessage(err, "GetContents %v %v %v failed: %v", user, repo, path, errResp)
 	}
-	var folders []*gpb.FolderInfo
+	var folders []*sppb.FolderInfo
 	for _, c := range cs {
 		if getString(c.Type) != "dir" {
 			continue
