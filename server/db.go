@@ -75,14 +75,19 @@ func (db *searcherDB) FindFullPackage(id string) (gcse.HitInfo, bool) {
 		return gcse.HitInfo{}, false
 	}
 	var hit gcse.HitInfo
+	found := false
 	if err := db.ts.Search(index.SingleFieldQuery(gcse.IndexPkgField, id), func(docID int32, _ interface{}) error {
 		h, err := db.hits.GetGob(int(docID))
 		if err != nil {
 			return err
 		}
 		hit = h.(gcse.HitInfo)
+		found = true
 		return nil
 	}); err != nil {
+		return gcse.HitInfo{}, false
+	}
+	if !found {
 		return gcse.HitInfo{}, false
 	}
 	return hit, true

@@ -62,8 +62,6 @@ func reloadTemplates() {
 func init() {
 	log.SetFlags(log.Flags() | log.Lmicroseconds)
 
-	loadTemplates()
-
 	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir(configs.ServerRoot.Join("css").S()))))
 	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir(configs.ServerRoot.Join("js").S()))))
 	http.Handle("/images/", http.StripPrefix("/images/", http.FileServer(http.Dir(configs.ServerRoot.Join("images").S()))))
@@ -144,6 +142,8 @@ func main() {
 	}
 	go loadIndexLoop()
 	go processBi()
+
+	loadTemplates()
 
 	log.Printf("ListenAndServe at %s ...", configs.ServerAddr)
 
