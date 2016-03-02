@@ -61,7 +61,7 @@ func (s *Spider) waitForRate() {
 	if r.Remaining > 0 {
 		return
 	}
-	log.Printf("Quota used up, sleep until %v", r.Reset.Time)
+	log.Printf("Quota used up (limit = %d), sleep until %v", r.Limit, r.Reset.Time)
 	timep.SleepUntil(r.Reset.Time)
 }
 
