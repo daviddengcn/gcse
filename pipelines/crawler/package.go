@@ -12,6 +12,7 @@ import (
 
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/gcse/configs"
+	"github.com/daviddengcn/gcse/spider"
 	"github.com/daviddengcn/gddo/doc"
 	"github.com/daviddengcn/go-easybi"
 	"github.com/daviddengcn/sophie"
@@ -116,7 +117,9 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter, c []sophie.Collector
 
 	p, flds, err := gcse.CrawlPackage(pc.httpClient, pkg, ent.Etag)
 	for _, fld := range flds {
-		appendPackage(pkg + "/" + fld.Path)
+		if spider.LikeGoSubFolder(fld.Name) {
+			appendPackage(pkg + "/" + fld.Path)
+		}
 	}
 	if err != nil && err != gcse.ErrPackageNotModifed {
 		log.Printf("[Part %d] Crawling pkg %s failed: %v", pc.part, pkg, err)

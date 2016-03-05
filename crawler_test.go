@@ -27,10 +27,7 @@ func TestReadmeToText_Panic(t *testing.T) {
 func TestPlusone(t *testing.T) {
 	url := "http://www.google.com/"
 	cnt, err := Plusone(http.DefaultClient, url)
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	assert.NoError(t, err)
 	t.Logf("Plusone of %s: %d", url, cnt)
 	if cnt <= 0 {
 		t.Errorf("Zero Plusone count for %s", url)

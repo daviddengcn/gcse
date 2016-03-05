@@ -8,6 +8,7 @@ import (
 	"unicode"
 
 	"github.com/golangplus/bytes"
+	"github.com/golangplus/errors"
 	"github.com/golangplus/strings"
 
 	"github.com/agonopol/go-stem"
@@ -38,13 +39,13 @@ func NewDocInfo() sophie.Sophier {
 }
 
 func (d *DocInfo) WriteTo(w sophie.Writer) error {
-	return gob.NewEncoder(w).Encode(d)
+	return errorsp.WithStacks(gob.NewEncoder(w).Encode(d))
 }
 
 func (d *DocInfo) ReadFrom(r sophie.Reader, l int) error {
 	// clear before decoding, otherwise some slice will be reused
 	*d = DocInfo{}
-	return gob.NewDecoder(r).Decode(d)
+	return errorsp.WithStacks(gob.NewDecoder(r).Decode(d))
 }
 
 // HitInfo is the information provided to frontend

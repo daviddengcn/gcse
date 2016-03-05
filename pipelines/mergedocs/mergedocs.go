@@ -44,22 +44,18 @@ func main() {
 				return &mr.MapperStruct{
 					NewKeyF: sophie.NewRawString,
 					NewValF: gcse.NewDocInfo,
-					MapF: func(key, val sophie.SophieWriter,
-						c mr.PartCollector) error {
-
+					MapF: func(key, val sophie.SophieWriter, c mr.PartCollector) error {
 						pkg := key.(*sophie.RawString).String()
 						di := val.(*gcse.DocInfo)
 						act := gcse.NewDocAction{
 							Action:  gcse.NDA_ORIGINAL,
 							DocInfo: *di,
 						}
-
 						part := gcse.CalcPackagePartition(pkg, gcse.DOCS_PARTS)
 						return c.CollectTo(part, key, &act)
 					},
 				}
 			}
-
 			// Mapper for new docs
 			return &mr.MapperStruct{
 				NewKeyF: sophie.NewRawString,

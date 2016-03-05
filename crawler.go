@@ -102,7 +102,6 @@ func (br *BlackRequest) Do(req *http.Request) (*http.Response, error) {
 	if err != nil {
 		return resp, err
 	}
-
 	if resp.StatusCode == 500 {
 		log.Printf("Put %s into 500 blacklist", u)
 		r := *resp
@@ -126,7 +125,6 @@ func GenHttpClient(proxy string) doc.HttpClient {
 			tp.Proxy = http.ProxyURL(proxyURL)
 		}
 	}
-
 	return &BlackRequest{
 		badUrls: make(map[string]http.Response),
 		client: &http.Client{
@@ -148,7 +146,6 @@ func FullProjectOfPackage(pkg string) string {
 	if len(parts) == 0 {
 		return ""
 	}
-
 	switch parts[0] {
 	case "llamaslayers.net", "bazil.org":
 		if len(parts) > 2 {
@@ -225,12 +222,12 @@ func Plusone(httpClient doc.HttpClient, url string) (int, error) {
 			`[{"method":"pos.plusones.get","id":"p","params":{"nolog":true,"id": "`+
 				url+`","source":"widget","userId":"@viewer","groupId":"@self"},"jsonrpc":"2.0","key":"p","apiVersion":"v1"}]`)))
 	if err != nil {
-		return 0, err
+		return 0, errorsp.WithStacksAndMessage(err, "new request for crawling g+ of %v failed", url)
 	}
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return 0, err
+		return 0, errorsp.WithStacksAndMessage(err, "crawling g+ of %v failed", url)
 	}
 	defer resp.Body.Close()
 
@@ -245,9 +242,8 @@ func Plusone(httpClient doc.HttpClient, url string) (int, error) {
 		}
 	}
 	if err := dec.Decode(&v); err != nil {
-		return 0, err
+		return 0, errorsp.WithStacksAndMessage(err, "decoding g+ of %v failed", url)
 	}
-
 	return int(0.5 + v[0].Result.Metadata.GlobalCounts.Count), nil
 }
 
@@ -269,7 +265,6 @@ func LikeButton(httpClient doc.HttpClient, Url string) (int, error) {
 	if err := dec.Decode(&v); err != nil {
 		return 0, err
 	}
-
 	return v[Url].Shares, nil
 }
 
@@ -280,11 +275,9 @@ func fuseStars(a, b int) int {
 	if b < 0 {
 		return a
 	}
-
 	if a > b {
 		a, b = b, a
 	}
-
 	/*
 		Now, a <= b
 		Supposing half of the stargzers are shared ones. The numbers could
@@ -294,7 +287,6 @@ func fuseStars(a, b int) int {
 	if a <= b/3 {
 		return b
 	}
-
 	return (a + b) * 3 / 4
 }
 
@@ -349,7 +341,6 @@ func newDocGet(httpClient doc.HttpClient, pkg string, etag string) (p *doc.Packa
 
 		StarCount: -1,
 	}, nil
-	//	return nil, nil
 }
 
 var GithubSpider *github.Spider
@@ -434,7 +425,6 @@ func CrawlPackage(httpClient doc.HttpClient, pkg string, etag string) (p *Packag
 			log.Printf("Panic when crawling package %s: %v", pkg, err)
 		}
 	}()
-
 	var pdoc *doc.Package
 
 	if strings.HasPrefix(pkg, "thezombie.net") {
@@ -454,7 +444,6 @@ func CrawlPackage(httpClient doc.HttpClient, pkg string, etag string) (p *Packag
 	if err != nil {
 		return nil, folders, errorsp.WithStacks(err)
 	}
-
 	if pdoc.StarCount < 0 {
 		// if starcount is not fetched, choose fusion of Plusone and
 		// Like Button
@@ -467,7 +456,6 @@ func CrawlPackage(httpClient doc.HttpClient, pkg string, etag string) (p *Packag
 		}
 		pdoc.StarCount = fuseStars(plus, like)
 	}
-
 	readmeFn, readmeData := "", ""
 	for fn, data := range pdoc.ReadmeFiles {
 		readmeFn, readmeData = strings.TrimSpace(fn),
@@ -478,16 +466,13 @@ func CrawlPackage(httpClient doc.HttpClient, pkg string, etag string) (p *Packag
 			readmeFn, readmeData = "", ""
 		}
 	}
-
 	// try find synopsis from readme
 	if pdoc.Doc == "" && pdoc.Synopsis == "" {
 		pdoc.Synopsis = godoc.Synopsis(ReadmeToText(readmeFn, readmeData))
 	}
-
 	if len(readmeData) > 100*1024 {
 		readmeData = readmeData[:100*1024]
 	}
-
 	importsSet := stringsp.NewSet(pdoc.Imports...)
 	importsSet.Delete(pdoc.ImportPath)
 	imports := importsSet.Elements()
@@ -503,7 +488,6 @@ func CrawlPackage(httpClient doc.HttpClient, pkg string, etag string) (p *Packag
 	for _, t := range pdoc.Types {
 		exported.Add(t.Name)
 	}
-
 	return &Package{
 		Package:    pdoc.ImportPath,
 		Name:       pdoc.Name,
@@ -612,7 +596,6 @@ func (db PackedDocDB) Put(key string, data interface{}) {
 		log.Printf("Put %s failed: %v", key, err)
 		return
 	}
-
 	db.MemDB.Put(key, []byte(bs))
 }
 
@@ -699,12 +682,12 @@ func (nda *NewDocAction) WriteTo(w sophie.Writer) error {
 
 func (nda *NewDocAction) ReadFrom(r sophie.Reader, l int) error {
 	if err := nda.Action.ReadFrom(r, -1); err != nil {
-		return err
+		return errorsp.WithStacks(err)
 	}
 	if nda.Action == NDA_DEL {
 		return nil
 	}
-	return nda.DocInfo.ReadFrom(r, -1)
+	return errorsp.WithStacks(nda.DocInfo.ReadFrom(r, -1))
 }
 
 const (
@@ -715,29 +698,26 @@ const (
 func FetchAllPackagesInGodoc(httpClient doc.HttpClient) ([]string, error) {
 	req, err := http.NewRequest("GET", godocApiUrl, nil)
 	if err != nil {
-		return nil, err
+		return nil, errorsp.WithStacksAndMessage(err, "new request for %v failed", godocApiUrl)
 	}
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, errorsp.WithStacksAndMessage(err, "fetching %v failed", godocApiUrl)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
-		return nil, errors.New(fmt.Sprintf("StatusCode: %d", resp.StatusCode))
+		return nil, errorsp.NewWithStacks("StatusCode: %d", resp.StatusCode)
 	}
-
 	var results map[string][]map[string]string
 	dec := json.NewDecoder(resp.Body)
 
 	if err := dec.Decode(&results); err != nil {
-		return nil, err
+		return nil, errorsp.WithStacks(err)
 	}
-
 	list := make([]string, 0, len(results["results"]))
 	for _, res := range results["results"] {
 		list = append(list, res["path"])
 	}
-
 	return list, nil
 }
 

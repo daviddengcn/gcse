@@ -31,7 +31,7 @@ message RepoInfo {
 
 // Information for non-repository folder.
 message FolderInfo {
-	// E.g. "spider"
+	// E.g. "github"
 	string name = 1;
 
 	// E.g. "spider/github"
