@@ -1,26 +1,31 @@
 package store
 
 import (
-	"log"
-	"os"
 	"testing"
+	"time"
 
+	"github.com/golang/protobuf/ptypes"
 	"github.com/golangplus/testing/assert"
 
 	"github.com/daviddengcn/gcse/configs"
-	"github.com/daviddengcn/go-villa"
 
+	sppb "github.com/daviddengcn/gcse/proto/spider"
 	stpb "github.com/daviddengcn/gcse/proto/store"
 )
 
 func init() {
-	configs.DataRoot = villa.Path(os.TempDir()).Join("gcse_testing")
-	configs.DataRoot.RemoveAll()
-	configs.DataRoot.MkdirAll(0755)
-	log.Printf("DataRoot: %v", configs.DataRoot)
+	configs.SetTestingDataPath()
 }
 
-func TestUpdateReadPackage(t *testing.T) {
+func TestRepoInfoAge(t *testing.T) {
+	ts, _ := ptypes.TimestampProto(time.Now().Add(-time.Hour))
+	age := RepoInfoAge(&sppb.RepoInfo{
+		LastCrawled: ts,
+	})
+	assert.ValueShould(t, "age", age, age >= time.Hour && age < time.Hour+time.Minute, "age out of expected range")
+}
+
+func TestUpdateReadDeletePackage(t *testing.T) {
 	const (
 		site = "TestUpdateReadPackage.com"
 		path = "gcse"
@@ -34,25 +39,34 @@ func TestUpdateReadPackage(t *testing.T) {
 	pkg, err := ReadPackage(site, path)
 	assert.NoError(t, err)
 	assert.Equal(t, "pkg", pkg, &stpb.PackageInfo{Name: name})
-}
-
-func TestDeletePackage(t *testing.T) {
-	const (
-		site = "TestDeletePackage.com"
-		path = "gcse"
-		name = "pkgname"
-	)
-	assert.NoError(t, UpdatePackage(site, path, func(info *stpb.PackageInfo) error {
-		info.Name = name
-		return nil
-	}))
-	pkg, err := ReadPackage(site, path)
-	assert.NoError(t, err)
-	assert.Equal(t, "pkg", pkg, &stpb.PackageInfo{Name: name})
 
 	assert.NoError(t, DeletePackage(site, path))
 
 	pkg, err = ReadPackage(site, path)
 	assert.NoError(t, err)
 	assert.Equal(t, "pkg", pkg, &stpb.PackageInfo{})
+}
+
+func TestUpdateReadDeletePerson(t *testing.T) {
+	const (
+		site = "TestUpdateReadDeletePerson.com"
+		id   = "daviddengcn"
+		etag = "tag"
+	)
+	assert.NoError(t, UpdatePerson(site, id, func(info *stpb.PersonInfo) error {
+		assert.Equal(t, "info", info, &stpb.PersonInfo{})
+		info.CrawlingInfo = &sppb.CrawlingInfo{
+			Etag: etag,
+		}
+		return nil
+	}))
+	p, err := ReadPerson(site, id)
+	assert.NoError(t, err)
+	assert.Equal(t, "p", p, &stpb.PersonInfo{CrawlingInfo: &sppb.CrawlingInfo{Etag: etag}})
+
+	assert.NoError(t, DeletePerson(site, id))
+
+	p, err = ReadPerson(site, id)
+	assert.NoError(t, err)
+	assert.Equal(t, "p", p, &stpb.PersonInfo{})
 }

@@ -1,0 +1,18 @@
+{{template "header.html" .UIUtils.Slice "Crawl Histotry" "crawlhistory"}}
+{{if .FoundTime}}
+<div class="jumbotron">
+	Found at <b>{{.FoundTime}}</b> by <b>{{.FoundWay}}</b>
+</div>
+<div>
+</div>{{end}}
+<table class="table">
+<thead>
+<tr><th>Time</th><th>Action</th></tr>
+</thead>
+<tbody>
+{{range .Events}}
+<tr><td>{{.Time}}</td><td>{{.Action}}</td></tr>
+{{end}}
+</tbody>
+</table>
+{{template "footer.html"}}

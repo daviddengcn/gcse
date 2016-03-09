@@ -14,8 +14,10 @@ for _, a := range APPS {
 
 Println("go test -a")
 MustSucc(Bash("go test -a"))
-Println("go test store/*.go -a")
-MustSucc(Bash("go test store/*.go -a"))
+Println("go test store/*.go")
+MustSucc(Bash("go test store/*.go"))
+Println("go test spider/*.go")
+MustSucc(Bash("go test spider/*.go"))
 
 for _, a := range APPS {
   Printfln("go install -a %s/%s", GCSE, a)

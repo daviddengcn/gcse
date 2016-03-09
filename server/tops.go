@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/golangplus/container/heap"
@@ -175,5 +177,24 @@ func statTops(N int) []StatList {
 	}
 	return []StatList{
 		tlStaticScore, tlTestStatic, tlImported, tlSites,
+	}
+}
+
+func pageTops(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
+
+	N, _ := strconv.Atoi(r.FormValue("len"))
+	if N < 20 {
+		N = 20
+	} else if N > 100 {
+		N = 100
+	}
+	if err := templates.ExecuteTemplate(w, "tops.html", struct {
+		UIUtils
+		Lists []StatList
+	}{
+		Lists: statTops(N),
+	}); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }

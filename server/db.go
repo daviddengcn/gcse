@@ -9,9 +9,15 @@ import (
 
 	"github.com/golangplus/strings"
 
+	"github.com/daviddengcn/bolthelper"
 	"github.com/daviddengcn/gcse"
+	"github.com/daviddengcn/gcse/configs"
+	"github.com/daviddengcn/gcse/store"
+	"github.com/daviddengcn/gcse/utils"
 	"github.com/daviddengcn/go-easybi"
 	"github.com/daviddengcn/go-index"
+
+	sppb "github.com/daviddengcn/gcse/proto/spider"
 )
 
 var (
@@ -29,6 +35,7 @@ type database interface {
 	ForEachFullPackage(func(gcse.HitInfo) error) error
 	PackageCountOfToken(field, token string) int
 	Search(q map[string]stringsp.Set, out func(docID int32, data interface{}) error) error
+	PackageCrawlHistory(pkg string) *sppb.HistoryInfo
 }
 
 type searcherDB struct {
@@ -37,6 +44,8 @@ type searcherDB struct {
 
 	projectCount int
 	indexUpdated time.Time
+
+	storeDB *bh.RefCountBox
 }
 
 func (db *searcherDB) PackageCount() int {
@@ -116,6 +125,16 @@ func (db *searcherDB) Search(q map[string]stringsp.Set, out func(docID int32, da
 	return db.ts.Search(q, out)
 }
 
+func (db *searcherDB) PackageCrawlHistory(pkg string) *sppb.HistoryInfo {
+	site, path := utils.SplitPackage(pkg)
+	info, err := store.ReadPackageHistoryOf(db.storeDB, site, path)
+	if err != nil {
+		log.Printf("ReadPackageHistoryOf %s %s failed: %v", site, path, err)
+		return nil
+	}
+	return info
+}
+
 func getDatabase() database {
 	db, ok := databaseValue.Load().(database)
 	if !ok {
@@ -144,6 +163,11 @@ func loadIndex() error {
 		return db.ts.Load(f)
 	}(); err != nil {
 		return err
+	}
+	db.storeDB = &bh.RefCountBox{
+		DataPath: func() string {
+			return segm.Join(configs.FnStore).S()
+		},
 	}
 	hitsPath := segm.Join(gcse.HitsArrFn)
 	if db.hits, err = index.OpenConstArray(hitsPath.S()); err != nil {
@@ -190,5 +214,12 @@ func loadIndexLoop() {
 		}
 		bi.AddValue(bi.Max, "search.age_in_hours", int(time.Now().Sub(getDatabase().IndexUpdated()).Hours()))
 		bi.AddValue(bi.Max, "search.age_in_mins", int(time.Now().Sub(getDatabase().IndexUpdated()).Minutes()))
+	}
+}
+
+func processBi() {
+	for {
+		bi.Process()
+		time.Sleep(time.Minute)
 	}
 }

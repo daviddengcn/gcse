@@ -1,7 +1,9 @@
+// Package configs define and load all configurations. It depends on no othe GCSE packages.
 package configs
 
 import (
 	"log"
+	"os"
 	"time"
 
 	"github.com/golangplus/strings"
@@ -20,6 +22,8 @@ const (
 	// key: RawString, value: DocInfo
 	FnDocs    = "docs"
 	FnNewDocs = "newdocs"
+
+	FnStore = "store"
 )
 
 var (
@@ -102,4 +106,11 @@ func CrawlerDBPath() villa.Path {
 
 func DocsDBPath() villa.Path {
 	return DataRoot.Join(FnDocs)
+}
+
+func SetTestingDataPath() {
+	DataRoot = villa.Path(os.TempDir()).Join("gcse_testing")
+	DataRoot.RemoveAll()
+	DataRoot.MkdirAll(0755)
+	log.Printf("DataRoot: %v", DataRoot)
 }

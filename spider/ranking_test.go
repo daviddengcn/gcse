@@ -14,7 +14,6 @@ func TestLikeGoSubFolder(t *testing.T) {
 	for _, c := range pos_cases {
 		assert.True(t, fmt.Sprintf("LikeGoSubFolder %v", c), LikeGoSubFolder(c))
 	}
-
 	neg_cases := []string{
 		"js", "1234", "1234-5678", "1234_5678",
 	}

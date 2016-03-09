@@ -31,10 +31,10 @@ message RepoInfo {
 
 // Information for non-repository folder.
 message FolderInfo {
-	// E.g. "github"
+	// E.g. "sub"
 	string name = 1;
 
-	// E.g. "spider/github"
+	// E.g. "spider/sub"
 	string path = 2;
 
 	string sha = 3;
@@ -42,4 +42,38 @@ message FolderInfo {
 
 	// The timestamp this folder-info is crawled
 	google.protobuf.Timestamp crawling_time = 5;
+}
+
+message CrawlingInfo {
+	// The timestamp the related entry was crawled
+	google.protobuf.Timestamp crawling_time = 1;
+	string etag = 2;
+}
+
+message HistoryEvent {
+	message Action {
+		enum Enum {
+			None    = 0;  // No action
+			Success = 1;  // Success crawling and the package is valid
+			Failed  = 2;  // Failed crawling, do not know validity of the package
+			Invalid = 3;  // Success crawling and the package is invalid
+		}
+	}
+	google.protobuf.Timestamp timestamp = 1;
+	Action.Enum action = 2;
+}
+
+message HistoryInfo {
+	repeated HistoryEvent events = 1;
+
+	google.protobuf.Timestamp found_time = 2;
+	// Possible value:
+	//   web                  added from web
+	//   user:<user>          found from user crawling
+	//   parent               found by crawling his parent
+	//   imported:<pkg>       imported by a <pkg>
+	//   testimported:<pkg>   test imported by a <pkg>
+	//   package:<pkg>
+	//   reference:<pkg>      referenced in the readme file of <pkg>
+	string found_way = 3;
 }

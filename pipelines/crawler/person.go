@@ -32,7 +32,7 @@ type PersonCrawler struct {
 
 func pushPerson(p *gcse.Person) {
 	for _, pkg := range p.Packages {
-		appendPackage(pkg)
+		appendNewPackage(pkg, "user:"+p.Id)
 	}
 	cDB.SchedulePerson(p.Id, time.Now().Add(time.Duration(float64(DefaultPersonAge)*(1+(rand.Float64()-0.5)*0.2))))
 }

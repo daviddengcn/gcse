@@ -6,6 +6,7 @@ import (
 
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/gcse/configs"
+	"github.com/daviddengcn/gcse/store"
 	"github.com/daviddengcn/go-easybi"
 	"github.com/daviddengcn/sophie"
 	"github.com/daviddengcn/sophie/kv"
@@ -74,6 +75,12 @@ func doIndex() bool {
 	}
 	runtime.GC()
 	gcse.DumpMemStats()
+
+	storePath := idxSegm.Join(configs.FnStore)
+	log.Printf("Saving store snapshot to %v", storePath)
+	if err := store.SaveSnapshot(storePath.S()); err != nil {
+		log.Printf("SaveSnapshot %v failed: %v", storePath, err)
+	}
 
 	if err := idxSegm.Done(); err != nil {
 		log.Printf("segm.Done failed: %v", err)

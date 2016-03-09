@@ -21,7 +21,7 @@ func processImports() error {
 		if len(pkgs) > 0 {
 			log.Printf("Importing %d packages ...", len(pkgs))
 			for _, pkg := range pkgs {
-				appendPackage(pkg)
+				appendNewPackage(pkg, "web")
 			}
 		}
 		if err := segm.Remove(); err != nil {
