@@ -65,6 +65,20 @@ func (cdb *CrawlerDB) SchedulePackage(pkg string, sTime time.Time, etag string) 
 	return nil
 }
 
+// SchedulePackage schedules a package to be crawled at a specific time if not specified earlier.
+func (cdb *CrawlerDB) PushToCrawlPackage(pkg string) {
+	now := time.Now()
+	var ent CrawlingEntry
+	if cdb.PackageDB.Get(pkg, &ent) {
+		if ent.ScheduleTime.Before(now) {
+			// The package has been scheduled to an earlier time.
+			return
+		}
+	}
+	ent.ScheduleTime = now
+	cdb.PackageDB.Put(pkg, ent)
+}
+
 func TrimPackageName(pkg string) string {
 	return strings.TrimFunc(strings.TrimSpace(pkg), func(r rune) bool {
 		return r > rune(128)
@@ -79,8 +93,7 @@ func (cdb *CrawlerDB) AppendPackage(pkg string, inDocs func(pkg string) bool) {
 		return
 	}
 	var ent CrawlingEntry
-	exists := cdb.PackageDB.Get(pkg, &ent)
-	if exists {
+	if cdb.PackageDB.Get(pkg, &ent) {
 		if ent.ScheduleTime.Before(time.Now()) || inDocs(pkg) {
 			return
 		}

@@ -19,6 +19,8 @@ import (
 	"github.com/daviddengcn/go-easybi"
 	"github.com/daviddengcn/sophie"
 	"github.com/daviddengcn/sophie/kv"
+
+	sppb "github.com/daviddengcn/gcse/proto/spider"
 )
 
 var (

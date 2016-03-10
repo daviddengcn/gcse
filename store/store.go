@@ -41,7 +41,7 @@ var box = &bh.RefCountBox{
 }
 
 func RepoInfoAge(r *sppb.RepoInfo) time.Duration {
-	t, _ := ptypes.Timestamp(r.LastCrawled)
+	t, _ := ptypes.Timestamp(r.CrawlingTime)
 	return time.Now().Sub(t)
 }
 

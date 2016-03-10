@@ -20,7 +20,7 @@ func init() {
 func TestRepoInfoAge(t *testing.T) {
 	ts, _ := ptypes.TimestampProto(time.Now().Add(-time.Hour))
 	age := RepoInfoAge(&sppb.RepoInfo{
-		LastCrawled: ts,
+		CrawlingTime: ts,
 	})
 	assert.ValueShould(t, "age", age, age >= time.Hour && age < time.Hour+time.Minute, "age out of expected range")
 }

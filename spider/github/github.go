@@ -70,7 +70,7 @@ func repoInfoFromGithub(repo *github.Repository) *sppb.RepoInfo {
 		Description: stringsp.Get(repo.Description),
 		Stars:       int32(getInt(repo.StargazersCount)),
 	}
-	ri.LastCrawled, _ = ptypes.TimestampProto(time.Now())
+	ri.CrawlingTime, _ = ptypes.TimestampProto(time.Now())
 	ri.LastUpdated, _ = ptypes.TimestampProto(getTimestamp(repo.PushedAt).Time)
 	if repo.Source != nil {
 		ri.Source = stringsp.Get(repo.Source.Name)

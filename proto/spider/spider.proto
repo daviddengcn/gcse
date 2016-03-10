@@ -20,16 +20,18 @@ message GoFileInfo {
 }
 
 message RepoInfo {
-	google.protobuf.Timestamp last_crawled = 1;
+	// The timestamp this repo-info is crawled
+	google.protobuf.Timestamp crawling_time = 1;
 
 	int32  stars       = 2;
 	string description = 3;
 	// Where this project was forked from, full path
 	string source      = 5;
+	// As far as we know, when this repo was updated
 	google.protobuf.Timestamp last_updated = 4;
 }
 
-// Information for non-repository folder.
+// Information for a non-repository folder.
 message FolderInfo {
 	// E.g. "sub"
 	string name = 1;

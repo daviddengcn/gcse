@@ -7,8 +7,11 @@ import (
 	"time"
 
 	"github.com/daviddengcn/gcse"
+	"github.com/daviddengcn/gcse/store"
 	"github.com/daviddengcn/gddo/doc"
 	"github.com/golangplus/strings"
+
+	sppb "github.com/daviddengcn/gcse/proto/spider"
 )
 
 // touchPackage forces a package to update if it was not crawled before a
@@ -26,7 +29,7 @@ func touchPackage(pkg string, crawledBefore time.Time, pkgUTs map[string]time.Ti
 	}
 
 	// set Etag to "" to force updating
-	cDB.SchedulePackage(pkg, time.Now(), "")
+	cDB.PushToCrawlPackage(pkg)
 }
 
 func touchByGithubUpdates(pkgUTs map[string]time.Time) {
@@ -38,6 +41,7 @@ func touchByGithubUpdates(pkgUTs map[string]time.Time) {
 		return
 	}
 	count := 0
+	now := time.Now()
 	for _, r := range rs {
 		if r.Owner == nil || r.UpdatedAt == nil {
 			continue
@@ -48,6 +52,9 @@ func touchByGithubUpdates(pkgUTs map[string]time.Time) {
 			continue
 		}
 		touchPackage(fmt.Sprintf("github.com/%s/%s", user, path), r.UpdatedAt.Time, pkgUTs)
+		if err := store.AppendPackageEvent("github.com", user+"/"+path, "githubhupdate", now, sppb.HistoryEvent_Action_None); err != nil {
+			log.Printf("UpdatePackageHistory %s %s failed: %v", "github.com", user+"/"+path, err)
+		}
 		count++
 	}
 	log.Printf("%d updates found!", count)
