@@ -107,6 +107,12 @@ func AppendPackageEvent(site, path, foundWay string, t time.Time, a sppb.History
 		if len(hi.Events) > maxHistoryEvents {
 			hi.Events = hi.Events[:maxHistoryEvents]
 		}
+		switch a {
+		case sppb.HistoryEvent_Action_Success:
+			hi.LatestSuccess = tsp
+		case sppb.HistoryEvent_Action_Failed:
+			hi.LatestFailed = tsp
+		}
 		return nil
 	})
 }

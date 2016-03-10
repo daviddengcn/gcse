@@ -93,7 +93,6 @@ func (bc BoltFileCache) SetFolderSignatures(folder string, nameToSignature map[s
 	if !strings.HasSuffix(folder, "/") {
 		folder += "/"
 	}
-	log.Printf("nameoSignature: %v", nameToSignature)
 	if err := bc.Update(func(tx bh.Tx) error {
 		// sub path -> current signature
 		toDelete := make(map[string]string)

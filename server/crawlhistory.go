@@ -18,7 +18,6 @@ func pageCrawlHistory(w http.ResponseWriter, r *http.Request) {
 		pageNotFound(w, r)
 		return
 	}
-
 	type Event struct {
 		Time   time.Time
 		Action string
@@ -31,20 +30,32 @@ func pageCrawlHistory(w http.ResponseWriter, r *http.Request) {
 			Action: e.Action.String(),
 		})
 	}
-	var ft *time.Time
+	var foundTm, succTm, failedTm *time.Time
 	if hi.FoundTime != nil {
-		ft = &time.Time{}
-		*ft, _ = ptypes.Timestamp(hi.FoundTime)
+		foundTm = &time.Time{}
+		*foundTm, _ = ptypes.Timestamp(hi.FoundTime)
+	}
+	if hi.LatestSuccess != nil {
+		succTm := &time.Time{}
+		*succTm, _ = ptypes.Timestamp(hi.LatestSuccess)
+	}
+	if hi.LatestFailed != nil {
+		failedTm := &time.Time{}
+		*failedTm, _ = ptypes.Timestamp(hi.LatestFailed)
 	}
 	if err := templates.ExecuteTemplate(w, "crawlhistory.html", struct {
 		UIUtils
-		FoundTime *time.Time
-		FoundWay  string
-		Events    []Event
+		FoundTime     *time.Time
+		FoundWay      string
+		LatestSuccess *time.Time
+		LatestFailed  *time.Time
+		Events        []Event
 	}{
-		FoundTime: ft,
-		FoundWay:  hi.FoundWay,
-		Events:    events,
+		FoundTime:     foundTm,
+		FoundWay:      hi.FoundWay,
+		LatestSuccess: succTm,
+		LatestFailed:  failedTm,
+		Events:        events,
 	}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

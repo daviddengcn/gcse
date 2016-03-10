@@ -75,5 +75,9 @@ message HistoryInfo {
 	//   testimported:<pkg>   test imported by a <pkg>
 	//   package:<pkg>
 	//   reference:<pkg>      referenced in the readme file of <pkg>
+	//   godoc                found by godoc.org/api
 	string found_way = 3;
+
+	google.protobuf.Timestamp latest_success = 4;
+	google.protobuf.Timestamp latest_failed = 5;
 }

@@ -42,27 +42,47 @@ func TestAppendPackageEvent(t *testing.T) {
 		foundWay = "test"
 	)
 	// Insert a found only event, no action.
-	tm := time.Now()
-	ts, _ := ptypes.TimestampProto(tm)
-	foundTs := ts
-	assert.NoError(t, AppendPackageEvent(site, path, "test", tm, sppb.HistoryEvent_Action_None))
+	foundTm := time.Now()
+	foundTs, _ := ptypes.TimestampProto(foundTm)
+	assert.NoError(t, AppendPackageEvent(site, path, "test", foundTm, sppb.HistoryEvent_Action_None))
 	h, err := ReadPackageHistory(site, path)
 	assert.NoError(t, err)
 	assert.Equal(t, "h", h, &sppb.HistoryInfo{FoundWay: foundWay, FoundTime: foundTs})
 
 	// Inser a Success action
-	tm = tm.Add(time.Hour)
-	ts, _ = ptypes.TimestampProto(tm)
-	assert.NoError(t, AppendPackageEvent(site, path, "non-test", tm, sppb.HistoryEvent_Action_Success))
+	succTm := foundTm.Add(time.Hour)
+	succTs, _ := ptypes.TimestampProto(succTm)
+	assert.NoError(t, AppendPackageEvent(site, path, "non-test", succTm, sppb.HistoryEvent_Action_Success))
 	h, err = ReadPackageHistory(site, path)
 	assert.NoError(t, err)
 	assert.Equal(t, "h", h, &sppb.HistoryInfo{
 		FoundWay:  foundWay,
 		FoundTime: foundTs,
 		Events: []*sppb.HistoryEvent{{
-			Timestamp: ts,
+			Timestamp: succTs,
 			Action:    sppb.HistoryEvent_Action_Success,
-		}}})
+		}},
+		LatestSuccess: succTs,
+	})
+	// Inser a Failed action
+	failedTm := succTm.Add(time.Hour)
+	failedTs, _ := ptypes.TimestampProto(failedTm)
+	assert.NoError(t, AppendPackageEvent(site, path, "", failedTm, sppb.HistoryEvent_Action_Failed))
+	h, err = ReadPackageHistory(site, path)
+	assert.NoError(t, err)
+	assert.Equal(t, "h", h, &sppb.HistoryInfo{
+		FoundWay:  foundWay,
+		FoundTime: foundTs,
+		Events: []*sppb.HistoryEvent{{
+			Timestamp: failedTs,
+			Action:    sppb.HistoryEvent_Action_Failed,
+		}, {
+			Timestamp: succTs,
+			Action:    sppb.HistoryEvent_Action_Success,
+		}},
+		LatestSuccess: succTs,
+		LatestFailed:  failedTs,
+	})
 }
 
 func TestUpdateReadDeletePersonHistory(t *testing.T) {

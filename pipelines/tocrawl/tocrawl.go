@@ -14,6 +14,8 @@ import (
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/gcse/configs"
 	"github.com/daviddengcn/gcse/spider/github"
+	"github.com/daviddengcn/gcse/store"
+	"github.com/daviddengcn/gcse/utils"
 	"github.com/daviddengcn/go-easybi"
 	"github.com/daviddengcn/sophie"
 	"github.com/daviddengcn/sophie/kv"
@@ -186,11 +188,16 @@ func main() {
 			}
 			gcse.AddBiValueAndProcess(bi.Max, "godoc.doc-count", len(pkgs))
 			log.Printf("FetchAllPackagesInGodoc returns %d entries", len(pkgs))
+			now := time.Now()
 			for _, pkg := range pkgs {
 				cDB.AppendPackage(pkg, func(pkg string) bool {
 					_, ok := pkgUTs[pkg]
 					return ok
 				})
+				site, path := utils.SplitPackage(pkg)
+				if err := store.AppendPackageEvent(site, path, "godoc", now, sppb.HistoryEvent_Action_None); err != nil {
+					log.Printf("UpdatePackageHistory %s %s failed: %v", site, path, err)
+				}
 			}
 		}
 		syncDatabases()
