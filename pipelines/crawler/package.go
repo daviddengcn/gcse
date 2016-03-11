@@ -1,12 +1,12 @@
 package main
 
 import (
-	"errors"
 	"log"
 	"math/rand"
 	"strings"
 	"time"
 
+	"github.com/golangplus/errors"
 	"github.com/golangplus/strings"
 	"github.com/golangplus/time"
 
@@ -262,7 +262,7 @@ func crawlPackages(httpClient doc.HttpClient, fpToCrawlPkg,
 	fpOutNewDocs sophie.FsPath, end chan error) {
 
 	time.AfterFunc(configs.CrawlerDuePerRun+time.Minute*10, func() {
-		end <- errors.New("Crawling packages timeout!")
+		end <- errorsp.NewWithStacks("Crawling packages timeout!")
 	})
 	end <- func() error {
 		outNewDocs := kv.DirOutput(fpOutNewDocs)

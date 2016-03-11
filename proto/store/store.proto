@@ -21,10 +21,10 @@ message PackageInfo {
 
 	gcse.spider.CrawlingInfo crawling_info = 17;
 
-	// Available if the package is the repo's root.
+	// Available if the package is not the repo's root.
 	gcse.spider.FolderInfo folder_info = 14;
 
-	// Available if the package is a repo's root.
+	// Available if the package is the repo's root.
 	gcse.spider.RepoInfo repo_info = 15;
 }
 

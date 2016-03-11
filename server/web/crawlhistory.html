@@ -1,7 +1,9 @@
 {{template "header.html" .UIUtils.Slice "Crawl Histotry" "crawlhistory"}}
 {{if .FoundTime}}
 <div class="jumbotron">
-	Found at <b>{{.FoundTime}}</b> by <b>{{.FoundWay}}</b>
+	Found at <b>{{.FoundTime}}</b> by <b>{{.FoundWay}}</b><br/>
+	{{if .LatestSuccess}}<br>Latest success at <b>{{.LatestSuccess}}</b>{{end}}
+	{{if .LatestFailed}}<br>Latest failed at <b>{{.LatestFailed}}</b>{{end}}
 </div>
 <div>
 </div>{{end}}
