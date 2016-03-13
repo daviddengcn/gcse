@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"log"
 	"math/rand"
 	"runtime"
@@ -45,7 +46,7 @@ func loadPackageUpdateTimes(fpDocs sophie.FsPath) (map[string]time.Time, error) 
 		}
 		for {
 			if err := it.Next(&pkg, &info); err != nil {
-				if err == sophie.EOF {
+				if errorsp.Cause(err) == io.EOF {
 					break
 				}
 				return nil, err

@@ -20,10 +20,15 @@ _cgo_export.*
 _testmain.go
 
 *.exe
+*.gob
+*.bolt
 
 /conf.json
 /data/
 /logs/
 /scripts/backup-conf.json
 /server/server
-
+/pipelines/crawler/crawler
+/pipelines/indexer/indexer
+/pipelines/mergedocs/mergedocs
+/pipelines/tocrawl/tocrawl

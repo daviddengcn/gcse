@@ -1,6 +1,7 @@
 package gcse
 
 import (
+	"io"
 	"path"
 	"testing"
 
@@ -48,7 +49,7 @@ func TestIndex(t *testing.T) {
 			return &sophie.IterateCloserStruct{
 				NextF: func(key, val sophie.SophieReader) error {
 					if index >= len(docs) {
-						return sophie.EOF
+						return io.EOF
 					}
 					*key.(*sophie.RawString) = sophie.RawString(
 						docs[index].Package)

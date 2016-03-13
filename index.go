@@ -2,11 +2,13 @@ package gcse
 
 import (
 	"errors"
+	"io"
 	"log"
 	"os"
 	"path"
 	"time"
 
+	"github.com/golangplus/errors"
 	"github.com/golangplus/sort"
 	"github.com/golangplus/strings"
 	"golang.org/x/crypto/ssh/terminal"
@@ -140,7 +142,7 @@ func Index(docDB mr.Input, outDir string) (*index.TokenSetSearcher, error) {
 		var docInfo DocInfo
 		for {
 			if err := it.Next(&pkg, &docInfo); err != nil {
-				if err == sophie.EOF {
+				if errorsp.Cause(err) == io.EOF {
 					break
 				}
 				it.Close()
@@ -188,7 +190,7 @@ func Index(docDB mr.Input, outDir string) (*index.TokenSetSearcher, error) {
 		var hitInfo HitInfo
 		for {
 			if err := it.Next(&pkg, &hitInfo.DocInfo); err != nil {
-				if err == sophie.EOF {
+				if errorsp.Cause(err) == io.EOF {
 					break
 				}
 				it.Close()

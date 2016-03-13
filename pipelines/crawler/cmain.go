@@ -5,10 +5,12 @@ package main
 
 import (
 	"flag"
+	"io"
 	"log"
 	"runtime"
 	"time"
 
+	"github.com/golangplus/errors"
 	"github.com/golangplus/fmt"
 
 	"github.com/daviddengcn/bolthelper"
@@ -62,7 +64,7 @@ func loadAllDocsPkgs(in kv.DirInput) error {
 			var key sophie.RawString
 			var val gcse.DocInfo
 			if err := c.Next(&key, &val); err != nil {
-				if err == sophie.EOF {
+				if errorsp.Cause(err) == io.EOF {
 					break
 				}
 				return err

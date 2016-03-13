@@ -2,10 +2,12 @@ package main
 
 import (
 	//	"fmt"
+	"io"
 	"log"
 	"regexp"
 	"sync/atomic"
 
+	"github.com/golangplus/errors"
 	"github.com/golangplus/strings"
 
 	"github.com/daviddengcn/gcse"
@@ -91,7 +93,7 @@ func main() {
 					hasOriginal := false
 					for {
 						val, err := nextVal()
-						if err == sophie.EOF {
+						if errorsp.Cause(err) == io.EOF {
 							break
 						}
 						if err != nil {
