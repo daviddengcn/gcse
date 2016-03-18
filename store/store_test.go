@@ -25,6 +25,59 @@ func TestRepoInfoAge(t *testing.T) {
 	assert.ValueShould(t, "age", age, age >= time.Hour && age < time.Hour+time.Minute, "age out of expected range")
 }
 
+func TestForEachPackageSite(t *testing.T) {
+	// Clear the database
+	configs.StoreBoltPath().RemoveAll()
+
+	const (
+		site1 = "TestForEachPackageSite1.com"
+		site2 = "github.com"
+		path  = "gcse"
+		name  = "pkgname"
+	)
+	assert.NoError(t, UpdatePackage(site1, path, func(info *stpb.PackageInfo) error {
+		return nil
+	}))
+	assert.NoError(t, UpdatePackage(site2, path, func(info *stpb.PackageInfo) error {
+		return nil
+	}))
+	var sites []string
+	assert.NoError(t, ForEachPackageSite(func(site string) error {
+		sites = append(sites, site)
+		return nil
+	}))
+	assert.Equal(t, "sites", sites, []string{site1, site2})
+}
+
+func TestForEachPackageOfSite(t *testing.T) {
+	// Clear the database
+	configs.StoreBoltPath().RemoveAll()
+
+	const (
+		site  = "TestForEachPackageOfSite.com"
+		path1 = "gcse"
+		name1 = "pkgname"
+		path2 = "gcse2"
+		name2 = "TestForEachPackageOfSite"
+	)
+	assert.NoError(t, UpdatePackage(site, path1, func(info *stpb.PackageInfo) error {
+		info.Name = name1
+		return nil
+	}))
+	assert.NoError(t, UpdatePackage(site, path2, func(info *stpb.PackageInfo) error {
+		info.Name = name2
+		return nil
+	}))
+	var paths, names []string
+	assert.NoError(t, ForEachPackageOfSite(site, func(path string, info *stpb.PackageInfo) error {
+		paths = append(paths, path)
+		names = append(names, info.Name)
+		return nil
+	}))
+	assert.Equal(t, "paths", paths, []string{path1, path2})
+	assert.Equal(t, "names", names, []string{name1, name2})
+}
+
 func TestUpdateReadDeletePackage(t *testing.T) {
 	const (
 		site = "TestUpdateReadPackage.com"

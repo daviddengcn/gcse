@@ -420,9 +420,8 @@ func getGithub(pkg string) (*doc.Package, []*sppb.FolderInfo, error) {
 
 func CrawlPackage(httpClient doc.HttpClient, pkg string, etag string) (p *Package, folders []*sppb.FolderInfo, err error) {
 	defer func() {
-		if err := recover(); err != nil {
-			p, err = nil, errorsp.WithStacks(fmt.Errorf("Panic when crawling package %s: %v", pkg, err))
-			log.Printf("Panic when crawling package %s: %v", pkg, err)
+		if perr := recover(); perr != nil {
+			p, folders, err = nil, nil, errorsp.NewWithStacks("Panic when crawling package %s: %v", pkg, perr)
 		}
 	}()
 	var pdoc *doc.Package

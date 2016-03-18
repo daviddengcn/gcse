@@ -180,7 +180,7 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter, c []sophie.Collector
 		}
 	}
 	site, path := utils.SplitPackage(pkg)
-	if err != nil && err != gcse.ErrPackageNotModifed {
+	if err != nil && errorsp.Cause(err) != gcse.ErrPackageNotModifed {
 		log.Printf("[Part %d] Crawling pkg %s failed: %v", pc.part, pkg, err)
 		if gcse.IsBadPackage(err) {
 			utils.LogError(store.AppendPackageEvent(site, path, "", time.Now(), sppb.HistoryEvent_Action_Invalid), "AppendPackageEvent %v %v failed", site, path)
@@ -220,7 +220,7 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter, c []sophie.Collector
 	}
 	utils.LogError(store.AppendPackageEvent(site, path, "", time.Now(), sppb.HistoryEvent_Action_Success), "AppendPackageEvent %v %v failed", site, path)
 	pc.failCount = 0
-	if err == gcse.ErrPackageNotModifed {
+	if errorsp.Cause(err) == gcse.ErrPackageNotModifed {
 		// TODO crawling stars for unchanged project
 		log.Printf("[Part %d] Package %s unchanged!", pc.part, pkg)
 		schedulePackageNextCrawl(pkg, ent.Etag)

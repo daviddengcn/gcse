@@ -108,6 +108,10 @@ func DocsDBPath() villa.Path {
 	return DataRoot.Join(FnDocs)
 }
 
+func StoreBoltPath() villa.Path {
+	return DataRoot.Join("store.bolt")
+}
+
 func SetTestingDataPath() {
 	DataRoot = villa.Path(os.TempDir()).Join("gcse_testing")
 	DataRoot.RemoveAll()

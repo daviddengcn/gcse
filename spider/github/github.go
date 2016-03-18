@@ -116,6 +116,9 @@ func (s *Spider) getFile(user, repo, path string) ([]byte, error) {
 	if err != nil {
 		return nil, errorsp.WithStacks(err)
 	}
+	if stringsp.Get(c.Type) != "file" {
+		return nil, errorsp.NewWithStacks("Contents of %s/%s/%s is not a file: %v", user, repo, path, stringsp.Get(c.Type))
+	}
 	body, err := c.Decode()
 	return body, errorsp.WithStacks(err)
 }
@@ -239,10 +242,7 @@ func (s *Spider) ReadPackage(user, repo, path string) (*Package, []*sppb.FolderI
 	s.waitForRate()
 	_, cs, _, err := s.client.Repositories.GetContents(user, repo, path, nil)
 	if err != nil {
-		pkg := calcFullPath(user, repo, path, "")
 		if isNotFound(err) {
-			// The package does not exist, clear the cache.
-			s.FileCache.SetFolderSignatures(pkg, nil)
 			return nil, nil, errorsp.WithStacksAndMessage(ErrInvalidPackage, "GetContents %v %v %v returns 404", user, repo, path)
 		}
 		errResp, _ := errorsp.Cause(err).(*github.ErrorResponse)
@@ -261,18 +261,15 @@ func (s *Spider) ReadPackage(user, repo, path string) (*Package, []*sppb.FolderI
 	var imports stringsp.Set
 	var testImports stringsp.Set
 	// Process files
-	nameToSignature := make(map[string]string)
 	for _, c := range cs {
 		fn := getString(c.Name)
 		if getString(c.Type) != "file" {
-			nameToSignature[fn] = ""
 			continue
 		}
 		sha := getString(c.SHA)
 		cPath := path + "/" + fn
 		switch {
 		case strings.HasSuffix(fn, ".go"):
-			nameToSignature[fn] = sha
 			fi, err := func() (*sppb.GoFileInfo, error) {
 				fi := &sppb.GoFileInfo{}
 				if s.FileCache.Get(sha, fi) {
@@ -332,7 +329,6 @@ func (s *Spider) ReadPackage(user, repo, path string) (*Package, []*sppb.FolderI
 			pkg.ReadmeData = string(body)
 		}
 	}
-	s.FileCache.SetFolderSignatures(calcFullPath(user, repo, path, ""), nameToSignature)
 	if pkg.Name == "" {
 		return nil, folders, errorsp.WithStacksAndMessage(ErrInvalidPackage, "package name is not set")
 	}
@@ -352,4 +348,108 @@ func (s *Spider) SearchRepositories(q string) ([]github.Repository, error) {
 		return nil, errorsp.WithStacksAndMessage(err, "Search.Repositories %q failed: %+v", q, err)
 	}
 	return res.Repositories, nil
+}
+
+func (s *Spider) ReadRepo(user, repo, sha string, f func(path string, pkg *Package) error) error {
+	tree, _, err := s.client.Git.GetTree(user, repo, sha, true)
+	if err != nil {
+		return errorsp.WithStacksAndMessage(err, "GetTree %v %v failed", user, repo, sha)
+	}
+	pkgs := make(map[string][]github.TreeEntry)
+	for _, te := range tree.Entries {
+		if stringsp.Get(te.Type) != "blob" {
+			continue
+		}
+		p := stringsp.Get(te.Path)
+		if p == "" {
+			continue
+		}
+		d := path.Dir(p)
+		if d == "." {
+			d = ""
+		} else {
+			d = "/" + d
+		}
+		pkgs[d] = append(pkgs[d], te)
+	}
+	for d, teList := range pkgs {
+		pkg := Package{
+			Path: d,
+		}
+		var imports stringsp.Set
+		var testImports stringsp.Set
+		for _, te := range teList {
+			fn := path.Base(*te.Path)
+			cPath := *te.Path
+			sha := *te.SHA
+			switch {
+			case strings.HasSuffix(fn, ".go"):
+				fi, err := func() (*sppb.GoFileInfo, error) {
+					fi := &sppb.GoFileInfo{}
+					if s.FileCache.Get(sha, fi) {
+						log.Printf("Cache for %v found(sha:%q)", "github.com/"+user+"/"+cPath, sha)
+						return fi, nil
+					}
+					body, err := s.getFile(user, repo, cPath)
+					if err != nil {
+						if isTooLargeError(err) {
+							*fi = goFileInfo_ShouldIgnore
+						} else {
+							// Temporary error
+							return nil, err
+						}
+					} else {
+						parseGoFile(cPath, body, fi)
+					}
+					s.FileCache.Set(sha, fi)
+					log.Printf("Save file cache for %v (sha:%q)", "github.com/"+user+"/"+cPath, sha)
+					return fi, nil
+				}()
+				if err != nil {
+					return err
+				}
+				if fi.Status == sppb.GoFileInfo_ParseFailed {
+					return errorsp.WithStacksAndMessage(ErrInvalidPackage, "fi.Status is ParseFailed")
+				}
+				if fi.Status == sppb.GoFileInfo_ShouldIgnore {
+					continue
+				}
+				if fi.IsTest {
+					testImports.Add(fi.Imports...)
+				} else {
+					if pkg.Name != "" {
+						if fi.Name != pkg.Name {
+							return errorsp.WithStacksAndMessage(ErrInvalidPackage, "conflicting package name processing file %v: %v vs %v", cPath, fi.Name, pkg.Name)
+						}
+					} else {
+						pkg.Name = fi.Name
+					}
+					if fi.Description != "" {
+						if pkg.Description != "" && !strings.HasSuffix(pkg.Description, "\n") {
+							pkg.Description += "\n"
+						}
+						pkg.Description += fi.Description
+					}
+					imports.Add(fi.Imports...)
+				}
+			case isReadmeFile(fn):
+				body, err := s.getFile(user, repo, cPath)
+				if err != nil {
+					log.Printf("Get file %v failed: %v", cPath, err)
+					continue
+				}
+				pkg.ReadmeFn = fn
+				pkg.ReadmeData = string(body)
+			}
+		}
+		if pkg.Name == "" {
+			continue
+		}
+		pkg.Imports = imports.Elements()
+		pkg.TestImports = testImports.Elements()
+		if err := errorsp.WithStacks(f(d, &pkg)); err != nil {
+			return err
+		}
+	}
+	return nil
 }

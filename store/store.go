@@ -29,6 +29,12 @@ var (
 	//     - <site/path> -> HistoryInfo
 	//  - persons
 	//     - <site/id> -> HistoryInfo
+	// repos
+	//  - <site>
+	//    - <name>
+	//     - <path> -> PackageInfo
+	//     - <path>/ folder
+	//       - <path> -> PackageInfo
 	pkgsRoot    = []byte("pkgs")
 	personsRoot = []byte("persons")
 	historyRoot = []byte("history")
@@ -36,13 +42,43 @@ var (
 
 var box = &bh.RefCountBox{
 	DataPath: func() string {
-		return configs.DataRoot.Join("store.bolt").S()
+		return configs.StoreBoltPath().S()
 	},
 }
 
 func RepoInfoAge(r *sppb.RepoInfo) time.Duration {
 	t, _ := ptypes.Timestamp(r.CrawlingTime)
 	return time.Now().Sub(t)
+}
+
+// Returns all the sites one by one by calling the provided func.
+func ForEachPackageSite(f func(string) error) error {
+	return box.View(func(tx bh.Tx) error {
+		return tx.ForEach([][]byte{pkgsRoot}, func(_ bh.Bucket, k, v bytesp.Slice) error {
+			if v != nil {
+				log.Printf("Unexpected value %q for key %q, ignored", string(v), string(k))
+				return nil
+			}
+			return errorsp.WithStacks(f(string(k)))
+		})
+	})
+}
+
+func ForEachPackageOfSite(site string, f func(string, *stpb.PackageInfo) error) error {
+	return box.View(func(tx bh.Tx) error {
+		return tx.ForEach([][]byte{pkgsRoot, []byte(site)}, func(_ bh.Bucket, k, v bytesp.Slice) error {
+			if v == nil {
+				log.Printf("Unexpected nil value for key %q, ignored", string(k))
+				return nil
+			}
+			info := &stpb.PackageInfo{}
+			if err := errorsp.WithStacksAndMessage(proto.Unmarshal(v, info), "Unmarshal %d bytes failed", len(v)); err != nil {
+				log.Printf("Unmarshal failed: %v, ignored", err)
+				return nil
+			}
+			return errorsp.WithStacks(f(string(k), info))
+		})
+	})
 }
 
 // Returns an empty (non-nil) PackageInfo if not found.

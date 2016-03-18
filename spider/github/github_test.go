@@ -1,13 +1,26 @@
 package github
 
 import (
+	"net/http"
 	"sort"
 	"testing"
 
 	"github.com/golangplus/testing/assert"
 
+	"github.com/daviddengcn/gcse/spider"
+	"github.com/google/go-github/github"
+
 	sppb "github.com/daviddengcn/gcse/proto/spider"
 )
+
+func newSpiderWithContents(contents map[string]string) *Spider {
+	hc := &http.Client{}
+	c := github.NewClient(hc)
+	return &Spider{
+		client:    c,
+		FileCache: spider.NullFileCache{},
+	}
+}
 
 func TestReadUser(t *testing.T) {
 	s := NewSpiderWithToken("")
