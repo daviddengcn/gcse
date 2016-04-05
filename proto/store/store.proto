@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package gcse.store;
 
+option go_package = "stpb";
+
 import "github.com/daviddengcn/gcse/proto/spider/spider.proto";
 
 message PackageInfo {
@@ -30,4 +32,17 @@ message PackageInfo {
 
 message PersonInfo {
 	gcse.spider.CrawlingInfo crawling_info = 1;
+}
+
+message Repository {
+	string branch    = 6;
+	string signature = 7;
+
+	repeated gcse.spider.Package packages = 1;
+
+	string ReadmeFn   = 2;  // No directory info
+	string ReadmeData = 3;  // Raw content, cound be md, txt, etc.
+	int32 stars       = 4;
+
+	gcse.spider.CrawlingInfo crawling_info = 5;
 }

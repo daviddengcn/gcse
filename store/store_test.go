@@ -1,6 +1,7 @@
 package store
 
 import (
+	"os"
 	"testing"
 	"time"
 
@@ -17,6 +18,10 @@ func init() {
 	configs.SetTestingDataPath()
 }
 
+func cleanDatabase(t *testing.T) {
+	assert.NoErrorOrDie(t, os.RemoveAll(configs.StoreBoltPath()))
+}
+
 func TestRepoInfoAge(t *testing.T) {
 	ts, _ := ptypes.TimestampProto(time.Now().Add(-time.Hour))
 	age := RepoInfoAge(&sppb.RepoInfo{
@@ -26,8 +31,7 @@ func TestRepoInfoAge(t *testing.T) {
 }
 
 func TestForEachPackageSite(t *testing.T) {
-	// Clear the database
-	configs.StoreBoltPath().RemoveAll()
+	cleanDatabase(t)
 
 	const (
 		site1 = "TestForEachPackageSite1.com"
@@ -50,8 +54,7 @@ func TestForEachPackageSite(t *testing.T) {
 }
 
 func TestForEachPackageOfSite(t *testing.T) {
-	// Clear the database
-	configs.StoreBoltPath().RemoveAll()
+	cleanDatabase(t)
 
 	const (
 		site  = "TestForEachPackageOfSite.com"

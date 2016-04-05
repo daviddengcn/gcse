@@ -31,19 +31,16 @@ var (
 	//     - <site/id> -> HistoryInfo
 	// repos
 	//  - <site>
-	//    - <name>
-	//     - <path> -> PackageInfo
-	//     - <path>/ folder
-	//       - <path> -> PackageInfo
+	//    - <user>
+	//     - <repo> -> Repository
 	pkgsRoot    = []byte("pkgs")
 	personsRoot = []byte("persons")
 	historyRoot = []byte("history")
+	reposRoot   = []byte("repos")
 )
 
 var box = &bh.RefCountBox{
-	DataPath: func() string {
-		return configs.StoreBoltPath().S()
-	},
+	DataPath: configs.StoreBoltPath,
 }
 
 func RepoInfoAge(r *sppb.RepoInfo) time.Duration {

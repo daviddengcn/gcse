@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package gcse.spider;
 
+option go_package = "sppb";
+
 import "github.com/golang/protobuf/ptypes/timestamp/timestamp.proto";
 
 message GoFileInfo {
@@ -82,4 +84,15 @@ message HistoryInfo {
 
 	google.protobuf.Timestamp latest_success = 4;
 	google.protobuf.Timestamp latest_failed = 5;
+}
+
+message Package {
+	string Name        = 1;  // package "name"
+	string Path        = 2;  // Relative path to the repository
+	string Description = 3;
+	string ReadmeFn    = 4;  // No directory info
+	string ReadmeData  = 5;  // Raw content, cound be md, txt, etc.
+
+	repeated string Imports     = 6;
+	repeated string TestImports = 7;
 }

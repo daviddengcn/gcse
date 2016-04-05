@@ -108,8 +108,8 @@ func DocsDBPath() villa.Path {
 	return DataRoot.Join(FnDocs)
 }
 
-func StoreBoltPath() villa.Path {
-	return DataRoot.Join("store.bolt")
+func StoreBoltPath() string {
+	return DataRoot.Join("store.bolt").S()
 }
 
 func SetTestingDataPath() {

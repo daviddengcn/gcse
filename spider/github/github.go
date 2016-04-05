@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
+	"github.com/golangplus/bytes"
 	"github.com/golangplus/errors"
 	"github.com/golangplus/strings"
 	"github.com/golangplus/time"
@@ -27,6 +28,8 @@ import (
 var ErrInvalidPackage = errors.New("the package is not a Go package")
 
 var ErrInvalidRepository = errors.New("the repository is not found")
+
+var ErrRateLimited = errors.New("Github rate limited")
 
 type Spider struct {
 	client *github.Client
@@ -48,21 +51,56 @@ func NewSpiderWithToken(token string) *Spider {
 	}
 }
 
+type roundTripper map[string]string
+
+func (rt roundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	log.Printf("URI: %v", req.URL.RequestURI())
+	body, ok := rt[req.URL.RequestURI()]
+	if !ok {
+		return &http.Response{
+			StatusCode: http.StatusNotFound,
+			Request:    req,
+			Body:       bytesp.NewPSlice([]byte("not found")),
+		}, nil
+	}
+	return &http.Response{
+		StatusCode: http.StatusOK,
+		Body:       bytesp.NewPSlice([]byte(body)),
+		Request:    req,
+	}, nil
+}
+
+func NewSpiderWithContents(contents map[string]string) *Spider {
+	hc := &http.Client{
+		Transport: roundTripper(contents),
+	}
+	c := github.NewClient(hc)
+	return &Spider{
+		client:    c,
+		FileCache: spider.NullFileCache{},
+	}
+}
+
 type User struct {
 	Repos map[string]*sppb.RepoInfo
 }
 
-func (s *Spider) waitForRate() {
+func (s *Spider) waitForRate() error {
 	r := s.client.Rate()
 	if r.Limit == 0 {
 		// no rate info yet
-		return
+		return nil
 	}
 	if r.Remaining > 0 {
-		return
+		return nil
+	}
+	d := r.Reset.Time.Sub(time.Now())
+	if d > time.Minute {
+		return errorsp.WithStacksAndMessage(ErrRateLimited, "time to wait: %v", d)
 	}
 	log.Printf("Quota used up (limit = %d), sleep until %v", r.Limit, r.Reset.Time)
 	timep.SleepUntil(r.Reset.Time)
+	return nil
 }
 
 func repoInfoFromGithub(repo *github.Repository) *sppb.RepoInfo {
@@ -350,10 +388,41 @@ func (s *Spider) SearchRepositories(q string) ([]github.Repository, error) {
 	return res.Repositories, nil
 }
 
-func (s *Spider) ReadRepo(user, repo, sha string, f func(path string, pkg *Package) error) error {
-	tree, _, err := s.client.Git.GetTree(user, repo, sha, true)
+func (s *Spider) RepoBranchSHA(owner, repo, branch string) (sha string, err error) {
+	if err := s.waitForRate(); err != nil {
+		return "", err
+	}
+	b, _, err := s.client.Repositories.GetBranch(owner, repo, branch)
 	if err != nil {
-		return errorsp.WithStacksAndMessage(err, "GetTree %v %v failed", user, repo, sha)
+		if isNotFound(err) {
+			return "", errorsp.WithStacksAndMessage(ErrInvalidRepository, "GetBranch %v %v %v failed", owner, repo, branch)
+		}
+		return "", errorsp.WithStacksAndMessage(err, "GetBranch %v %v %v failed", owner, repo, branch)
+	}
+	if b.Commit == nil {
+		return "", nil
+	}
+	return stringsp.Get(b.Commit.SHA), nil
+}
+
+func (s *Spider) getTree(owner, repo, sha string, recursive bool) (*github.Tree, error) {
+	if err := s.waitForRate(); err != nil {
+		return nil, err
+	}
+	tree, _, err := s.client.Git.GetTree(owner, repo, sha, true)
+	if err != nil {
+		if isNotFound(err) {
+			return nil, errorsp.WithStacksAndMessage(ErrInvalidRepository, "GetTree %v %v %v failed", owner, repo, sha)
+		}
+		return nil, errorsp.WithStacksAndMessage(err, "GetTree %v %v %v failed", owner, repo, sha)
+	}
+	return tree, nil
+}
+
+func (s *Spider) ReadRepo(user, repo, sha string, f func(path string, pkg *sppb.Package) error) error {
+	tree, err := s.getTree(user, repo, sha, true)
+	if err != nil {
+		return err
 	}
 	pkgs := make(map[string][]github.TreeEntry)
 	for _, te := range tree.Entries {
@@ -372,8 +441,9 @@ func (s *Spider) ReadRepo(user, repo, sha string, f func(path string, pkg *Packa
 		}
 		pkgs[d] = append(pkgs[d], te)
 	}
+	log.Printf("pkgs: %v", pkgs)
 	for d, teList := range pkgs {
-		pkg := Package{
+		pkg := sppb.Package{
 			Path: d,
 		}
 		var imports stringsp.Set
