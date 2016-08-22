@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"log"
+	"os"
 	"runtime"
 	"sync/atomic"
 	"time"
@@ -22,7 +23,7 @@ import (
 
 var (
 	databaseValue atomic.Value
-	indexSegment  gcse.Segment
+	indexSegment  utils.Segment
 )
 
 type database interface {
@@ -144,17 +145,17 @@ func getDatabase() database {
 }
 
 func loadIndex() error {
-	segm, err := gcse.IndexSegments.FindMaxDone()
-	if segm == nil || err != nil {
+	segm, err := configs.IndexSegments().FindMaxDone()
+	if segm == "" || err != nil {
 		return err
 	}
-	if indexSegment != nil && !gcse.SegmentLess(indexSegment, segm) {
+	if indexSegment != "" && !utils.SegmentLess(indexSegment, segm) {
 		// no new index
 		return nil
 	}
 	db := &searcherDB{}
 	if err := func() error {
-		f, err := segm.Join(gcse.IndexFn).Open()
+		f, err := os.Open(segm.Join(gcse.IndexFn))
 		if err != nil {
 			return err
 		}
@@ -166,11 +167,11 @@ func loadIndex() error {
 	}
 	db.storeDB = &bh.RefCountBox{
 		DataPath: func() string {
-			return segm.Join(configs.FnStore).S()
+			return segm.Join(configs.FnStore)
 		},
 	}
 	hitsPath := segm.Join(gcse.HitsArrFn)
-	if db.hits, err = index.OpenConstArray(hitsPath.S()); err != nil {
+	if db.hits, err = index.OpenConstArray(hitsPath); err != nil {
 		log.Printf("OpenConstArray %v failed: %v", hitsPath, err)
 		return err
 	}
@@ -186,7 +187,7 @@ func loadIndex() error {
 
 	// Update db.indexUpdated
 	db.indexUpdated = time.Now()
-	if st, err := segm.Join(gcse.IndexFn).Stat(); err == nil {
+	if st, err := os.Stat(segm.Join(gcse.IndexFn)); err == nil {
 		db.indexUpdated = st.ModTime()
 	}
 	indexSegment = segm
@@ -197,10 +198,10 @@ func loadIndex() error {
 	databaseValue.Store(db)
 	oldDB.Close()
 	oldDB = nil
-	gcse.DumpMemStats()
+	utils.DumpMemStats()
 
 	runtime.GC()
-	gcse.DumpMemStats()
+	utils.DumpMemStats()
 
 	return nil
 }

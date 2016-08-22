@@ -4,11 +4,12 @@ import (
 	"log"
 
 	"github.com/daviddengcn/gcse"
+	"github.com/daviddengcn/gcse/configs"
 )
 
 // processing sumitted packages (from go-search.org/add path)
 func processImports() error {
-	dones, err := gcse.ImportSegments.ListDones()
+	dones, err := configs.ImportSegments().ListDones()
 	if err != nil {
 		return err
 	}

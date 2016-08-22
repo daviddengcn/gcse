@@ -8,6 +8,7 @@ import (
 
 	"github.com/golangplus/strings"
 
+	"github.com/daviddengcn/gcse/utils"
 	"github.com/daviddengcn/go-easybi"
 	"github.com/daviddengcn/go-ljson-conf"
 	"github.com/daviddengcn/go-villa"
@@ -40,10 +41,6 @@ var (
 
 	// producer: crawler, consumer: indexer
 	DBOutPath villa.Path
-
-	// producer: indexer, consumer: server.
-	// server never delete index segments, indexer clear updated segments.
-	IndexPath villa.Path
 
 	// configures of crawler
 	CrawlByGodocApi           = true
@@ -80,9 +77,6 @@ func init() {
 	DBOutPath = DataRoot.Join("dbout")
 	DBOutPath.MkdirAll(0755)
 
-	IndexPath = DataRoot.Join("index")
-	IndexPath.MkdirAll(0755)
-
 	CrawlByGodocApi = conf.Bool("crawler.godoc", CrawlByGodocApi)
 	CrawlGithubUpdate = conf.Bool("crawler.github_update", CrawlGithubUpdate)
 	CrawlerDuePerRun = conf.Duration("crawler.due_per_run", CrawlerDuePerRun)
@@ -108,6 +102,10 @@ func DocsDBPath() villa.Path {
 	return DataRoot.Join(FnDocs)
 }
 
+func IndexPath() villa.Path {
+	return DataRoot.Join("index")
+}
+
 func StoreBoltPath() string {
 	return DataRoot.Join("store.bolt").S()
 }
@@ -117,4 +115,17 @@ func SetTestingDataPath() {
 	DataRoot.RemoveAll()
 	DataRoot.MkdirAll(0755)
 	log.Printf("DataRoot: %v", DataRoot)
+}
+
+// Returns the segments imported from web site.
+func ImportSegments() utils.Segments {
+	return utils.Segments(ImportPath)
+}
+
+func DBOutSegments() utils.Segments {
+	return utils.Segments(DBOutPath)
+}
+
+func IndexSegments() utils.Segments {
+	return utils.Segments(IndexPath())
 }

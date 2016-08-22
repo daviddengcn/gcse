@@ -140,12 +140,13 @@ func TestCrawlRepo(t *testing.T) {
 	assert.Equal(t, "r.Repository", *r.Repository, stpb.Repository{
 		Branch:    "master",
 		Signature: "sha-1",
-		Packages: []*sppb.Package{{
-			Name:        "gcse",
-			Path:        "",
-			Imports:     []string{"github.com/daviddengcn/go-easybi"},
-			TestImports: nil,
-		}},
+		Packages: map[string]*sppb.Package{
+			"": {
+				Name:        "gcse",
+				Path:        "",
+				Imports:     []string{"github.com/daviddengcn/go-easybi"},
+				TestImports: nil,
+			}},
 		CrawlingInfo: (&sppb.CrawlingInfo{}).SetCrawlingTime(tm),
 	})
 }
@@ -158,12 +159,13 @@ func TestCrawlRepo_Unchanged(t *testing.T) {
 		Repository: &stpb.Repository{
 			Branch:    "master",
 			Signature: "sha-unchanged",
-			Packages: []*sppb.Package{{
-				Name:        "gcse",
-				Path:        "",
-				Imports:     []string{"github.com/daviddengcn/go-easybi"},
-				TestImports: nil,
-			}},
+			Packages: map[string]*sppb.Package{
+				"": {
+					Name:        "gcse",
+					Path:        "",
+					Imports:     []string{"github.com/daviddengcn/go-easybi"},
+					TestImports: nil,
+				}},
 		},
 		User: "daviddengcn",
 		Name: "unchanged",
@@ -172,12 +174,13 @@ func TestCrawlRepo_Unchanged(t *testing.T) {
 	assert.Equal(t, "r.Repository", *r.Repository, stpb.Repository{
 		Branch:    "master",
 		Signature: "sha-unchanged",
-		Packages: []*sppb.Package{{
-			Name:        "gcse",
-			Path:        "",
-			Imports:     []string{"github.com/daviddengcn/go-easybi"},
-			TestImports: nil,
-		}},
+		Packages: map[string]*sppb.Package{
+			"": {
+				Name:        "gcse",
+				Path:        "",
+				Imports:     []string{"github.com/daviddengcn/go-easybi"},
+				TestImports: nil,
+			}},
 		CrawlingInfo: (&sppb.CrawlingInfo{}).SetCrawlingTime(tm),
 	})
 }
@@ -234,12 +237,13 @@ func TestExec(t *testing.T) {
 	assert.Equal(t, "r", *r, stpb.Repository{
 		Branch:    "master",
 		Signature: "sha-1",
-		Packages: []*sppb.Package{{
-			Name:        "gcse",
-			Path:        "",
-			Imports:     []string{"github.com/daviddengcn/go-easybi"},
-			TestImports: nil,
-		}},
+		Packages: map[string]*sppb.Package{
+			"": {
+				Name:        "gcse",
+				Path:        "",
+				Imports:     []string{"github.com/daviddengcn/go-easybi"},
+				TestImports: nil,
+			}},
 		CrawlingInfo: (&sppb.CrawlingInfo{}).SetCrawlingTime(tm),
 	})
 }

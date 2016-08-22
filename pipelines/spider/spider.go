@@ -86,10 +86,10 @@ func crawlRepo(site string, repo *RepositoryInfo) error {
 	}
 	repo.Signature = sha
 
-	repo.Packages = make([]*sppb.Package, 0, len(repo.Packages))
+	repo.Packages = make(map[string]*sppb.Package)
 	if err := githubSpider.ReadRepo(repo.User, repo.Name, repo.Signature, func(path string, doc *sppb.Package) error {
 		log.Printf("Package: %v", doc)
-		repo.Packages = append(repo.Packages, doc)
+		repo.Packages[path] = doc
 		return nil
 	}); err != nil {
 		return err
@@ -136,6 +136,9 @@ func exec(maxCrawl int, dur time.Duration) error {
 		go crawl(site, out, maxCrawl, dur)
 		return nil
 	})
+	if anyErr != nil {
+		log.Printf("ForEachRepositorySite failed: %v", anyErr)
+	}
 	log.Printf("Waiting for %d site(s)...", n)
 	for ; n > 0; n-- {
 		if e := <-out; e != nil {

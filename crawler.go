@@ -21,8 +21,10 @@ import (
 	"github.com/golangplus/strings"
 	"github.com/golangplus/time"
 
+	"github.com/daviddengcn/gcse/configs"
 	"github.com/daviddengcn/gcse/spider/github"
 	"github.com/daviddengcn/gcse/store"
+	"github.com/daviddengcn/gcse/utils"
 	"github.com/daviddengcn/gddo/doc"
 	"github.com/daviddengcn/go-easybi"
 	"github.com/daviddengcn/go-index"
@@ -56,13 +58,13 @@ const (
 // AppendPackages appends a list packages to imports folder for crawler
 // backend to read
 func AppendPackages(pkgs []string) bool {
-	segm, err := ImportSegments.GenNewSegment()
+	segm, err := configs.ImportSegments().GenNewSegment()
 	if err != nil {
 		log.Printf("genImportSegment failed: %v", err)
 		return false
 	}
 	log.Printf("Import to %v", segm)
-	if err := WriteJsonFile(segm.Join(fnLinks), pkgs); err != nil {
+	if err := utils.WriteJsonFile(segm.Join(fnLinks), pkgs); err != nil {
 		log.Printf("WriteJsonFile failed: %v", err)
 		return false
 	}
@@ -73,8 +75,9 @@ func AppendPackages(pkgs []string) bool {
 	return true
 }
 
-func ReadPackages(segm Segment) (pkgs []string, err error) {
-	err = ReadJsonFile(segm.Join(fnLinks), &pkgs)
+func ReadPackages(segm utils.Segment) ([]string, error) {
+	var pkgs []string
+	err := utils.ReadJsonFile(segm.Join(fnLinks), &pkgs)
 	return pkgs, err
 }
 
@@ -294,7 +297,7 @@ func newDocGet(httpClient doc.HttpClient, pkg string, etag string) (p *doc.Packa
 	gp, err := glgddo.Get(httpClient.(*BlackRequest).client.(*http.Client),
 		pkg, etag)
 	if err != nil {
-		if err == gosrc.ErrNotModified {
+		if _, ok := err.(gosrc.NotModifiedError); ok {
 			err = doc.ErrNotModified
 		}
 		return nil, err
@@ -687,37 +690,6 @@ func (nda *NewDocAction) ReadFrom(r sophie.Reader, l int) error {
 		return nil
 	}
 	return errorsp.WithStacks(nda.DocInfo.ReadFrom(r, -1))
-}
-
-const (
-	godocApiUrl = "http://api.godoc.org/packages"
-)
-
-// FetchAllPackagesInGodoc fetches the list of all packages on godoc.org
-func FetchAllPackagesInGodoc(httpClient doc.HttpClient) ([]string, error) {
-	req, err := http.NewRequest("GET", godocApiUrl, nil)
-	if err != nil {
-		return nil, errorsp.WithStacksAndMessage(err, "new request for %v failed", godocApiUrl)
-	}
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		return nil, errorsp.WithStacksAndMessage(err, "fetching %v failed", godocApiUrl)
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		return nil, errorsp.NewWithStacks("StatusCode: %d", resp.StatusCode)
-	}
-	var results map[string][]map[string]string
-	dec := json.NewDecoder(resp.Body)
-
-	if err := dec.Decode(&results); err != nil {
-		return nil, errorsp.WithStacks(err)
-	}
-	list := make([]string, 0, len(results["results"]))
-	for _, res := range results["results"] {
-		list = append(list, res["path"])
-	}
-	return list, nil
 }
 
 func init() {

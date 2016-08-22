@@ -15,6 +15,7 @@ import (
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/gcse/configs"
 	"github.com/daviddengcn/gcse/spider/github"
+	"github.com/daviddengcn/gcse/spider/godocorg"
 	"github.com/daviddengcn/gcse/store"
 	"github.com/daviddengcn/gcse/utils"
 	"github.com/daviddengcn/go-easybi"
@@ -149,14 +150,14 @@ func generateCrawlEntries(db *gcse.MemDB, hostFromID func(id string) string, out
 }
 
 func syncDatabases() {
-	gcse.DumpMemStats()
+	utils.DumpMemStats()
 	log.Printf("Synchronizing databases to disk...")
 	if err := cDB.Sync(); err != nil {
 		log.Fatalf("cdb.Sync() failed: %v", err)
 	}
-	gcse.DumpMemStats()
+	utils.DumpMemStats()
 	runtime.GC()
-	gcse.DumpMemStats()
+	utils.DumpMemStats()
 }
 
 func main() {
@@ -185,7 +186,7 @@ func main() {
 
 		if configs.CrawlByGodocApi {
 			httpClient := gcse.GenHttpClient("")
-			pkgs, err := gcse.FetchAllPackagesInGodoc(httpClient)
+			pkgs, err := godocorg.FetchAllPackagesInGodoc(httpClient)
 			if err != nil {
 				log.Fatalf("FetchAllPackagesInGodoc failed: %v", err)
 			}

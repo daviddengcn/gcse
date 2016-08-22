@@ -14,6 +14,7 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 
 	"github.com/cheggaaa/pb"
+	"github.com/daviddengcn/gcse/utils"
 	"github.com/daviddengcn/go-index"
 	"github.com/daviddengcn/sophie"
 	"github.com/daviddengcn/sophie/mr"
@@ -108,12 +109,12 @@ func indexAndSaveHits(ts *index.TokenSetSearcher, hits []HitInfo, idxs []int, sa
 	if bar != nil {
 		bar.FinishPrint("Indexing finished!")
 	}
-	DumpMemStats()
+	utils.DumpMemStats()
 	return nil
 }
 
 func Index(docDB mr.Input, outDir string) (*index.TokenSetSearcher, error) {
-	DumpMemStats()
+	utils.DumpMemStats()
 
 	docPartCnt, err := docDB.PartCount()
 	if err != nil {
@@ -178,7 +179,7 @@ func Index(docDB mr.Input, outDir string) (*index.TokenSetSearcher, error) {
 		it.Close()
 	}
 
-	DumpMemStats()
+	utils.DumpMemStats()
 	log.Printf("Making HitInfos ...")
 	hits := make([]HitInfo, 0, docCount)
 	for i := 0; i < docPartCnt; i++ {
@@ -239,10 +240,10 @@ func Index(docDB mr.Input, outDir string) (*index.TokenSetSearcher, error) {
 		it.Close()
 	}
 
-	DumpMemStats()
+	utils.DumpMemStats()
 	importsDB = nil
 	testImportsDB = nil
-	DumpMemStats()
+	utils.DumpMemStats()
 	log.Printf("%d hits collected, sorting static-scores in descending order", len(hits))
 
 	idxs := sortp.IndexSortF(len(hits), func(i, j int) bool {
@@ -250,7 +251,7 @@ func Index(docDB mr.Input, outDir string) (*index.TokenSetSearcher, error) {
 	})
 
 	ts := &index.TokenSetSearcher{}
-	DumpMemStats()
+	utils.DumpMemStats()
 	log.Printf("Indexing %d packages to TokenSetSearcher ...", len(idxs))
 	hitsArr, err := index.CreateConstArray(path.Join(outDir, HitsArrFn))
 	if err != nil {

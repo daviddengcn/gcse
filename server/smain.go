@@ -16,7 +16,6 @@ import (
 	"github.com/golangplus/bytes"
 	"github.com/golangplus/time"
 
-	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/gcse/configs"
 	"github.com/daviddengcn/go-easybi"
 	"github.com/russross/blackfriday"
@@ -121,7 +120,7 @@ func (hdl globalHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	runtime.GOMAXPROCS(2)
-	if err := gcse.ImportSegments.ClearUndones(); err != nil {
+	if err := configs.ImportSegments().ClearUndones(); err != nil {
 		log.Printf("CleanImportSegments failed: %v", err)
 	}
 	if err := loadIndex(); err != nil {

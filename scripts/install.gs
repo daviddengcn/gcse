@@ -1,15 +1,23 @@
 #!/usr/bin/env gosl
 
+import "flag"
+
+goGet := flag.Bool("go_get", true, `Whether do "go get" before installing`)
+
+flag.Parse()
+
 const GCSE = "github.com/daviddengcn/gcse"
 APPS := []string {
   "server", "pipelines/tocrawl", "pipelines/crawler", "pipelines/mergedocs", "pipelines/indexer",
 }
 
-Printfln("go get -u -v %s", GCSE)
-MustSucc(Bash("go get -u -v %s", GCSE))
-for _, a := range APPS {
+if *goGet {
+  Printfln("go get -u -v %s", GCSE)
+  MustSucc(Bash("go get -u -v %s", GCSE))
+  for _, a := range APPS {
 	Printfln("go get -u -v %s/%s", GCSE, a)
 	MustSucc(Bash("go get -u -v %s/%s", GCSE, a))
+  }
 }
 
 Println("go test -a")

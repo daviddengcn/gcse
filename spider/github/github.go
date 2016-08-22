@@ -131,7 +131,7 @@ func (s *Spider) ReadUser(name string) (*User, error) {
 		if user.Repos == nil {
 			user.Repos = make(map[string]*sppb.RepoInfo)
 		}
-		user.Repos[repoName] = repoInfoFromGithub(&repo)
+		user.Repos[repoName] = repoInfoFromGithub(repo)
 	}
 	return user, nil
 }
@@ -419,6 +419,9 @@ func (s *Spider) getTree(owner, repo, sha string, recursive bool) (*github.Tree,
 	return tree, nil
 }
 
+// ReadRepo reads all packages of a repository.
+// For pkg given to f, it will not be reused.
+// path in f is relative to the repository path.
 func (s *Spider) ReadRepo(user, repo, sha string, f func(path string, pkg *sppb.Package) error) error {
 	tree, err := s.getTree(user, repo, sha, true)
 	if err != nil {

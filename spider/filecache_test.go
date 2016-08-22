@@ -7,9 +7,9 @@ import (
 
 	"github.com/golangplus/testing/assert"
 
-	sppb "github.com/daviddengcn/gcse/proto/spider"
-
 	"github.com/daviddengcn/bolthelper"
+
+	sppb "github.com/daviddengcn/gcse/proto/spider"
 )
 
 func TestNullFileCache(t *testing.T) {

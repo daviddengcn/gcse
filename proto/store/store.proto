@@ -38,7 +38,8 @@ message Repository {
 	string branch    = 6;
 	string signature = 7;
 
-	repeated gcse.spider.Package packages = 1;
+	// map from relative path, e.g. "proto/store", to Package
+	map<string, gcse.spider.Package> packages = 8;
 
 	string ReadmeFn   = 2;  // No directory info
 	string ReadmeData = 3;  // Raw content, cound be md, txt, etc.

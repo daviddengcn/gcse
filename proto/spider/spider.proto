@@ -87,12 +87,24 @@ message HistoryInfo {
 }
 
 message Package {
-	string Name        = 1;  // package "name"
-	string Path        = 2;  // Relative path to the repository
+	// package "name"
+	string Name        = 1;
+
+	// Relative path to the repository, "" for root repository, "/sub" for a sub package.
+	// Full path: site + "/" + user + "/" + repo + path
+	string Path        = 2;
+
+    string Synopsis    = 9;
 	string Description = 3;
-	string ReadmeFn    = 4;  // No directory info
-	string ReadmeData  = 5;  // Raw content, cound be md, txt, etc.
+	// No directory info
+	string ReadmeFn    = 4;
+
+	// Raw content, cound be md, txt, etc.
+	string ReadmeData  = 5;
 
 	repeated string Imports     = 6;
 	repeated string TestImports = 7;
+
+	// URL to the package source code.
+	string url = 8;
 }

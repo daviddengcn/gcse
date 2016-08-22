@@ -18,6 +18,7 @@ import (
 	"github.com/daviddengcn/gcse/configs"
 	"github.com/daviddengcn/gcse/spider"
 	"github.com/daviddengcn/gcse/spider/github"
+	"github.com/daviddengcn/gcse/utils"
 	"github.com/daviddengcn/gddo/doc"
 	"github.com/daviddengcn/go-easybi"
 	"github.com/daviddengcn/go-villa"
@@ -40,14 +41,14 @@ func init() {
 }
 
 func syncDatabases() {
-	gcse.DumpMemStats()
+	utils.DumpMemStats()
 	log.Printf("Synchronizing databases to disk...")
 	if err := cDB.Sync(); err != nil {
 		log.Fatalf("cdb.Sync() failed: %v", err)
 	}
-	gcse.DumpMemStats()
+	utils.DumpMemStats()
 	runtime.GC()
-	gcse.DumpMemStats()
+	utils.DumpMemStats()
 }
 
 func loadAllDocsPkgs(in kv.DirInput) error {
