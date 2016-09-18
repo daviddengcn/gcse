@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	DefaultPackageAge = 10 * timep.Day
+	DefaultPackageAge = 20 * timep.Day
 )
 
 var (
