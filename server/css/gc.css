@@ -1,373 +1,373 @@
 body {
-    padding-top: 50px;
+  padding-top: 50px;
 }
 
 div.info {
-    margin-top: 10px;
-	margin-bottom: 10px;
+  margin-top: 10px;
+  margin-bottom: 10px;
 }
 
 div.schblock {
-	margin-top: 10px;
+  margin-top: 10px;
 }
 
 div.toplist {
-    float: left;
-    width: 280px;
-    margin-right: 5px;
-    margin-bottom: 5px;
+  float: left;
+  width: 280px;
+  margin-right: 5px;
+  margin-bottom: 5px;
 }
 
 div.toplist div.pkg {
-    width: 175px;
+  width: 175px;
 }
 
 div.toplist div.pkg {
-    width: 160px;
-    height: 20px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    vertical-align: bottom;
+  width: 160px;
+  height: 20px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
 }
 
 div.toplist div.tableinfo {
-	float: right;
-    height: 18px;
-    text-align: right;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-size: 90%;
+  float: right;
+  height: 18px;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 90%;
 }
 
 div.toplist div.topnum {
-	margin-top: 2px;
-	margin-left: -18px;
-	margin-right: 5px;
-	float: left;
-	width: 30px;
-	text-align: right;
-	font-size: 90%;
+  margin-top: 2px;
+  margin-left: -18px;
+  margin-right: 5px;
+  float: left;
+  width: 30px;
+  text-align: right;
+  font-size: 90%;
 }
 
 div.toplist a:visited {
-    color: #12c;
+  color: #12c;
 }
 
 
 ol.schres div.title {
-	margin-bottom: 5px;
+  margin-bottom: 5px;
 }
 
 ol.schres div.summary {
-	line-height: 1.3em;
+  line-height: 1.3em;
 }
 
 ol.schres div.info {
-    margin-top: 5px;
-	margin-bottom: 10px;
+  margin-top: 5px;
+  margin-bottom: 10px;
 }
 
 div#totopbtn {
-    position: fixed;
-    bottom: 5px;
-    right: 20px;
+  position: fixed;
+  bottom: 5px;
+  right: 20px;
 }
 
 a#top {
-	display: block;
-	position: absolute;
-	top: 0px;
+  display: block;
+  position: absolute;
+  top: 0px;
 }
 
 textarea#pkg {
-    height: 500px;
+  height: 500px;
 }
 
 
 
 
 img.logo {
-    vertical-align: bottom;
+  vertical-align: bottom;
 }
 
 input.query-box {
-    width: 500px;
+  width: 500px;
 }
 
 div.content {
-    text-align: left;
+  text-align: left;
 }
 
 ol.schres {
-    line-height: 1.2em;
+  line-height: 1.2em;
 }
 
 ol.schres li {
-    margin-bottom: 10px;
+  margin-bottom: 10px;
 }
 
 ol.schres div.title a {
-    font-size: medium;
+  font-size: medium;
 }
 
 .schres div.num {
-    display: inline-block;
-    width: 2em;
-    margin-left: -2.5em;
-    margin-right: 0.5em;
-    text-align: right;
+  display: inline-block;
+  width: 2em;
+  margin-left: -2.5em;
+  margin-right: 0.5em;
+  text-align: right;
 }
 
 
 .schres li {
-    list-style-type: none;
+  list-style-type: none;
 }
 
 .schres .title a, .schres .title a:link, .schres .title a:visited {
-    color: #12c;
+  color: #12c;
 }
 
 .schres .info, .schres .info a {
-    color: #093;
+  color: #093;
 }
 
 .schres .info a {
-    text-decoration: none;
+  text-decoration: none;
 }
 
 div.pages {
-    margin-bottom: 10px;
+  margin-bottom: 10px;
 }
 
 .pages span.prevpage {
-    display: inline-block;
-    width: 1em;
-    text-align: center;
+  display: inline-block;
+  width: 1em;
+  text-align: center;
 }
 
 .pages span.prevpage a {
-    text-decoration: none;
+  text-decoration: none;
 }
 
 .pages .page {
-    padding-left: 0.2em;
-    padding-right: 0.2em;
+  padding-left: 0.2em;
+  padding-right: 0.2em;
 }
 
 .pages a.page {
-    border: 1px solid gray;
-    border-radius: 5px;
-    text-decoration: none;
+  border: 1px solid gray;
+  border-radius: 5px;
+  text-decoration: none;
 }
 
 .pages a.page:hover {
-    background: gray;
-    color: white;
+  background: gray;
+  color: white;
 }
 
 .code {
-    font-family: courier new;
+  font-family: courier new;
 }
 
 header {
-    border-bottom: 1px solid gray;
-    margin-top: 5px;
-    margin-bottom: 10px;
-    height: 25px;
-    padding-left: 2px;
+  border-bottom: 1px solid gray;
+  margin-top: 5px;
+  margin-bottom: 10px;
+  height: 25px;
+  padding-left: 2px;
 }
 
 header a, footer a {
-    text-decoration: none;
+  text-decoration: none;
 }
 
 div.hdsch {
-    float: right;
-    margin-top: -2px;
+  float: right;
+  margin-top: -2px;
 }
 
 div.hdsch input[type="search"] {
-    width: 80px;
-    transition: all 0.1s ease-in;
-    opacity: 0.5;
+  width: 80px;
+  transition: all 0.1s ease-in;
+  opacity: 0.5;
 }
 
 div.hdsch input[type="search"]:focus {
-    background: white;
-    width: auto;
-    width: 300px;
-    opacity: 1.0;
+  background: white;
+  width: auto;
+  width: 300px;
+  opacity: 1.0;
 }
 
 div.hdsch input[type="search"]~button {
-    opacity: 0.5;
+  opacity: 0.5;
 }
 
 div.hdsch input[type="search"]:focus~button {
-    opacity: 1.0;
+  opacity: 1.0;
 }
 
 div.rightalign {
-    text-align: right;
+  text-align: right;
 }
 
 
 h4 a.anchor {
-    text-decoration: none;
-    color: rgba(0, 0, 0, 0);
+  text-decoration: none;
+  color: rgba(0, 0, 0, 0);
 }
 
 h4:hover a.anchor, h4 a.anchor:focus {
-    color: inherit;
+  color: inherit;
 }
 
 footer {
-    margin-top: 15px;
-    border-top: 1px solid gray;
-    padding-bottom: 20px;
-    text-align: center;
-    font-size: 90%;
-    line-height: 150%;
-    margin-bottom: 10px;
+  margin-top: 15px;
+  border-top: 1px solid gray;
+  padding-bottom: 20px;
+  text-align: center;
+  font-size: 90%;
+  line-height: 150%;
+  margin-bottom: 10px;
 }
 
 footer div.block {
-    display: inline-block;
-    height: 50px;
-    text-align: left;
-    vertical-align: top;
-    margin-top: 10px;
-    padding: 0px 10px;
+  display: inline-block;
+  height: 50px;
+  text-align: left;
+  vertical-align: top;
+  margin-top: 10px;
+  padding: 0px 10px;
 }
 
 footer div.rightline {
-    border-right: 1px solid gray;
+  border-right: 1px solid gray;
 }
 
 tfoot tr td {
-    border-top: 1px solid black;
-    border-bottom: 3px double black;
+  border-top: 1px solid black;
+  border-bottom: 3px double black;
 }
 
 td.numcell {
-    font-family: courier new;
-    text-align: right;
+  font-family: courier new;
+  text-align: right;
 }
 
 div.half {
-    width: 49%;
-    height: auto;
-    display: inline-block;
+  width: 49%;
+  height: auto;
+  display: inline-block;
 }
 
 div.desc pre {
-    background: #e0e0e0;
-    margin: 0 0 10px;
-    padding: 5px;
-    font-size: 13px;
-    border-radius: 5px;
-    
-    font-family: monospace;
+  background: #e0e0e0;
+  margin: 0 0 10px;
+  padding: 5px;
+  font-size: 13px;
+  border-radius: 5px;
+
+  font-family: monospace;
 }
 
 pre.readme {
-    word-break: break-word;
-    font-size: 13px;
+  word-break: break-word;
+  font-size: 13px;
 }
 
 
 div.toplist div.listname {
-    border-bottom: 1px solid gray;
+  border-bottom: 1px solid gray;
 }
 
 div.toplist ol {
-    margin: 0px;
-    padding: 0px;
-    padding-left: 25px;
+  margin: 0px;
+  padding: 0px;
+  padding-left: 25px;
 }
 
 div.toplist li.line {
-    height: 25px;
-    vertical-align: bottom;
+  height: 25px;
+  vertical-align: bottom;
 }
 
 .clearboth {
-    clear: both;
+  clear: both;
 }
 
 div.view-bottom {
-    color: gray;
-    margin-top: 0px;
-    margin-bottom: 10px;
-    font-size: 75%;
+  color: gray;
+  margin-top: 0px;
+  margin-bottom: 10px;
+  font-size: 75%;
 }
 
 div.view-bottom a:link {
-    color: gray;
+  color: gray;
 }
 
 div.bottom-search {
-    margin-top: 5px;
+  margin-top: 5px;
 }
 
 h4 {
-    margin: 1em 0px 0px 0px;
+  margin: 1em 0px 0px 0px;
 }
 
 div.markdown ul {
-    padding-left: 20px;
+  padding-left: 20px;
 }
 
 div.markdown thead td {
-    font-weight: bold;
+  font-weight: bold;
 }
 
 div.markdown td {
-    vertical-align: top;
-    padding: 0px 10px 0px 0px;
+  vertical-align: top;
+  padding: 0px 10px 0px 0px;
 }
 
 @media only screen and (max-device-width: 480px) {
-body {
+  body {
     margin: 0px auto;
     width: 100%;
-}
+  }
 
-div.main {
+  div.main {
     padding: 0px 0px 0px 2px;
     overflow: hidden;
-}
-input.query-box {
+  }
+  input.query-box {
     width: auto;
-}
+  }
 
-div.hdsch {
+  div.hdsch {
     padding-right: 2px;
-}
+  }
 
-div.hdsch input[type="search"]:focus {
+  div.hdsch input[type="search"]:focus {
     background: white;
     width: 150px;
-}
-__h1 {
+  }
+  __h1 {
     font-size: 1em;
     padding-left: 2px;
-}
+  }
 
-__h1 img {
+  __h1 img {
     height: 16px;
-}
+  }
 
-div.taframe {
+  div.taframe {
     padding: 0px;
-}
+  }
 
-textarea#pkg {
+  textarea#pkg {
     width: 95%;
     height: 200px;
-}
+  }
 
-div#totopbtn {
+  div#totopbtn {
     display: none;
-}
+  }
 }
