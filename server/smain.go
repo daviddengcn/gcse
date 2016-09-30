@@ -59,7 +59,6 @@ func init() {
 	http.Handle("/images/", http.StripPrefix("/images/", http.FileServer(http.Dir(configs.ServerRoot.Join("images").S()))))
 	http.Handle("/img/", http.StripPrefix("/img/", http.FileServer(http.Dir(configs.ServerRoot.Join("images").S()))))
 	http.Handle("/robots.txt", http.FileServer(http.Dir(configs.ServerRoot.Join("static").S())))
-	http.Handle("/clippy.swf", http.FileServer(http.Dir(configs.ServerRoot.Join("static").S())))
 
 	http.HandleFunc("/add", pageAdd)
 	http.HandleFunc("/search", pageSearch)

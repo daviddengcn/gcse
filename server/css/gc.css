@@ -327,6 +327,13 @@ div.markdown td {
   padding: 0px 10px 0px 0px;
 }
 
+.import-box {
+  margin-bottom: 1.5rem;
+}
+.import-box input {
+  font-family: monospace;
+}
+
 @media only screen and (max-device-width: 480px) {
   body {
     margin: 0px auto;
