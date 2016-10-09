@@ -42,24 +42,14 @@ window.fbAsyncInit = function() {
   </div><!-- /.container-fluid -->
 </nav>
 
-<pre>import "{{.Package}}"<object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000" id="clippy"
-		><param name="movie" value="/clippy.swf"
-		/><param name="allowScriptAccess" value="always"
-		/><param name="quality" value="high"
-		/><param name="scale" value="noscale"
-		/><param NAME="FlashVars" value="text={{.Package}}"
-		/><param name="bgcolor" value="#f5f5f5" /> <embed
-			src="/clippy.swf"
-			width="100"
-			height="14"
-			name="clippy"
-			quality="high"
-			allowScriptAccess="always"
-			type="application/x-shockwave-flash"
-			pluginspage="http://www.macromedia.com/go/getflashplayer"
-			FlashVars="text={{.Package}}"
-			bgcolor="#f5f5f5"
-	    /></object></pre>
+<div class="input-group import-box">
+  <span class="input-group-btn">
+    <button id="import-btn" data-clipboard-target="#import" class="btn btn-default">
+      <span class="glyphicon glyphicon-copy"></span>
+    </button>
+  </span>
+  <input id="import" type="text" class="form-control" value="import &quot;{{.Package}}&quot;" disabled="disabled">
+</div>
 
 {{if .Description}}
 <div class="panel panel-default">
@@ -113,7 +103,7 @@ window.fbAsyncInit = function() {
 
         function disqus_config() {
             console.log('disqus_config');
-            this.callbacks.onNewComment = [function(comment) { 
+            this.callbacks.onNewComment = [function(comment) {
             	console.log('comment_create_callback');
                 ga('send', 'event', 'comment', '{{.Package}}', 'create');
             }];
@@ -131,6 +121,11 @@ window.fbAsyncInit = function() {
     <meta itemprop="name" content="Go"></meta>
 </div>
 {{template "searchbox.html" .UIUtils.Slice "" false}}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.5.12/clipboard.min.js"></script>
+<script>
+  new Clipboard(document.getElementById('import-btn'))
+</script>
 
 <script type="text/javascript">
   (function() {
