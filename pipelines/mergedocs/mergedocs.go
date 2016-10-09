@@ -1,3 +1,6 @@
+// Input
+//   FnDocs
+//   FnNewDocs
 package main
 
 import (

@@ -59,7 +59,7 @@ func loadPackageUpdateTimes(fpDocs sophie.FsPath) (map[string]time.Time, error) 
 	return pkgUTs, nil
 }
 
-func generateCrawlEntries(db *gcse.MemDB, hostFromID func(id string) string, out kv.DirOutput) error {
+func generateCrawlEntries(db *gcse.MemDB, hostFromID func(id string) string, out kv.DirOutput, pkgUTs map[string]time.Time) error {
 	now := time.Now()
 	type idAndCrawlingEntry struct {
 		id  string
@@ -113,6 +113,16 @@ func generateCrawlEntries(db *gcse.MemDB, hostFromID func(id string) string, out
 	index := 0
 	for _, g := range groups {
 		sortp.SortF(len(g), func(i, j int) bool {
+			if pkgUTs != nil {
+				_, inDocsI := pkgUTs[g[i].id]
+				_, inDocsJ := pkgUTs[g[j].id]
+				if inDocsI != inDocsJ {
+					// The one not in docs should be crawled first.
+					// I.e. if g[i] in doc (inDocsI = true), g[j] not in doc (inDocsJ == false), shoud return false
+					// vice versa.
+					return inDocsJ
+				}
+			}
 			return g[i].ent.ScheduleTime.Before(g[j].ent.ScheduleTime)
 		}, func(i, j int) {
 			g[i], g[j] = g[j], g[i]
@@ -172,14 +182,13 @@ func main() {
 	// Load CrawlerDB
 	cDB = gcse.LoadCrawlerDB()
 
+	// load pkgUTs
+	pkgUTs, err := loadPackageUpdateTimes(
+		sophie.LocalFsPath(configs.DocsDBPath().S()))
+	if err != nil {
+		log.Fatalf("loadPackageUpdateTimes failed: %v", err)
+	}
 	if configs.CrawlGithubUpdate || configs.CrawlByGodocApi {
-		// load pkgUTs
-		pkgUTs, err := loadPackageUpdateTimes(
-			sophie.LocalFsPath(configs.DocsDBPath().S()))
-		if err != nil {
-			log.Fatalf("loadPackageUpdateTimes failed: %v", err)
-		}
-
 		if configs.CrawlGithubUpdate {
 			touchByGithubUpdates(pkgUTs)
 		}
@@ -215,7 +224,7 @@ func main() {
 	kvPackage := kv.DirOutput(sophie.LocalFsPath(
 		pathToCrawl.Join(configs.FnPackage).S()))
 	kvPackage.Clean()
-	if err := generateCrawlEntries(cDB.PackageDB, gcse.HostOfPackage, kvPackage); err != nil {
+	if err := generateCrawlEntries(cDB.PackageDB, gcse.HostOfPackage, kvPackage, pkgUTs); err != nil {
 		log.Fatalf("generateCrawlEntries %v failed: %v", kvPackage.Path, err)
 	}
 
@@ -226,7 +235,7 @@ func main() {
 	if err := generateCrawlEntries(cDB.PersonDB, func(id string) string {
 		site, _ := gcse.ParsePersonId(id)
 		return site
-	}, kvPerson); err != nil {
+	}, kvPerson, nil); err != nil {
 		log.Fatalf("generateCrawlEntries %v failed: %v", kvPerson.Path, err)
 	}
 }
