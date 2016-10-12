@@ -74,6 +74,9 @@ func generateCrawlEntries(db *gcse.MemDB, hostFromID func(id string) string, out
 
 		sumAgeHours float64
 		cnt         int
+
+		// The number of packages not in pkgUTs
+		newCnt int
 	}
 	ages := make(map[string]nameAndAges)
 	if err := db.Iterate(func(id string, val interface{}) error {
@@ -95,7 +98,10 @@ func generateCrawlEntries(db *gcse.MemDB, hostFromID func(id string) string, out
 			// randomly set Etag to empty to fetch stars
 			ent.Etag = ""
 		}
-		groups[host] = append(groups[host], idAndCrawlingEntry{id, &ent})
+		groups[host] = append(groups[host], idAndCrawlingEntry{
+			id:  id,
+			ent: &ent,
+		})
 
 		age := now.Sub(ent.ScheduleTime)
 		na := ages[host]
@@ -104,6 +110,9 @@ func generateCrawlEntries(db *gcse.MemDB, hostFromID func(id string) string, out
 		}
 		na.sumAgeHours += age.Hours()
 		na.cnt++
+		if _, ok := pkgUTs[id]; !ok {
+			na.newCnt++
+		}
 		ages[host] = na
 
 		count++
@@ -148,12 +157,13 @@ func generateCrawlEntries(db *gcse.MemDB, hostFromID func(id string) string, out
 	}
 	for host, na := range ages {
 		aveAge := time.Duration(na.sumAgeHours / float64(na.cnt) * float64(time.Hour))
-		log.Printf("%s age: max -> %v(%s), ave -> %v", host, na.maxAge, na.maxName, aveAge)
+		log.Printf("%s age: max -> %v(%s), ave -> %v, new -> %v", host, na.maxAge, na.maxName, aveAge, na.newCnt)
 		if host == "github.com" && strings.Contains(out.Path, configs.FnPackage) {
 			gcse.AddBiValueAndProcess(bi.Average, "crawler.github_max_age.hours", int(na.maxAge.Hours()))
 			gcse.AddBiValueAndProcess(bi.Average, "crawler.github_max_age.days", int(na.maxAge/timep.Day))
 			gcse.AddBiValueAndProcess(bi.Average, "crawler.github_ave_age.hours", int(aveAge.Hours()))
 			gcse.AddBiValueAndProcess(bi.Average, "crawler.github_ave_age.days", int(aveAge/timep.Day))
+			gcse.AddBiValueAndProcess(bi.Average, "crawler.github_new_cnt", na.newCnt)
 		}
 	}
 	log.Printf("%d entries to crawl for folder %v", count, out.Path)
