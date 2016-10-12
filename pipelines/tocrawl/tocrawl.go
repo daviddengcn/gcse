@@ -18,6 +18,7 @@ import (
 	"github.com/daviddengcn/gcse/spider/godocorg"
 	"github.com/daviddengcn/gcse/store"
 	"github.com/daviddengcn/gcse/utils"
+	"github.com/daviddengcn/gddo/doc"
 	"github.com/daviddengcn/go-easybi"
 	"github.com/daviddengcn/sophie"
 	"github.com/daviddengcn/sophie/kv"
@@ -203,6 +204,9 @@ func main() {
 			log.Printf("FetchAllPackagesInGodoc returns %d entries", len(pkgs))
 			now := time.Now()
 			for _, pkg := range pkgs {
+				if !doc.IsValidRemotePath(pkg) {
+					continue
+				}
 				cDB.AppendPackage(pkg, func(pkg string) bool {
 					_, ok := pkgUTs[pkg]
 					return ok
