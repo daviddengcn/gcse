@@ -144,9 +144,12 @@ func generateCrawlEntries(db *gcse.MemDB, hostFromID func(id string) string, out
 			}
 			defer c.Close()
 
-			for _, ie := range ies {
+			for i, ie := range ies {
 				if err := c.Collect(sophie.RawString(ie.id), ie.ent); err != nil {
 					return err
+				}
+				if i < 10 {
+					log.Printf("id: %s, ent: %+v", ie.id, *ie.ent)
 				}
 			}
 			return nil

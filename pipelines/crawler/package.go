@@ -176,7 +176,7 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter, c []sophie.Collector
 	p, flds, err := gcse.CrawlPackage(pc.httpClient, pkg, ent.Etag)
 	for _, fld := range flds {
 		if spider.LikeGoSubFolder(fld.Name) {
-			appendNewPackage(pkg+"/"+fld.Path, "parent")
+			appendNewPackage(pkg+"/"+fld.Name, "parent")
 		}
 	}
 	site, path := utils.SplitPackage(pkg)

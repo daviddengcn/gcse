@@ -110,6 +110,10 @@ func StoreBoltPath() string {
 	return DataRoot.Join("store.bolt").S()
 }
 
+func FileCacheBoltPath() string {
+	return DataRoot.Join("filecache.bolt").S()
+}
+
 func SetTestingDataPath() {
 	DataRoot = villa.Path(os.TempDir()).Join("gcse_testing")
 	DataRoot.RemoveAll()

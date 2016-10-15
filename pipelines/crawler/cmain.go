@@ -108,7 +108,7 @@ func main() {
 	log.Printf("Using personal: %v", configs.CrawlerGithubPersonal)
 	gcse.GithubSpider = github.NewSpiderWithToken(configs.CrawlerGithubPersonal)
 
-	if db, err := bh.Open(configs.DataRoot.Join("filecache.bolt").S(), 0644, nil); err == nil {
+	if db, err := bh.Open(configs.FileCacheBoltPath(), 0644, nil); err == nil {
 		log.Print("Using file cache!")
 		gcse.GithubSpider.FileCache = spider.BoltFileCache{
 			DB:         db,
@@ -142,9 +142,9 @@ func main() {
 		log.Printf("Crawling single package %s ...", *singlePackage)
 		p, flds, err := gcse.CrawlPackage(httpClient, *singlePackage, *singleETag)
 		if err != nil {
-			fmtp.Printfln("Crawling package %s failed: %v, folders: %v", *singlePackage, err, flds)
+			fmtp.Printfln("Crawling package %s failed: %v\nfolders: %v", *singlePackage, err, flds)
 		} else {
-			fmtp.Printfln("Package %s: %+v, folders: %v", *singlePackage, p, flds)
+			fmtp.Printfln("Package %s: %+v\nfolders: %v", *singlePackage, p, flds)
 		}
 	}
 	if *singlePackage != "" || *singlePerson != "" {
