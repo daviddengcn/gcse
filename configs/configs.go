@@ -12,12 +12,13 @@ import (
 	"github.com/daviddengcn/go-easybi"
 	"github.com/daviddengcn/go-ljson-conf"
 	"github.com/daviddengcn/go-villa"
+	"github.com/daviddengcn/sophie"
 )
 
 const (
-	FnCrawlerDB = "crawler"
+	fnCrawlerDB = "crawler"
 
-	FnToCrawl = "tocrawl"
+	fnToCrawl = "tocrawl"
 	FnPackage = "package"
 	FnPerson  = "person"
 	// key: RawString, value: DocInfo
@@ -94,12 +95,32 @@ func init() {
 	BiWebPath = conf.String("bi.web_path", BiWebPath)
 }
 
-func CrawlerDBPath() villa.Path {
-	return DataRoot.Join(FnCrawlerDB)
+func DataRootFsPath() sophie.FsPath {
+	return sophie.LocalFsPath(DataRoot.S())
 }
 
-func DocsDBPath() villa.Path {
-	return DataRoot.Join(FnDocs)
+func CrawlerDBPath() villa.Path {
+	return DataRoot.Join(fnCrawlerDB)
+}
+
+func CrawlerDBFsPath() sophie.FsPath {
+	return DataRootFsPath().Join(fnCrawlerDB)
+}
+
+func DocsDBPath() string {
+	return DataRoot.Join(FnDocs).S()
+}
+
+func DocsDBFsPath() sophie.FsPath {
+	return DataRootFsPath().Join(FnDocs)
+}
+
+func ToCrawlPath() string {
+	return DataRoot.Join(fnToCrawl).S()
+}
+
+func ToCrawlFsPath() sophie.FsPath {
+	return DataRootFsPath().Join(fnToCrawl)
 }
 
 func IndexPath() villa.Path {

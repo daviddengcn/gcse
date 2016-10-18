@@ -156,12 +156,7 @@ func main() {
 	// Load CrawlerDB
 	cDB = gcse.LoadCrawlerDB()
 
-	fpDataRoot := sophie.FsPath{
-		Fs:   sophie.LocalFS,
-		Path: configs.DataRoot.S(),
-	}
-
-	fpDocs := fpDataRoot.Join(configs.FnDocs)
+	fpDocs := configs.DocsDBFsPath()
 	if err := loadAllDocsPkgs(kv.DirInput(fpDocs)); err != nil {
 		log.Fatalf("loadAllDocsPkgs: %v", err)
 	}
@@ -170,8 +165,8 @@ func main() {
 	AppStopTime = time.Now().Add(configs.CrawlerDuePerRun)
 
 	//pathToCrawl := gcse.DataRoot.Join(gcse.FnToCrawl)
-	fpCrawler := fpDataRoot.Join(configs.FnCrawlerDB)
-	fpToCrawl := fpDataRoot.Join(configs.FnToCrawl)
+	fpCrawler := configs.CrawlerDBFsPath()
+	fpToCrawl := configs.ToCrawlFsPath()
 
 	fpNewDocs := fpCrawler.Join(configs.FnNewDocs)
 	fpNewDocs.Remove()

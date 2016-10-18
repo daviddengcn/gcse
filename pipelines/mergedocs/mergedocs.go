@@ -15,6 +15,7 @@ import (
 
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/gcse/configs"
+	"github.com/daviddengcn/go-villa"
 	"github.com/daviddengcn/sophie"
 	"github.com/daviddengcn/sophie/kv"
 	"github.com/daviddengcn/sophie/mr"
@@ -31,7 +32,7 @@ func main() {
 
 	fpDataRoot := sophie.LocalFsPath(configs.DataRoot.S())
 
-	fpCrawler := fpDataRoot.Join(configs.FnCrawlerDB)
+	fpCrawler := configs.CrawlerDBFsPath()
 	outDocsUpdated := kv.DirOutput(fpDataRoot.Join("docs-updated"))
 	outDocsUpdated.Clean()
 
@@ -155,7 +156,7 @@ func main() {
 	log.Printf("New:       %v", cntNew)
 	log.Printf("Unchanged: %v", cntUnchanged)
 
-	pDocs := configs.DataRoot.Join(configs.FnDocs)
+	pDocs := villa.Path(configs.DocsDBPath())
 	pUpdated := configs.DataRoot.Join("docs-updated")
 	pTmp := configs.DataRoot.Join("docs-tmp")
 

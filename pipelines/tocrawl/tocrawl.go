@@ -20,6 +20,7 @@ import (
 	"github.com/daviddengcn/gcse/utils"
 	"github.com/daviddengcn/gddo/doc"
 	"github.com/daviddengcn/go-easybi"
+	"github.com/daviddengcn/go-villa"
 	"github.com/daviddengcn/sophie"
 	"github.com/daviddengcn/sophie/kv"
 
@@ -197,8 +198,7 @@ func main() {
 	cDB = gcse.LoadCrawlerDB()
 
 	// load pkgUTs
-	pkgUTs, err := loadPackageUpdateTimes(
-		sophie.LocalFsPath(configs.DocsDBPath().S()))
+	pkgUTs, err := loadPackageUpdateTimes(sophie.LocalFsPath(configs.DocsDBPath()))
 	if err != nil {
 		log.Fatalf("loadPackageUpdateTimes failed: %v", err)
 	}
@@ -236,7 +236,7 @@ func main() {
 	log.Printf("Package DB: %d entries", cDB.PackageDB.Count())
 	log.Printf("Person DB: %d entries", cDB.PersonDB.Count())
 
-	pathToCrawl := configs.DataRoot.Join(configs.FnToCrawl)
+	pathToCrawl := villa.Path(configs.ToCrawlPath())
 
 	kvPackage := kv.DirOutput(sophie.LocalFsPath(
 		pathToCrawl.Join(configs.FnPackage).S()))

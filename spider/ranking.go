@@ -2,6 +2,7 @@ package spider
 
 import (
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
@@ -19,16 +20,44 @@ const (
 )
 
 var nonGoSubFolders = stringsp.NewSet(
-	"javascript", "js", "css", "image", "images", "font", "fonts", "script", "scripts", "themes", "templates", "vendor", "bin", "cpp", "python", "nodejs",
+	"android",
+	"bin", "binary",
+	"c", "cmd", "cpp", "css",
+	"doc", "dll",
+	"faq", "font", "fonts",
+	"gif", "django",
+	"help", "html",
+	"image", "images", "icon", "icons",
+	"java", "javascript", "js", "jpg", "jpeg",
+	"lib", "less",
+	"nodejs",
+	"pdf", "python",
+	"r", "readme",
+	"src", "script", "scripts", "static",
+	"themes", "templates", "tex",
+	"vendor",
+	"wav",
+	"xml",
+	"zip",
 )
 
 var nonGoSubPattern = regexp.MustCompile(`^[0-9\-_]+$`)
 
 func LikeGoSubFolder(folder string) bool {
+	folder = strings.ToLower(folder)
 	if nonGoSubFolders.Contain(folder) {
 		return false
 	}
 	if nonGoSubPattern.MatchString(folder) {
+		return false
+	}
+	if strings.ContainsAny(folder, ".") {
+		return false
+	}
+	if folder[0] < 'a' || folder[0] > 'z' {
+		return false
+	}
+	if strings.Contains(folder, "nodejs") {
 		return false
 	}
 	return true
