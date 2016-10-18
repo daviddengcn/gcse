@@ -27,6 +27,7 @@ import (
 
 const (
 	DefaultPackageAge = 60 * timep.Day
+	FailPackageAge    = 10 * timep.Day
 )
 
 var (
@@ -176,7 +177,12 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter, c []sophie.Collector
 	p, flds, err := gcse.CrawlPackage(pc.httpClient, pkg, ent.Etag)
 	for _, fld := range flds {
 		if spider.LikeGoSubFolder(fld.Name) {
-			appendNewPackage(pkg+"/"+fld.Name, "parent")
+			newPkg := pkg + "/" + fld.Name
+			site, path := utils.SplitPackage(newPkg)
+			if info, _ := store.ReadPackageHistory(site, path), len(info.GetEvents()) == 0 {
+				// appendNewPackage only if the new package has no history.
+				appendNewPackage(newPkg, "parent")
+			}
 		}
 	}
 	site, path := utils.SplitPackage(pkg)
@@ -200,7 +206,7 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter, c []sophie.Collector
 			}
 			pc.failCount++
 
-			cDB.SchedulePackage(pkg, time.Now().Add(12*time.Hour), ent.Etag)
+			cDB.SchedulePackage(pkg, time.Now().Add(FailPackageAge), ent.Etag)
 
 			if pc.failCount >= 10 || strings.Contains(err.Error(), "403") {
 				durToSleep := 10 * time.Minute
