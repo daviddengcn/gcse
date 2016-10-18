@@ -179,7 +179,7 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter, c []sophie.Collector
 		if spider.LikeGoSubFolder(fld.Name) {
 			newPkg := pkg + "/" + fld.Name
 			site, path := utils.SplitPackage(newPkg)
-			if info, _ := store.ReadPackageHistory(site, path), len(info.GetEvents()) == 0 {
+			if info, _ := store.ReadPackageHistory(site, path); len(info.GetEvents()) == 0 {
 				// appendNewPackage only if the new package has no history.
 				appendNewPackage(newPkg, "parent")
 			}
