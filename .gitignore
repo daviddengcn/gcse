@@ -6,6 +6,7 @@
 # Folders
 _obj
 _test
+/tmp/
 
 # Architecture specific extensions/prefixes
 *.[568vq]
@@ -21,6 +22,7 @@ _testmain.go
 
 *.exe
 *.gob
+*.gob.new
 *.bolt
 
 /conf.json

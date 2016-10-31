@@ -18,6 +18,16 @@ if *goGet {
 	Printfln("go get -u -v %s/%s", GCSE, a)
 	MustSucc(Bash("go get -u -v %s/%s", GCSE, a))
   }
+
+  additionalPackages := []string{
+    "github.com/golangplus/fmt",
+    "github.com/golangplus/container/heap",
+    "github.com/golangplus/testing/assert",
+  }
+  for _, pkg := range additionalPackages {
+    Printfln("go get -u -v %s", pkg)
+    MustSucc(Bash("go get -u -v %s", pkg))
+  }
 }
 
 Println("go test -a")
@@ -31,4 +41,3 @@ for _, a := range APPS {
   Printfln("go install -a %s/%s", GCSE, a)
   MustSucc(Bash("go install -a %s/%s", GCSE, a))
 }
-

@@ -1,32 +1,32 @@
 {
-    web: {
-        // addr: ":8080"
-        // root: "./server/"
-	// loadtemplatepass: ""
-	// autoloadtemplate: false
-    }
+  "web": {
+    //"addr": ":8080",
+    //"root": "./server/",
+    //"loadtemplatepass": "",
+    //"autoloadtemplate": false
+  },
 
-    back: {
-        // dbroot: "./data/"
-    }
+  "back": {
+    //"dbroot": "./data/"
+  },
 
-    crawler: {
-        // due_per_run: "1h"
-        // godoc: true
-        // github_update: true
-		// noncrawl_hosts: []
-		// github: {
-		// 	clientid: ""
-		// 	clientsecret: ""
-		// }
-    }
+  "crawler": {
+    //"due_per_run": "1h",
+    //"godoc": true,
+    //"github_update": true,
+    //"noncrawl_hosts": [],
+    //"github": {
+    //  "clientid": "",
+    //  "clientsecret": "",
+    //}
+  },
 
-	docdb: {
-		// nonstore_regexps: []
-	}
+  "docdb": {
+    //"nonstore_regexps": [],
+  },
 
-	bi: {
-		// data_path: "/tmp/gcse.bolt"
-		// web_path: "/bi"
-	}
+  "bi": {
+    //"data_path": "/tmp/gcse.bolt",
+    //"web_path": "/bi",
+  }
 }

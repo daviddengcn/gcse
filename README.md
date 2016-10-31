@@ -20,12 +20,12 @@ Development
 
 You'll need to perform the following steps to get a basic server running:
 
+  1. Install [gosl](https://github.com/daviddengcn/gosl) (`go get github.com/daviddengcn/gosl`).
   1. Create a basic `conf.json` file, limiting the crawler to a one minute run: `{ "crawler": { "due_per_run": "1m" } }`
-  1. Run the package finder: `go run tocrawl/*.go`
-  1. Run the crawler: `go run crawler/*.go`
-  1. Merge the crawled docs: `go run mergedocs/*.go`
-  1. Run the indexer: `go run indexer/*.go`
-  1. Run the server: ` go run server/*.go`
+  1. Create the data dir: `mkdir -p data/docs`
+  1. Install dependencies: `./scripts/install.gs`
+  1. Run the crawler: `./scripts/crawler.gs`
+  1. Run the server: `./scripts/server.gs`
   1. Visit [http://localhost:8080](http://localhost:8080) in your browser
 
 
