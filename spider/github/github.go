@@ -1,6 +1,7 @@
 package github
 
 import (
+	"context"
 	"errors"
 	"go/ast"
 	"go/parser"
@@ -12,17 +13,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/daviddengcn/gcse/spider"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golangplus/bytes"
 	"github.com/golangplus/errors"
 	"github.com/golangplus/strings"
-	"github.com/golangplus/time"
+	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
 
 	sppb "github.com/daviddengcn/gcse/proto/spider"
-
-	"github.com/daviddengcn/gcse/spider"
-	"github.com/google/go-github/github"
 )
 
 var ErrInvalidPackage = errors.New("the package is not a Go package")
@@ -86,21 +85,23 @@ type User struct {
 }
 
 func (s *Spider) waitForRate() error {
-	r := s.client.Rate()
-	if r.Limit == 0 {
-		// no rate info yet
-		return nil
-	}
-	if r.Remaining > 0 {
-		return nil
-	}
-	d := r.Reset.Time.Sub(time.Now())
-	if d > time.Minute {
-		return errorsp.WithStacksAndMessage(ErrRateLimited, "time to wait: %v", d)
-	}
-	log.Printf("Quota used up (limit = %d), sleep until %v", r.Limit, r.Reset.Time)
-	timep.SleepUntil(r.Reset.Time)
+	time.Sleep(time.Second)
 	return nil
+	//	r := s.client.Rate()
+	//	if r.Limit == 0 {
+	//		// no rate info yet
+	//		return nil
+	//	}
+	//	if r.Remaining > 0 {
+	//		return nil
+	//	}
+	//	d := r.Reset.Time.Sub(time.Now())
+	//	if d > time.Minute {
+	//		return errorsp.WithStacksAndMessage(ErrRateLimited, "time to wait: %v", d)
+	//	}
+	//	log.Printf("Quota used up (limit = %d), sleep until %v", r.Limit, r.Reset.Time)
+	//	timep.SleepUntil(r.Reset.Time)
+	//	return nil
 }
 
 func repoInfoFromGithub(repo *github.Repository) *sppb.RepoInfo {
@@ -116,9 +117,9 @@ func repoInfoFromGithub(repo *github.Repository) *sppb.RepoInfo {
 	return ri
 }
 
-func (s *Spider) ReadUser(name string) (*User, error) {
+func (s *Spider) ReadUser(ctx context.Context, name string) (*User, error) {
 	s.waitForRate()
-	repos, _, err := s.client.Repositories.List(name, nil)
+	repos, _, err := s.client.Repositories.List(ctx, name, nil)
 	if err != nil {
 		return nil, errorsp.WithStacksAndMessage(err, "Repositories.List %v failed", name)
 	}
@@ -136,9 +137,9 @@ func (s *Spider) ReadUser(name string) (*User, error) {
 	return user, nil
 }
 
-func (s *Spider) ReadRepository(user, name string) (*sppb.RepoInfo, error) {
+func (s *Spider) ReadRepository(ctx context.Context, user, name string) (*sppb.RepoInfo, error) {
 	s.waitForRate()
-	repo, _, err := s.client.Repositories.Get(user, name)
+	repo, _, err := s.client.Repositories.Get(ctx, user, name)
 	if err != nil {
 		if isNotFound(err) {
 			return nil, errorsp.WithStacksAndMessage(ErrInvalidRepository, "respository github.com/%v/%v not found", user, name)
@@ -148,16 +149,17 @@ func (s *Spider) ReadRepository(user, name string) (*sppb.RepoInfo, error) {
 	return repoInfoFromGithub(repo), nil
 }
 
-func (s *Spider) getFile(user, repo, path string) ([]byte, error) {
+func (s *Spider) getFile(ctx context.Context, user, repo, path string) (string, error) {
 	s.waitForRate()
-	c, _, _, err := s.client.Repositories.GetContents(user, repo, path, nil)
+	// TODO switch to DownloadContents
+	c, _, _, err := s.client.Repositories.GetContents(ctx, user, repo, path, nil)
 	if err != nil {
-		return nil, errorsp.WithStacks(err)
+		return "", errorsp.WithStacks(err)
 	}
-	if stringsp.Get(c.Type) != "file" {
-		return nil, errorsp.NewWithStacks("Contents of %s/%s/%s is not a file: %v", user, repo, path, stringsp.Get(c.Type))
+	if c.GetType() != "file" {
+		return "", errorsp.NewWithStacks("Contents of %s/%s/%s is not a file: %v", user, repo, path, stringsp.Get(c.Type))
 	}
-	body, err := c.Decode()
+	body, err := c.GetContent()
 	return body, errorsp.WithStacks(err)
 }
 
@@ -194,7 +196,7 @@ var (
 	goFileInfo_ParseFailed  = sppb.GoFileInfo{Status: sppb.GoFileInfo_ParseFailed}
 )
 
-func parseGoFile(path string, body []byte, info *sppb.GoFileInfo) {
+func parseGoFile(path string, body string, info *sppb.GoFileInfo) {
 	info.IsTest = strings.HasSuffix(path, "_test.go")
 	fs := token.NewFileSet()
 	goF, err := parser.ParseFile(fs, "", body, parser.ImportsOnly|parser.ParseComments)
@@ -276,9 +278,9 @@ type Package struct {
 }
 
 // Even an error is returned, the folders may still contain useful elements.
-func (s *Spider) ReadPackage(user, repo, path string) (*Package, []*sppb.FolderInfo, error) {
+func (s *Spider) ReadPackage(ctx context.Context, user, repo, path string) (*Package, []*sppb.FolderInfo, error) {
 	s.waitForRate()
-	_, cs, _, err := s.client.Repositories.GetContents(user, repo, path, nil)
+	_, cs, _, err := s.client.Repositories.GetContents(ctx, user, repo, path, nil)
 	if err != nil {
 		if isNotFound(err) {
 			return nil, nil, errorsp.WithStacksAndMessage(ErrInvalidPackage, "GetContents %v %v %v returns 404", user, repo, path)
@@ -314,7 +316,7 @@ func (s *Spider) ReadPackage(user, repo, path string) (*Package, []*sppb.FolderI
 					log.Printf("Cache for %v found(sha:%q)", calcFullPath(user, repo, path, fn), sha)
 					return fi, nil
 				}
-				body, err := s.getFile(user, repo, cPath)
+				body, err := s.getFile(ctx, user, repo, cPath)
 				if err != nil {
 					if isTooLargeError(err) {
 						*fi = goFileInfo_ShouldIgnore
@@ -358,7 +360,7 @@ func (s *Spider) ReadPackage(user, repo, path string) (*Package, []*sppb.FolderI
 				imports.Add(fi.Imports...)
 			}
 		case isReadmeFile(fn):
-			body, err := s.getFile(user, repo, cPath)
+			body, err := s.getFile(ctx, user, repo, cPath)
 			if err != nil {
 				log.Printf("Get file %v failed: %v", cPath, err)
 				continue
@@ -375,24 +377,24 @@ func (s *Spider) ReadPackage(user, repo, path string) (*Package, []*sppb.FolderI
 	return &pkg, folders, nil
 }
 
-func (s *Spider) SearchRepositories(q string) ([]github.Repository, error) {
+func (s *Spider) SearchRepositories(ctx context.Context, q string) ([]github.Repository, error) {
 	if !strings.Contains(q, "language:go") {
 		q += " language:go"
 		q = strings.TrimSpace(q)
 	}
 	s.waitForRate()
-	res, _, err := s.client.Search.Repositories(q, &github.SearchOptions{})
+	res, _, err := s.client.Search.Repositories(ctx, q, &github.SearchOptions{})
 	if err != nil {
 		return nil, errorsp.WithStacksAndMessage(err, "Search.Repositories %q failed: %+v", q, err)
 	}
 	return res.Repositories, nil
 }
 
-func (s *Spider) RepoBranchSHA(owner, repo, branch string) (sha string, err error) {
+func (s *Spider) RepoBranchSHA(ctx context.Context, owner, repo, branch string) (sha string, err error) {
 	if err := s.waitForRate(); err != nil {
 		return "", err
 	}
-	b, _, err := s.client.Repositories.GetBranch(owner, repo, branch)
+	b, _, err := s.client.Repositories.GetBranch(ctx, owner, repo, branch)
 	if err != nil {
 		if isNotFound(err) {
 			return "", errorsp.WithStacksAndMessage(ErrInvalidRepository, "GetBranch %v %v %v failed", owner, repo, branch)
@@ -405,11 +407,11 @@ func (s *Spider) RepoBranchSHA(owner, repo, branch string) (sha string, err erro
 	return stringsp.Get(b.Commit.SHA), nil
 }
 
-func (s *Spider) getTree(owner, repo, sha string, recursive bool) (*github.Tree, error) {
+func (s *Spider) getTree(ctx context.Context, owner, repo, sha string, recursive bool) (*github.Tree, error) {
 	if err := s.waitForRate(); err != nil {
 		return nil, err
 	}
-	tree, _, err := s.client.Git.GetTree(owner, repo, sha, true)
+	tree, _, err := s.client.Git.GetTree(ctx, owner, repo, sha, true)
 	if err != nil {
 		if isNotFound(err) {
 			return nil, errorsp.WithStacksAndMessage(ErrInvalidRepository, "GetTree %v %v %v failed", owner, repo, sha)
@@ -422,8 +424,8 @@ func (s *Spider) getTree(owner, repo, sha string, recursive bool) (*github.Tree,
 // ReadRepo reads all packages of a repository.
 // For pkg given to f, it will not be reused.
 // path in f is relative to the repository path.
-func (s *Spider) ReadRepo(user, repo, sha string, f func(path string, pkg *sppb.Package) error) error {
-	tree, err := s.getTree(user, repo, sha, true)
+func (s *Spider) ReadRepo(ctx context.Context, user, repo, sha string, f func(path string, pkg *sppb.Package) error) error {
+	tree, err := s.getTree(ctx, user, repo, sha, true)
 	if err != nil {
 		return err
 	}
@@ -463,7 +465,7 @@ func (s *Spider) ReadRepo(user, repo, sha string, f func(path string, pkg *sppb.
 						log.Printf("Cache for %v found(sha:%q)", "github.com/"+user+"/"+cPath, sha)
 						return fi, nil
 					}
-					body, err := s.getFile(user, repo, cPath)
+					body, err := s.getFile(ctx, user, repo, cPath)
 					if err != nil {
 						if isTooLargeError(err) {
 							*fi = goFileInfo_ShouldIgnore
@@ -506,7 +508,7 @@ func (s *Spider) ReadRepo(user, repo, sha string, f func(path string, pkg *sppb.
 					imports.Add(fi.Imports...)
 				}
 			case isReadmeFile(fn):
-				body, err := s.getFile(user, repo, cPath)
+				body, err := s.getFile(ctx, user, repo, cPath)
 				if err != nil {
 					log.Printf("Get file %v failed: %v", cPath, err)
 					continue

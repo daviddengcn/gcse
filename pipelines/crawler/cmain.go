@@ -4,6 +4,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"io"
 	"log"
@@ -103,6 +104,7 @@ func cleanTempDir() {
 }
 
 func main() {
+	ctx := context.Background()
 	runtime.GOMAXPROCS(2)
 
 	log.Printf("Using personal: %v", configs.CrawlerGithubPersonal)
@@ -131,7 +133,7 @@ func main() {
 
 	if *singlePerson != "" {
 		log.Printf("Crawling single person %s ...", *singlePerson)
-		p, err := gcse.CrawlPerson(httpClient, *singlePerson)
+		p, err := gcse.CrawlPerson(ctx, httpClient, *singlePerson)
 		if err != nil {
 			fmtp.Printfln("Crawling person %s failed: %v", *singlePerson, err)
 		} else {
@@ -140,7 +142,7 @@ func main() {
 	}
 	if *singlePackage != "" {
 		log.Printf("Crawling single package %s ...", *singlePackage)
-		p, flds, err := gcse.CrawlPackage(httpClient, *singlePackage, *singleETag)
+		p, flds, err := gcse.CrawlPackage(ctx, httpClient, *singlePackage, *singleETag)
 		if err != nil {
 			fmtp.Printfln("Crawling package %s failed: %v\nfolders: %v", *singlePackage, err, flds)
 		} else {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"math/rand"
 	"strings"
@@ -161,6 +162,8 @@ type PackageCrawler struct {
 
 // OnlyMapper.Map
 func (pc *PackageCrawler) Map(key, val sophie.SophieWriter, c []sophie.Collector) error {
+	// TODO add context in villa
+	ctx := context.Background()
 	if time.Now().After(AppStopTime) {
 		log.Printf("[Part %d] Timeout(key = %v), PackageCrawler returns EOM",
 			pc.part, key)
@@ -174,7 +177,7 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter, c []sophie.Collector
 	}
 	log.Printf("[Part %d] Crawling package %v with etag %s\n", pc.part, pkg, ent.Etag)
 
-	p, flds, err := gcse.CrawlPackage(pc.httpClient, pkg, ent.Etag)
+	p, flds, err := gcse.CrawlPackage(ctx, pc.httpClient, pkg, ent.Etag)
 	for _, fld := range flds {
 		if spider.LikeGoSubFolder(fld.Name) {
 			newPkg := pkg + "/" + fld.Name

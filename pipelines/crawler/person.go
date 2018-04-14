@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"log"
 	"math/rand"
@@ -40,6 +41,7 @@ func pushPerson(p *gcse.Person) {
 // OnlyMapper.Map
 func (pc *PersonCrawler) Map(key, val sophie.SophieWriter,
 	c []sophie.Collector) error {
+	ctx := context.Background()
 	if time.Now().After(AppStopTime) {
 		log.Printf("[Part %d] Timeout(key = %v), PersonCrawler returns EOM", pc.part, key)
 		return mr.EOM
@@ -48,7 +50,7 @@ func (pc *PersonCrawler) Map(key, val sophie.SophieWriter,
 	// ent := val.(*gcse.CrawlingEntry)
 	log.Printf("[Part %d] Crawling person %v\n", pc.part, id)
 
-	p, err := gcse.CrawlPerson(pc.httpClient, id)
+	p, err := gcse.CrawlPerson(ctx, pc.httpClient, id)
 	if err != nil {
 		bi.AddValue(bi.Sum, "crawler.person.failed", 1)
 		pc.failCount++

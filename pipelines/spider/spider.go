@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"time"
 
@@ -70,14 +71,14 @@ func selectRepos(site string, maxCrawl int) ([]*RepositoryInfo, error) {
 var githubSpider *github.Spider
 var now timep.NowFunc = time.Now
 
-func crawlRepo(site string, repo *RepositoryInfo) error {
+func crawlRepo(ctx context.Context, site string, repo *RepositoryInfo) error {
 	if site != "github.com" {
 		return errorsp.NewWithStacks("Cannot crawl the repository in %v", site)
 	}
 	repo.CrawlingInfo = &sppb.CrawlingInfo{}
 	repo.CrawlingInfo.SetCrawlingTime(now())
 
-	sha, err := githubSpider.RepoBranchSHA(repo.User, repo.Name, repo.Branch)
+	sha, err := githubSpider.RepoBranchSHA(ctx, repo.User, repo.Name, repo.Branch)
 	if err != nil {
 		return err
 	}
@@ -87,7 +88,7 @@ func crawlRepo(site string, repo *RepositoryInfo) error {
 	repo.Signature = sha
 
 	repo.Packages = make(map[string]*sppb.Package)
-	if err := githubSpider.ReadRepo(repo.User, repo.Name, repo.Signature, func(path string, doc *sppb.Package) error {
+	if err := githubSpider.ReadRepo(ctx, repo.User, repo.Name, repo.Signature, func(path string, doc *sppb.Package) error {
 		log.Printf("Package: %v", doc)
 		repo.Packages[path] = doc
 		return nil
@@ -97,8 +98,8 @@ func crawlRepo(site string, repo *RepositoryInfo) error {
 	return nil
 }
 
-func crawlAndSaveRepo(site string, repo *RepositoryInfo) error {
-	if err := crawlRepo(site, repo); err != nil {
+func crawlAndSaveRepo(ctx context.Context, site string, repo *RepositoryInfo) error {
+	if err := crawlRepo(ctx, site, repo); err != nil {
 		if errorsp.Cause(err) == github.ErrInvalidRepository {
 			// Remove the repo entry.
 			return store.DeleteRepository(site, repo.User, repo.Name)
@@ -111,7 +112,7 @@ func crawlAndSaveRepo(site string, repo *RepositoryInfo) error {
 	})
 }
 
-func crawl(site string, out chan error, maxCrawl int, dur time.Duration) {
+func crawl(ctx context.Context, site string, out chan error, maxCrawl int, dur time.Duration) {
 	repos, err := selectRepos(site, maxCrawl)
 	if err != nil {
 		out <- err
@@ -120,7 +121,7 @@ func crawl(site string, out chan error, maxCrawl int, dur time.Duration) {
 	log.Printf("%d repos selected", len(repos))
 	var anyErr error
 	for _, repo := range repos {
-		if err := crawlAndSaveRepo(site, repo); err != nil {
+		if err := crawlAndSaveRepo(ctx, site, repo); err != nil {
 			anyErr = err
 			log.Printf("crawlAndSaveRepo %v %v %v failed: %v", site, repo.User, repo.Name, err)
 		}
@@ -133,7 +134,7 @@ func exec(maxCrawl int, dur time.Duration) error {
 	n := 0
 	anyErr := store.ForEachRepositorySite(func(site string) error {
 		n++
-		go crawl(site, out, maxCrawl, dur)
+		go crawl(context.Background(), site, out, maxCrawl, dur)
 		return nil
 	})
 	if anyErr != nil {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"os"
 	"testing"
 	"time"
@@ -88,7 +89,8 @@ func TestSelectRepos(t *testing.T) {
 }
 
 func TestCrawlRepo_UnknownSite(t *testing.T) {
-	assert.Error(t, crawlRepo("unknown.com", nil))
+	ctx := context.Background()
+	assert.Error(t, crawlRepo(ctx, "unknown.com", nil))
 }
 
 func initSpider() {
@@ -121,6 +123,7 @@ func initSpider() {
 }
 
 func TestCrawlRepo(t *testing.T) {
+	ctx := context.Background()
 	tm := time.Now()
 	now = timep.PresetNow(tm)
 	const (
@@ -136,7 +139,7 @@ func TestCrawlRepo(t *testing.T) {
 		User: user,
 		Name: repo,
 	}
-	assert.NoError(t, crawlRepo("github.com", r))
+	assert.NoError(t, crawlRepo(ctx, "github.com", r))
 	assert.Equal(t, "r.Repository", *r.Repository, stpb.Repository{
 		Branch:    "master",
 		Signature: "sha-1",
@@ -152,6 +155,7 @@ func TestCrawlRepo(t *testing.T) {
 }
 
 func TestCrawlRepo_Unchanged(t *testing.T) {
+	ctx := context.Background()
 	tm := time.Now()
 	now = timep.PresetNow(tm)
 	initSpider()
@@ -170,7 +174,7 @@ func TestCrawlRepo_Unchanged(t *testing.T) {
 		User: "daviddengcn",
 		Name: "unchanged",
 	}
-	assert.NoError(t, crawlRepo("github.com", r))
+	assert.NoError(t, crawlRepo(ctx, "github.com", r))
 	assert.Equal(t, "r.Repository", *r.Repository, stpb.Repository{
 		Branch:    "master",
 		Signature: "sha-unchanged",
@@ -186,6 +190,7 @@ func TestCrawlRepo_Unchanged(t *testing.T) {
 }
 
 func TestCrawlAndSaveRepo_RepositoryDeleted(t *testing.T) {
+	ctx := context.Background()
 	tm := time.Now()
 	now = timep.PresetNow(tm)
 	const (
@@ -206,7 +211,7 @@ func TestCrawlAndSaveRepo_RepositoryDeleted(t *testing.T) {
 		*doc = *r.Repository
 		return nil
 	}))
-	assert.NoError(t, crawlAndSaveRepo(site, r))
+	assert.NoError(t, crawlAndSaveRepo(ctx, site, r))
 
 	rp, err := store.ReadRepository(site, user, repo)
 	assert.NoError(t, err)

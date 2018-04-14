@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strings"
@@ -32,10 +33,10 @@ func touchPackage(pkg string, crawledBefore time.Time, pkgUTs map[string]time.Ti
 	cDB.PushToCrawlPackage(pkg)
 }
 
-func touchByGithubUpdates(pkgUTs map[string]time.Time) {
+func touchByGithubUpdates(ctx context.Context, pkgUTs map[string]time.Time) {
 	log.Printf("touchByGithubUpdates ...")
 
-	rs, err := gcse.GithubSpider.SearchRepositories("")
+	rs, err := gcse.GithubSpider.SearchRepositories(ctx, "")
 	if err != nil {
 		log.Printf("SearchRepositories failed: %v", err)
 		return

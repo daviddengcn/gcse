@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"io"
 	"log"
 	"math/rand"
@@ -186,6 +187,8 @@ func syncDatabases() {
 }
 
 func main() {
+	ctx := context.Background()
+
 	log.Println("Running tocrawl tool, to generate crawling list")
 	log.Println("NonCrawlHosts: ", configs.NonCrawlHosts)
 	log.Println("CrawlGithubUpdate: ", configs.CrawlGithubUpdate)
@@ -204,7 +207,7 @@ func main() {
 	}
 	if configs.CrawlGithubUpdate || configs.CrawlByGodocApi {
 		if configs.CrawlGithubUpdate {
-			touchByGithubUpdates(pkgUTs)
+			touchByGithubUpdates(ctx, pkgUTs)
 		}
 
 		if configs.CrawlByGodocApi {

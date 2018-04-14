@@ -1,6 +1,7 @@
 package gcse
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/gob"
 	"encoding/json"
@@ -350,7 +351,7 @@ var GithubSpider *github.Spider
 
 const maxRepoInfoAge = 2 * timep.Day
 
-func CrawlRepoInfo(site, user, name string) *sppb.RepoInfo {
+func CrawlRepoInfo(ctx context.Context, site, user, name string) *sppb.RepoInfo {
 	// Check cache in store.
 	path := user + "/" + name
 	p, err := store.ReadPackage(site, path)
@@ -364,7 +365,7 @@ func CrawlRepoInfo(site, user, name string) *sppb.RepoInfo {
 		}
 	}
 	bi.Inc("crawler.repocache.miss")
-	ri, err := GithubSpider.ReadRepository(user, name)
+	ri, err := GithubSpider.ReadRepository(ctx, user, name)
 	if err != nil {
 		if errorsp.Cause(err) == github.ErrInvalidRepository {
 			if err := store.DeletePackage(site, path); err != nil {
@@ -384,15 +385,15 @@ func CrawlRepoInfo(site, user, name string) *sppb.RepoInfo {
 	return ri
 }
 
-func getGithubStars(user, name string) int {
-	r := CrawlRepoInfo("github.com", user, name)
+func getGithubStars(ctx context.Context, user, name string) int {
+	r := CrawlRepoInfo(ctx, "github.com", user, name)
 	if r != nil {
 		return int(r.Stars)
 	}
 	return -1
 }
 
-func getGithub(pkg string) (*doc.Package, []*sppb.FolderInfo, error) {
+func getGithub(ctx context.Context, pkg string) (*doc.Package, []*sppb.FolderInfo, error) {
 	parts := strings.SplitN(pkg, "/", 4)
 	for len(parts) < 4 {
 		parts = append(parts, "")
@@ -400,7 +401,7 @@ func getGithub(pkg string) (*doc.Package, []*sppb.FolderInfo, error) {
 	if parts[1] == "" || parts[2] == "" {
 		return nil, nil, errorsp.WithStacks(ErrInvalidPackage)
 	}
-	p, folders, err := GithubSpider.ReadPackage(parts[1], parts[2], parts[3])
+	p, folders, err := GithubSpider.ReadPackage(ctx, parts[1], parts[2], parts[3])
 	if err != nil {
 		return nil, folders, err
 	}
@@ -415,13 +416,13 @@ func getGithub(pkg string) (*doc.Package, []*sppb.FolderInfo, error) {
 
 		Imports:     p.Imports,
 		TestImports: p.TestImports,
-		StarCount:   getGithubStars(parts[1], parts[2]),
+		StarCount:   getGithubStars(ctx, parts[1], parts[2]),
 
 		ReadmeFiles: map[string][]byte{p.ReadmeFn: []byte(p.ReadmeData)},
 	}, folders, nil
 }
 
-func CrawlPackage(httpClient doc.HttpClient, pkg string, etag string) (p *Package, folders []*sppb.FolderInfo, err error) {
+func CrawlPackage(ctx context.Context, httpClient doc.HttpClient, pkg string, etag string) (p *Package, folders []*sppb.FolderInfo, err error) {
 	defer func() {
 		if perr := recover(); perr != nil {
 			p, folders, err = nil, nil, errorsp.NewWithStacks("Panic when crawling package %s: %v", pkg, perr)
@@ -433,7 +434,7 @@ func CrawlPackage(httpClient doc.HttpClient, pkg string, etag string) (p *Packag
 		return nil, folders, ErrInvalidPackage
 	} else if strings.HasPrefix(pkg, "github.com/") {
 		if GithubSpider != nil {
-			pdoc, folders, err = getGithub(pkg)
+			pdoc, folders, err = getGithub(ctx, pkg)
 		} else {
 			pdoc, err = doc.Get(httpClient, pkg, etag)
 		}
@@ -524,11 +525,11 @@ type Person struct {
 	Packages []string
 }
 
-func CrawlPerson(httpClient doc.HttpClient, id string) (*Person, error) {
+func CrawlPerson(ctx context.Context, httpClient doc.HttpClient, id string) (*Person, error) {
 	site, user := ParsePersonId(id)
 	switch site {
 	case "github.com":
-		u, err := GithubSpider.ReadUser(user)
+		u, err := GithubSpider.ReadUser(ctx, user)
 		if err != nil {
 			return nil, errorsp.WithStacksAndMessage(err, "ReadUser %s failed", id)
 		}
