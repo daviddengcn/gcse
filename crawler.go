@@ -294,9 +294,8 @@ func fuseStars(a, b int) int {
 	return (a + b) * 3 / 4
 }
 
-func newDocGet(httpClient doc.HttpClient, pkg string, etag string) (p *doc.Package, err error) {
-	gp, err := glgddo.Get(httpClient.(*BlackRequest).client.(*http.Client),
-		pkg, etag)
+func newDocGet(ctx context.Context, httpClient doc.HttpClient, pkg string, etag string) (p *doc.Package, err error) {
+	gp, err := glgddo.Get(ctx, httpClient.(*BlackRequest).client.(*http.Client), pkg, etag)
 	if err != nil {
 		if _, ok := err.(gosrc.NotModifiedError); ok {
 			err = doc.ErrNotModified
@@ -439,7 +438,7 @@ func CrawlPackage(ctx context.Context, httpClient doc.HttpClient, pkg string, et
 			pdoc, err = doc.Get(httpClient, pkg, etag)
 		}
 	} else {
-		pdoc, err = newDocGet(httpClient, pkg, etag)
+		pdoc, err = newDocGet(ctx, httpClient, pkg, etag)
 	}
 	if err == doc.ErrNotModified {
 		return nil, folders, ErrPackageNotModifed
