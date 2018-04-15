@@ -429,9 +429,10 @@ func CrawlPackage(ctx context.Context, httpClient doc.HttpClient, pkg string, et
 	}()
 	var pdoc *doc.Package
 
-	if strings.HasPrefix(pkg, "thezombie.net") {
+	if strings.Contains(pkg, "/vendor/") || strings.HasPrefix(pkg, "thezombie.net") {
 		return nil, folders, ErrInvalidPackage
-	} else if strings.HasPrefix(pkg, "github.com/") {
+	}
+	if strings.HasPrefix(pkg, "github.com/") {
 		if GithubSpider != nil {
 			pdoc, folders, err = getGithub(ctx, pkg)
 		} else {

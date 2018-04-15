@@ -80,6 +80,7 @@ func generateCrawlEntries(db *gcse.MemDB, hostFromID func(id string) string, out
 		// The number of packages not in pkgUTs
 		newCnt int
 	}
+	skippedVendors := 0
 	ages := make(map[string]nameAndAges)
 	if err := db.Iterate(func(id string, val interface{}) error {
 		ent, ok := val.(gcse.CrawlingEntry)
@@ -88,6 +89,11 @@ func generateCrawlEntries(db *gcse.MemDB, hostFromID func(id string) string, out
 			return nil
 		}
 		if ent.Version == gcse.CrawlerVersion && ent.ScheduleTime.After(now) {
+			return nil
+		}
+		if strings.Contains(id, "/vendor/") {
+			// Ignoring vendors
+			skippedVendors++
 			return nil
 		}
 		host := hostFromID(id)
@@ -122,6 +128,10 @@ func generateCrawlEntries(db *gcse.MemDB, hostFromID func(id string) string, out
 	}); err != nil {
 		return errorsp.WithStacks(err)
 	}
+	if skippedVendors > 0 {
+		log.Printf("skippedVendors: %d", skippedVendors)
+	}
+	gcse.AddBiValueAndProcess(bi.Average, "crawler.skipped_vendor_packages", skippedVendors)
 	index := 0
 	for _, g := range groups {
 		sortp.SortF(len(g), func(i, j int) bool {

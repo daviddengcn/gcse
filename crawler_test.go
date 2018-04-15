@@ -12,6 +12,7 @@ import (
 	"github.com/golangplus/testing/assert"
 
 	"github.com/daviddengcn/gcse/configs"
+	"github.com/daviddengcn/gcse/spider/github"
 	"github.com/daviddengcn/gddo/doc"
 	"github.com/daviddengcn/go-villa"
 )
@@ -56,6 +57,7 @@ func TestCrawlPackage(t *testing.T) {
 		t.Logf("Github clientsecret: %s", configs.CrawlerGithubClientSecret)
 		doc.SetGithubCredentials(configs.CrawlerGithubClientID, configs.CrawlerGithubClientSecret)
 	}
+	GithubSpider = github.NewSpiderWithToken(configs.CrawlerGithubPersonal)
 
 	pkg := "github.com/daviddengcn/gcse"
 	httpClient := GenHttpClient("")
@@ -161,7 +163,11 @@ func TestCrawlingEntry(t *testing.T) {
 	var dst CrawlingEntry
 	assert.NoError(t, dst.ReadFrom(&buf, -1))
 
-	assert.StringEqual(t, "dst", dst, src)
+	if got, want := dst.ScheduleTime, src.ScheduleTime; !got.Equal(want) {
+		t.Errorf("dst.ScheduleTime = %v, want %v", got, want)
+	}
+	assert.Equal(t, "dst.Version", dst.Version, src.Version)
+	assert.Equal(t, "dst.Etag", dst.Etag, src.Etag)
 }
 
 func TestFullProjectOfPackage(t *testing.T) {

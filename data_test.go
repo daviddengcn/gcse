@@ -15,7 +15,7 @@ func TestDocInfo(t *testing.T) {
 		Name:        "gcse",
 		Package:     "github.com/daviddengcn/gcse",
 		Author:      "github.com/daviddengcn",
-		LastUpdated: time.Now(),
+		LastUpdated: time.Now().Round(0),
 		StarCount:   10,
 		Synopsis:    "Go Package Search Engine",
 		Description: "More details about GCSE",
@@ -38,6 +38,7 @@ func TestDocInfo(t *testing.T) {
 
 	var dst DocInfo
 	assert.NoError(t, dst.ReadFrom(&buf, -1))
+	dst.LastUpdated = dst.LastUpdated.Round(0)
 
 	assert.StringEqual(t, "dst", dst, src)
 

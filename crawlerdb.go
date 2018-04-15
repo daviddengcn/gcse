@@ -30,6 +30,8 @@ type CrawlerDB struct {
 func LoadCrawlerDB() *CrawlerDB {
 	root := configs.CrawlerDBPath()
 
+	log.Printf("Loading CrawlerDB from %s", root)
+
 	return &CrawlerDB{
 		PackageDB: NewMemDB(root, KindPackage),
 		PersonDB:  NewMemDB(root, KindPerson),
