@@ -10,8 +10,7 @@ import (
 
 	"github.com/daviddengcn/gcse/configs"
 
-	sppb "github.com/daviddengcn/gcse/proto/spider"
-	stpb "github.com/daviddengcn/gcse/proto/store"
+	gpb "github.com/daviddengcn/gcse/shared/proto"
 )
 
 func init() {
@@ -24,7 +23,7 @@ func cleanDatabase(t *testing.T) {
 
 func TestRepoInfoAge(t *testing.T) {
 	ts, _ := ptypes.TimestampProto(time.Now().Add(-time.Hour))
-	age := RepoInfoAge(&sppb.RepoInfo{
+	age := RepoInfoAge(&gpb.RepoInfo{
 		CrawlingTime: ts,
 	})
 	assert.ValueShould(t, "age", age, age >= time.Hour && age < time.Hour+time.Minute, "age out of expected range")
@@ -39,10 +38,10 @@ func TestForEachPackageSite(t *testing.T) {
 		path  = "gcse"
 		name  = "pkgname"
 	)
-	assert.NoError(t, UpdatePackage(site1, path, func(info *stpb.PackageInfo) error {
+	assert.NoError(t, UpdatePackage(site1, path, func(info *gpb.PackageInfo) error {
 		return nil
 	}))
-	assert.NoError(t, UpdatePackage(site2, path, func(info *stpb.PackageInfo) error {
+	assert.NoError(t, UpdatePackage(site2, path, func(info *gpb.PackageInfo) error {
 		return nil
 	}))
 	var sites []string
@@ -63,16 +62,16 @@ func TestForEachPackageOfSite(t *testing.T) {
 		path2 = "gcse2"
 		name2 = "TestForEachPackageOfSite"
 	)
-	assert.NoError(t, UpdatePackage(site, path1, func(info *stpb.PackageInfo) error {
+	assert.NoError(t, UpdatePackage(site, path1, func(info *gpb.PackageInfo) error {
 		info.Name = name1
 		return nil
 	}))
-	assert.NoError(t, UpdatePackage(site, path2, func(info *stpb.PackageInfo) error {
+	assert.NoError(t, UpdatePackage(site, path2, func(info *gpb.PackageInfo) error {
 		info.Name = name2
 		return nil
 	}))
 	var paths, names []string
-	assert.NoError(t, ForEachPackageOfSite(site, func(path string, info *stpb.PackageInfo) error {
+	assert.NoError(t, ForEachPackageOfSite(site, func(path string, info *gpb.PackageInfo) error {
 		paths = append(paths, path)
 		names = append(names, info.Name)
 		return nil
@@ -87,20 +86,20 @@ func TestUpdateReadDeletePackage(t *testing.T) {
 		path = "gcse"
 		name = "pkgname"
 	)
-	assert.NoError(t, UpdatePackage(site, path, func(info *stpb.PackageInfo) error {
-		assert.Equal(t, "info", info, &stpb.PackageInfo{})
+	assert.NoError(t, UpdatePackage(site, path, func(info *gpb.PackageInfo) error {
+		assert.Equal(t, "info", info, &gpb.PackageInfo{})
 		info.Name = name
 		return nil
 	}))
 	pkg, err := ReadPackage(site, path)
 	assert.NoError(t, err)
-	assert.Equal(t, "pkg", pkg, &stpb.PackageInfo{Name: name})
+	assert.Equal(t, "pkg", pkg, &gpb.PackageInfo{Name: name})
 
 	assert.NoError(t, DeletePackage(site, path))
 
 	pkg, err = ReadPackage(site, path)
 	assert.NoError(t, err)
-	assert.Equal(t, "pkg", pkg, &stpb.PackageInfo{})
+	assert.Equal(t, "pkg", pkg, &gpb.PackageInfo{})
 }
 
 func TestUpdateReadDeletePerson(t *testing.T) {
@@ -109,20 +108,20 @@ func TestUpdateReadDeletePerson(t *testing.T) {
 		id   = "daviddengcn"
 		etag = "tag"
 	)
-	assert.NoError(t, UpdatePerson(site, id, func(info *stpb.PersonInfo) error {
-		assert.Equal(t, "info", info, &stpb.PersonInfo{})
-		info.CrawlingInfo = &sppb.CrawlingInfo{
+	assert.NoError(t, UpdatePerson(site, id, func(info *gpb.PersonInfo) error {
+		assert.Equal(t, "info", info, &gpb.PersonInfo{})
+		info.CrawlingInfo = &gpb.CrawlingInfo{
 			Etag: etag,
 		}
 		return nil
 	}))
 	p, err := ReadPerson(site, id)
 	assert.NoError(t, err)
-	assert.Equal(t, "p", p, &stpb.PersonInfo{CrawlingInfo: &sppb.CrawlingInfo{Etag: etag}})
+	assert.Equal(t, "p", p, &gpb.PersonInfo{CrawlingInfo: &gpb.CrawlingInfo{Etag: etag}})
 
 	assert.NoError(t, DeletePerson(site, id))
 
 	p, err = ReadPerson(site, id)
 	assert.NoError(t, err)
-	assert.Equal(t, "p", p, &stpb.PersonInfo{})
+	assert.Equal(t, "p", p, &gpb.PersonInfo{})
 }

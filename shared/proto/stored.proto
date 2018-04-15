@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package gcse;
+
+option go_package = "gcsepb";
+
+message PackageCrawlHistoryReq {
+	string package = 1;
+}
+
+message PackageCrawlHistoryResp {
+	// HistoryInfo info = 1;
+}
+
+service StoreService {
+  rpc PackageCrawlHistory(PackageCrawlHistoryReq) returns (PackageCrawlHistoryResp);
+}

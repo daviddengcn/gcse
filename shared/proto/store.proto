@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-package gcse.store;
+package gcse;
 
-option go_package = "stpb";
+option go_package = "gcsepb";
 
-import "github.com/daviddengcn/gcse/proto/spider/spider.proto";
+import "github.com/daviddengcn/gcse/shared/proto/spider.proto";
 
 message PackageInfo {
 	string name = 1;
@@ -21,17 +21,17 @@ message PackageInfo {
 	repeated string exported = 12;
 	repeated string references = 18;
 
-	gcse.spider.CrawlingInfo crawling_info = 17;
+	CrawlingInfo crawling_info = 17;
 
 	// Available if the package is not the repo's root.
-	gcse.spider.FolderInfo folder_info = 14;
+	FolderInfo folder_info = 14;
 
 	// Available if the package is the repo's root.
-	gcse.spider.RepoInfo repo_info = 15;
+	RepoInfo repo_info = 15;
 }
 
 message PersonInfo {
-	gcse.spider.CrawlingInfo crawling_info = 1;
+	CrawlingInfo crawling_info = 1;
 }
 
 message Repository {
@@ -39,11 +39,11 @@ message Repository {
 	string signature = 7;
 
 	// map from relative path, e.g. "proto/store", to Package
-	map<string, gcse.spider.Package> packages = 8;
+	map<string, Package> packages = 8;
 
 	string ReadmeFn   = 2;  // No directory info
 	string ReadmeData = 3;  // Raw content, cound be md, txt, etc.
 	int32 stars       = 4;
 
-	gcse.spider.CrawlingInfo crawling_info = 5;
+	CrawlingInfo crawling_info = 5;
 }

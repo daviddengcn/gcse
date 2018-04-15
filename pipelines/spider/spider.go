@@ -10,20 +10,20 @@ import (
 	"github.com/golangplus/time"
 
 	"github.com/daviddengcn/gcse/configs"
-	"github.com/daviddengcn/gcse/proto/spider"
-	"github.com/daviddengcn/gcse/proto/store"
 	"github.com/daviddengcn/gcse/spider/github"
 	"github.com/daviddengcn/gcse/store"
+
+	gpb "github.com/daviddengcn/gcse/shared/proto"
 )
 
 type RepositoryInfo struct {
-	*stpb.Repository
+	*gpb.Repository
 
 	User string
 	Name string
 }
 
-func needCrawl(r *stpb.Repository) bool {
+func needCrawl(r *gpb.Repository) bool {
 	if r.CrawlingInfo == nil {
 		return true
 	}
@@ -47,7 +47,7 @@ func selectRepos(site string, maxCrawl int) ([]*RepositoryInfo, error) {
 	repos := heap.NewInterfaces(func(x, y interface{}) bool {
 		return shouldCrawlLater(x.(*RepositoryInfo), y.(*RepositoryInfo))
 	}, maxCrawl)
-	if err := store.ForEachRepositoryOfSite(site, func(user, name string, doc *stpb.Repository) error {
+	if err := store.ForEachRepositoryOfSite(site, func(user, name string, doc *gpb.Repository) error {
 		if !needCrawl(doc) {
 			return nil
 		}
@@ -75,7 +75,7 @@ func crawlRepo(ctx context.Context, site string, repo *RepositoryInfo) error {
 	if site != "github.com" {
 		return errorsp.NewWithStacks("Cannot crawl the repository in %v", site)
 	}
-	repo.CrawlingInfo = &sppb.CrawlingInfo{}
+	repo.CrawlingInfo = &gpb.CrawlingInfo{}
 	repo.CrawlingInfo.SetCrawlingTime(now())
 
 	sha, err := githubSpider.RepoBranchSHA(ctx, repo.User, repo.Name, repo.Branch)
@@ -87,8 +87,8 @@ func crawlRepo(ctx context.Context, site string, repo *RepositoryInfo) error {
 	}
 	repo.Signature = sha
 
-	repo.Packages = make(map[string]*sppb.Package)
-	if err := githubSpider.ReadRepo(ctx, repo.User, repo.Name, repo.Signature, func(path string, doc *sppb.Package) error {
+	repo.Packages = make(map[string]*gpb.Package)
+	if err := githubSpider.ReadRepo(ctx, repo.User, repo.Name, repo.Signature, func(path string, doc *gpb.Package) error {
 		log.Printf("Package: %v", doc)
 		repo.Packages[path] = doc
 		return nil
@@ -106,7 +106,7 @@ func crawlAndSaveRepo(ctx context.Context, site string, repo *RepositoryInfo) er
 		}
 		return err
 	}
-	return store.UpdateRepository(site, repo.User, repo.Name, func(doc *stpb.Repository) error {
+	return store.UpdateRepository(site, repo.User, repo.Name, func(doc *gpb.Repository) error {
 		*doc = *repo.Repository
 		return nil
 	})

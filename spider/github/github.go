@@ -21,7 +21,7 @@ import (
 	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
 
-	sppb "github.com/daviddengcn/gcse/proto/spider"
+	gpb "github.com/daviddengcn/gcse/shared/proto"
 )
 
 var ErrInvalidPackage = errors.New("the package is not a Go package")
@@ -81,7 +81,7 @@ func NewSpiderWithContents(contents map[string]string) *Spider {
 }
 
 type User struct {
-	Repos map[string]*sppb.RepoInfo
+	Repos map[string]*gpb.RepoInfo
 }
 
 func (s *Spider) waitForRate() error {
@@ -104,8 +104,8 @@ func (s *Spider) waitForRate() error {
 	//	return nil
 }
 
-func repoInfoFromGithub(repo *github.Repository) *sppb.RepoInfo {
-	ri := &sppb.RepoInfo{
+func repoInfoFromGithub(repo *github.Repository) *gpb.RepoInfo {
+	ri := &gpb.RepoInfo{
 		Description: stringsp.Get(repo.Description),
 		Stars:       int32(getInt(repo.StargazersCount)),
 	}
@@ -130,14 +130,14 @@ func (s *Spider) ReadUser(ctx context.Context, name string) (*User, error) {
 			continue
 		}
 		if user.Repos == nil {
-			user.Repos = make(map[string]*sppb.RepoInfo)
+			user.Repos = make(map[string]*gpb.RepoInfo)
 		}
 		user.Repos[repoName] = repoInfoFromGithub(repo)
 	}
 	return user, nil
 }
 
-func (s *Spider) ReadRepository(ctx context.Context, user, name string) (*sppb.RepoInfo, error) {
+func (s *Spider) ReadRepository(ctx context.Context, user, name string) (*gpb.RepoInfo, error) {
 	s.waitForRate()
 	repo, _, err := s.client.Repositories.Get(ctx, user, name)
 	if err != nil {
@@ -192,11 +192,11 @@ func buildIgnored(comments []*ast.CommentGroup) bool {
 }
 
 var (
-	goFileInfo_ShouldIgnore = sppb.GoFileInfo{Status: sppb.GoFileInfo_ShouldIgnore}
-	goFileInfo_ParseFailed  = sppb.GoFileInfo{Status: sppb.GoFileInfo_ParseFailed}
+	goFileInfo_ShouldIgnore = gpb.GoFileInfo{Status: gpb.GoFileInfo_ShouldIgnore}
+	goFileInfo_ParseFailed  = gpb.GoFileInfo{Status: gpb.GoFileInfo_ParseFailed}
 )
 
-func parseGoFile(path string, body string, info *sppb.GoFileInfo) {
+func parseGoFile(path string, body string, info *gpb.GoFileInfo) {
 	info.IsTest = strings.HasSuffix(path, "_test.go")
 	fs := token.NewFileSet()
 	goF, err := parser.ParseFile(fs, "", body, parser.ImportsOnly|parser.ParseComments)
@@ -213,7 +213,7 @@ func parseGoFile(path string, body string, info *sppb.GoFileInfo) {
 		*info = goFileInfo_ShouldIgnore
 		return
 	}
-	info.Status = sppb.GoFileInfo_ParseSuccess
+	info.Status = gpb.GoFileInfo_ParseSuccess
 	for _, imp := range goF.Imports {
 		p, _ := strconv.Unquote(imp.Path.Value)
 		info.Imports = append(info.Imports, p)
@@ -258,8 +258,8 @@ func isNotFound(err error) bool {
 	return errResp.Response.StatusCode == http.StatusNotFound
 }
 
-func folderInfoFromGithub(rc *github.RepositoryContent) *sppb.FolderInfo {
-	return &sppb.FolderInfo{
+func folderInfoFromGithub(rc *github.RepositoryContent) *gpb.FolderInfo {
+	return &gpb.FolderInfo{
 		Name:    getString(rc.Name),
 		Path:    getString(rc.Path),
 		Sha:     getString(rc.SHA),
@@ -278,7 +278,7 @@ type Package struct {
 }
 
 // Even an error is returned, the folders may still contain useful elements.
-func (s *Spider) ReadPackage(ctx context.Context, user, repo, path string) (*Package, []*sppb.FolderInfo, error) {
+func (s *Spider) ReadPackage(ctx context.Context, user, repo, path string) (*Package, []*gpb.FolderInfo, error) {
 	s.waitForRate()
 	_, cs, _, err := s.client.Repositories.GetContents(ctx, user, repo, path, nil)
 	if err != nil {
@@ -288,7 +288,7 @@ func (s *Spider) ReadPackage(ctx context.Context, user, repo, path string) (*Pac
 		errResp, _ := errorsp.Cause(err).(*github.ErrorResponse)
 		return nil, nil, errorsp.WithStacksAndMessage(err, "GetContents %v %v %v failed: %v", user, repo, path, errResp)
 	}
-	var folders []*sppb.FolderInfo
+	var folders []*gpb.FolderInfo
 	for _, c := range cs {
 		if getString(c.Type) != "dir" {
 			continue
@@ -310,8 +310,8 @@ func (s *Spider) ReadPackage(ctx context.Context, user, repo, path string) (*Pac
 		cPath := path + "/" + fn
 		switch {
 		case strings.HasSuffix(fn, ".go"):
-			fi, err := func() (*sppb.GoFileInfo, error) {
-				fi := &sppb.GoFileInfo{}
+			fi, err := func() (*gpb.GoFileInfo, error) {
+				fi := &gpb.GoFileInfo{}
 				if s.FileCache.Get(sha, fi) {
 					log.Printf("Cache for %v found(sha:%q)", calcFullPath(user, repo, path, fn), sha)
 					return fi, nil
@@ -334,10 +334,10 @@ func (s *Spider) ReadPackage(ctx context.Context, user, repo, path string) (*Pac
 			if err != nil {
 				return nil, folders, err
 			}
-			if fi.Status == sppb.GoFileInfo_ParseFailed {
+			if fi.Status == gpb.GoFileInfo_ParseFailed {
 				return nil, folders, errorsp.WithStacksAndMessage(ErrInvalidPackage, "fi.Status is ParseFailed")
 			}
-			if fi.Status == sppb.GoFileInfo_ShouldIgnore {
+			if fi.Status == gpb.GoFileInfo_ShouldIgnore {
 				continue
 			}
 			if fi.IsTest {
@@ -424,7 +424,7 @@ func (s *Spider) getTree(ctx context.Context, owner, repo, sha string, recursive
 // ReadRepo reads all packages of a repository.
 // For pkg given to f, it will not be reused.
 // path in f is relative to the repository path.
-func (s *Spider) ReadRepo(ctx context.Context, user, repo, sha string, f func(path string, pkg *sppb.Package) error) error {
+func (s *Spider) ReadRepo(ctx context.Context, user, repo, sha string, f func(path string, pkg *gpb.Package) error) error {
 	tree, err := s.getTree(ctx, user, repo, sha, true)
 	if err != nil {
 		return err
@@ -448,7 +448,7 @@ func (s *Spider) ReadRepo(ctx context.Context, user, repo, sha string, f func(pa
 	}
 	log.Printf("pkgs: %v", pkgs)
 	for d, teList := range pkgs {
-		pkg := sppb.Package{
+		pkg := gpb.Package{
 			Path: d,
 		}
 		var imports stringsp.Set
@@ -459,8 +459,8 @@ func (s *Spider) ReadRepo(ctx context.Context, user, repo, sha string, f func(pa
 			sha := *te.SHA
 			switch {
 			case strings.HasSuffix(fn, ".go"):
-				fi, err := func() (*sppb.GoFileInfo, error) {
-					fi := &sppb.GoFileInfo{}
+				fi, err := func() (*gpb.GoFileInfo, error) {
+					fi := &gpb.GoFileInfo{}
 					if s.FileCache.Get(sha, fi) {
 						log.Printf("Cache for %v found(sha:%q)", "github.com/"+user+"/"+cPath, sha)
 						return fi, nil
@@ -483,10 +483,10 @@ func (s *Spider) ReadRepo(ctx context.Context, user, repo, sha string, f func(pa
 				if err != nil {
 					return err
 				}
-				if fi.Status == sppb.GoFileInfo_ParseFailed {
+				if fi.Status == gpb.GoFileInfo_ParseFailed {
 					return errorsp.WithStacksAndMessage(ErrInvalidPackage, "fi.Status is ParseFailed")
 				}
-				if fi.Status == sppb.GoFileInfo_ShouldIgnore {
+				if fi.Status == gpb.GoFileInfo_ShouldIgnore {
 					continue
 				}
 				if fi.IsTest {

@@ -12,7 +12,7 @@ import (
 	"github.com/daviddengcn/gddo/doc"
 	"github.com/golangplus/strings"
 
-	sppb "github.com/daviddengcn/gcse/proto/spider"
+	gpb "github.com/daviddengcn/gcse/shared/proto"
 )
 
 // touchPackage forces a package to update if it was not crawled before a
@@ -53,7 +53,7 @@ func touchByGithubUpdates(ctx context.Context, pkgUTs map[string]time.Time) {
 			continue
 		}
 		touchPackage(fmt.Sprintf("github.com/%s/%s", user, path), r.UpdatedAt.Time, pkgUTs)
-		if err := store.AppendPackageEvent("github.com", user+"/"+path, "githubhupdate", now, sppb.HistoryEvent_Action_None); err != nil {
+		if err := store.AppendPackageEvent("github.com", user+"/"+path, "githubhupdate", now, gpb.HistoryEvent_Action_None); err != nil {
 			log.Printf("UpdatePackageHistory %s %s failed: %v", "github.com", user+"/"+path, err)
 		}
 		count++

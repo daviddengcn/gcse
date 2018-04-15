@@ -9,8 +9,9 @@ import (
 	"github.com/golangplus/testing/assert"
 
 	"github.com/daviddengcn/bolthelper"
-	sppb "github.com/daviddengcn/gcse/proto/spider"
 	"github.com/daviddengcn/go-villa"
+
+	gpb "github.com/daviddengcn/gcse/shared/proto"
 )
 
 func TestUpdateReadDeletePackageHistory(t *testing.T) {
@@ -19,20 +20,20 @@ func TestUpdateReadDeletePackageHistory(t *testing.T) {
 		path     = "gcse"
 		foundWay = "testing"
 	)
-	assert.NoError(t, UpdatePackageHistory(site, path, func(info *sppb.HistoryInfo) error {
-		assert.Equal(t, "info", info, &sppb.HistoryInfo{})
+	assert.NoError(t, UpdatePackageHistory(site, path, func(info *gpb.HistoryInfo) error {
+		assert.Equal(t, "info", info, &gpb.HistoryInfo{})
 		info.FoundWay = foundWay
 		return nil
 	}))
 	h, err := ReadPackageHistory(site, path)
 	assert.NoError(t, err)
-	assert.Equal(t, "h", h, &sppb.HistoryInfo{FoundWay: foundWay})
+	assert.Equal(t, "h", h, &gpb.HistoryInfo{FoundWay: foundWay})
 
 	assert.NoError(t, DeletePackageHistory(site, path))
 
 	h, err = ReadPackageHistory(site, path)
 	assert.NoError(t, err)
-	assert.Equal(t, "h", h, &sppb.HistoryInfo{})
+	assert.Equal(t, "h", h, &gpb.HistoryInfo{})
 }
 
 func TestAppendPackageEvent(t *testing.T) {
@@ -44,41 +45,41 @@ func TestAppendPackageEvent(t *testing.T) {
 	// Insert a found only event, no action.
 	foundTm := time.Now()
 	foundTs, _ := ptypes.TimestampProto(foundTm)
-	assert.NoError(t, AppendPackageEvent(site, path, "test", foundTm, sppb.HistoryEvent_Action_None))
+	assert.NoError(t, AppendPackageEvent(site, path, "test", foundTm, gpb.HistoryEvent_Action_None))
 	h, err := ReadPackageHistory(site, path)
 	assert.NoError(t, err)
-	assert.Equal(t, "h", h, &sppb.HistoryInfo{FoundWay: foundWay, FoundTime: foundTs})
+	assert.Equal(t, "h", h, &gpb.HistoryInfo{FoundWay: foundWay, FoundTime: foundTs})
 
 	// Inser a Success action
 	succTm := foundTm.Add(time.Hour)
 	succTs, _ := ptypes.TimestampProto(succTm)
-	assert.NoError(t, AppendPackageEvent(site, path, "non-test", succTm, sppb.HistoryEvent_Action_Success))
+	assert.NoError(t, AppendPackageEvent(site, path, "non-test", succTm, gpb.HistoryEvent_Action_Success))
 	h, err = ReadPackageHistory(site, path)
 	assert.NoError(t, err)
-	assert.Equal(t, "h", h, &sppb.HistoryInfo{
+	assert.Equal(t, "h", h, &gpb.HistoryInfo{
 		FoundWay:  foundWay,
 		FoundTime: foundTs,
-		Events: []*sppb.HistoryEvent{{
+		Events: []*gpb.HistoryEvent{{
 			Timestamp: succTs,
-			Action:    sppb.HistoryEvent_Action_Success,
+			Action:    gpb.HistoryEvent_Action_Success,
 		}},
 		LatestSuccess: succTs,
 	})
 	// Inser a Failed action
 	failedTm := succTm.Add(time.Hour)
 	failedTs, _ := ptypes.TimestampProto(failedTm)
-	assert.NoError(t, AppendPackageEvent(site, path, "", failedTm, sppb.HistoryEvent_Action_Failed))
+	assert.NoError(t, AppendPackageEvent(site, path, "", failedTm, gpb.HistoryEvent_Action_Failed))
 	h, err = ReadPackageHistory(site, path)
 	assert.NoError(t, err)
-	assert.Equal(t, "h", h, &sppb.HistoryInfo{
+	assert.Equal(t, "h", h, &gpb.HistoryInfo{
 		FoundWay:  foundWay,
 		FoundTime: foundTs,
-		Events: []*sppb.HistoryEvent{{
+		Events: []*gpb.HistoryEvent{{
 			Timestamp: failedTs,
-			Action:    sppb.HistoryEvent_Action_Failed,
+			Action:    gpb.HistoryEvent_Action_Failed,
 		}, {
 			Timestamp: succTs,
-			Action:    sppb.HistoryEvent_Action_Success,
+			Action:    gpb.HistoryEvent_Action_Success,
 		}},
 		LatestSuccess: succTs,
 		LatestFailed:  failedTs,
@@ -91,20 +92,20 @@ func TestUpdateReadDeletePersonHistory(t *testing.T) {
 		id       = "daviddengcn"
 		foundWay = "testing"
 	)
-	assert.NoError(t, UpdatePersonHistory(site, id, func(info *sppb.HistoryInfo) error {
-		assert.Equal(t, "info", info, &sppb.HistoryInfo{})
+	assert.NoError(t, UpdatePersonHistory(site, id, func(info *gpb.HistoryInfo) error {
+		assert.Equal(t, "info", info, &gpb.HistoryInfo{})
 		info.FoundWay = foundWay
 		return nil
 	}))
 	h, err := ReadPersonHistory(site, id)
 	assert.NoError(t, err)
-	assert.Equal(t, "h", h, &sppb.HistoryInfo{FoundWay: foundWay})
+	assert.Equal(t, "h", h, &gpb.HistoryInfo{FoundWay: foundWay})
 
 	assert.NoError(t, DeletePersonHistory(site, id))
 
 	h, err = ReadPersonHistory(site, id)
 	assert.NoError(t, err)
-	assert.Equal(t, "h", h, &sppb.HistoryInfo{})
+	assert.Equal(t, "h", h, &gpb.HistoryInfo{})
 }
 
 func TestSaveSnapshot(t *testing.T) {
@@ -113,14 +114,14 @@ func TestSaveSnapshot(t *testing.T) {
 		path     = "gcse"
 		foundWay = "testing"
 	)
-	assert.NoError(t, UpdatePackageHistory(site, path, func(info *sppb.HistoryInfo) error {
-		assert.Equal(t, "info", info, &sppb.HistoryInfo{})
+	assert.NoError(t, UpdatePackageHistory(site, path, func(info *gpb.HistoryInfo) error {
+		assert.Equal(t, "info", info, &gpb.HistoryInfo{})
 		info.FoundWay = foundWay
 		return nil
 	}))
 	h, err := ReadPackageHistory(site, path)
 	assert.NoError(t, err)
-	assert.Equal(t, "h", h, &sppb.HistoryInfo{FoundWay: foundWay})
+	assert.Equal(t, "h", h, &gpb.HistoryInfo{FoundWay: foundWay})
 
 	outPath := villa.Path(os.TempDir()).Join("TestSaveSnapshot").S()
 	assert.NoError(t, SaveSnapshot(outPath))
@@ -131,5 +132,5 @@ func TestSaveSnapshot(t *testing.T) {
 	}
 	h, err = ReadPackageHistoryOf(box, site, path)
 	assert.NoError(t, err)
-	assert.Equal(t, "h", h, &sppb.HistoryInfo{FoundWay: foundWay})
+	assert.Equal(t, "h", h, &gpb.HistoryInfo{FoundWay: foundWay})
 }

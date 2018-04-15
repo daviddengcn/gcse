@@ -25,7 +25,7 @@ import (
 	"github.com/daviddengcn/sophie"
 	"github.com/daviddengcn/sophie/kv"
 
-	sppb "github.com/daviddengcn/gcse/proto/spider"
+	gpb "github.com/daviddengcn/gcse/shared/proto"
 )
 
 var (
@@ -242,7 +242,7 @@ func main() {
 					return ok
 				})
 				site, path := utils.SplitPackage(pkg)
-				if err := store.AppendPackageEvent(site, path, "godoc", now, sppb.HistoryEvent_Action_None); err != nil {
+				if err := store.AppendPackageEvent(site, path, "godoc", now, gpb.HistoryEvent_Action_None); err != nil {
 					log.Printf("UpdatePackageHistory %s %s failed: %v", site, path, err)
 				}
 			}

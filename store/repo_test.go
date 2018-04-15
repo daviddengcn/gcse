@@ -5,7 +5,7 @@ import (
 
 	"github.com/golangplus/testing/assert"
 
-	stpb "github.com/daviddengcn/gcse/proto/store"
+	gpb "github.com/daviddengcn/gcse/shared/proto"
 )
 
 func TestUpdateReadDeleteRepository(t *testing.T) {
@@ -14,20 +14,20 @@ func TestUpdateReadDeleteRepository(t *testing.T) {
 		user = "daviddengcn"
 		repo = "gcse"
 	)
-	assert.NoError(t, UpdateRepository(site, user, repo, func(doc *stpb.Repository) error {
-		assert.Equal(t, "doc", doc, &stpb.Repository{})
+	assert.NoError(t, UpdateRepository(site, user, repo, func(doc *gpb.Repository) error {
+		assert.Equal(t, "doc", doc, &gpb.Repository{})
 		doc.Stars = 10
 		return nil
 	}))
 	r, err := ReadRepository(site, user, repo)
 	assert.NoError(t, err)
-	assert.Equal(t, "r", r, &stpb.Repository{Stars: 10})
+	assert.Equal(t, "r", r, &gpb.Repository{Stars: 10})
 
 	assert.NoError(t, DeleteRepository(site, user, repo))
 
 	r, err = ReadRepository(site, user, repo)
 	assert.NoError(t, err)
-	assert.Equal(t, "r", r, &stpb.Repository{})
+	assert.Equal(t, "r", r, &gpb.Repository{})
 }
 
 func TestForEachRepositorySite(t *testing.T) {
@@ -38,7 +38,7 @@ func TestForEachRepositorySite(t *testing.T) {
 		user = "daviddengcn"
 		repo = "gcse"
 	)
-	assert.NoError(t, UpdateRepository(site, user, repo, func(doc *stpb.Repository) error {
+	assert.NoError(t, UpdateRepository(site, user, repo, func(doc *gpb.Repository) error {
 		return nil
 	}))
 	var sites []string
@@ -55,14 +55,14 @@ func TestForEachRepositoryOfSite(t *testing.T) {
 		user = "daviddengcn"
 		repo = "gcse"
 	)
-	assert.NoError(t, UpdateRepository(site, user, repo, func(doc *stpb.Repository) error {
+	assert.NoError(t, UpdateRepository(site, user, repo, func(doc *gpb.Repository) error {
 		doc.ReadmeData = "hello"
 		return nil
 	}))
-	assert.NoError(t, ForEachRepositoryOfSite(site, func(u, r string, doc *stpb.Repository) error {
+	assert.NoError(t, ForEachRepositoryOfSite(site, func(u, r string, doc *gpb.Repository) error {
 		assert.Equal(t, "user", u, user)
 		assert.Equal(t, "repo", r, repo)
-		assert.Equal(t, "doc", doc, &stpb.Repository{ReadmeData: "hello"})
+		assert.Equal(t, "doc", doc, &gpb.Repository{ReadmeData: "hello"})
 		return nil
 	}))
 }

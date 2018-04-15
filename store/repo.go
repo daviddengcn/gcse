@@ -8,17 +8,18 @@ import (
 	"github.com/golangplus/errors"
 
 	"github.com/daviddengcn/bolthelper"
-	"github.com/daviddengcn/gcse/proto/store"
+
+	gpb "github.com/daviddengcn/gcse/shared/proto"
 )
 
 // Returns an empty (non-nil) PackageInfo if not found.
-func ReadRepository(site, user, repo string) (*stpb.Repository, error) {
-	doc := &stpb.Repository{}
+func ReadRepository(site, user, repo string) (*gpb.Repository, error) {
+	doc := &gpb.Repository{}
 	if err := box.View(func(tx bh.Tx) error {
 		return tx.Value([][]byte{reposRoot, []byte(site), []byte(user), []byte(repo)}, func(bs bytesp.Slice) error {
 			if err := errorsp.WithStacksAndMessage(proto.Unmarshal(bs, doc), "Unmarshal %d bytes failed", len(bs)); err != nil {
 				log.Printf("Unmarshal failed: %v", err)
-				*doc = stpb.Repository{}
+				*doc = gpb.Repository{}
 			}
 			return nil
 		})
@@ -28,17 +29,17 @@ func ReadRepository(site, user, repo string) (*stpb.Repository, error) {
 	return doc, nil
 }
 
-func UpdateRepository(site, user, repo string, f func(doc *stpb.Repository) error) error {
+func UpdateRepository(site, user, repo string, f func(doc *gpb.Repository) error) error {
 	return box.Update(func(tx bh.Tx) error {
 		b, err := tx.CreateBucketIfNotExists([][]byte{reposRoot, []byte(site), []byte(user)})
 		if err != nil {
 			return err
 		}
-		doc := &stpb.Repository{}
+		doc := &gpb.Repository{}
 		if err := b.Value([][]byte{[]byte(repo)}, func(bs bytesp.Slice) error {
 			if err := errorsp.WithStacksAndMessage(proto.Unmarshal(bs, doc), "Unmarshal %d bytes", len(bs)); err != nil {
 				log.Printf("Unmarshaling failed: %v", err)
-				*doc = stpb.Repository{}
+				*doc = gpb.Repository{}
 			}
 			return nil
 		}); err != nil {
@@ -73,7 +74,7 @@ func ForEachRepositorySite(f func(string) error) error {
 	})
 }
 
-func ForEachRepositoryOfSite(site string, f func(user, name string, doc *stpb.Repository) error) error {
+func ForEachRepositoryOfSite(site string, f func(user, name string, doc *gpb.Repository) error) error {
 	return box.View(func(tx bh.Tx) error {
 		return tx.ForEach([][]byte{reposRoot, []byte(site)}, func(b bh.Bucket, user, v bytesp.Slice) error {
 			if v != nil {
@@ -85,7 +86,7 @@ func ForEachRepositoryOfSite(site string, f func(user, name string, doc *stpb.Re
 					log.Printf("Unexpected nil value for key %q, ignored", string(name))
 					return nil
 				}
-				doc := &stpb.Repository{}
+				doc := &gpb.Repository{}
 				if err := errorsp.WithStacksAndMessage(proto.Unmarshal(bs, doc), "Unmarshal %d bytes", len(bs)); err != nil {
 					log.Printf("Unmarshaling value for %v failed, ignored: %v", name, err)
 					return nil

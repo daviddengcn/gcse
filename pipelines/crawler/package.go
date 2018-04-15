@@ -22,8 +22,7 @@ import (
 	"github.com/daviddengcn/sophie/kv"
 	"github.com/daviddengcn/sophie/mr"
 
-	sppb "github.com/daviddengcn/gcse/proto/spider"
-	stpb "github.com/daviddengcn/gcse/proto/store"
+	gpb "github.com/daviddengcn/gcse/shared/proto"
 )
 
 const (
@@ -47,17 +46,17 @@ func appendNewPackage(pkg, foundWay string) {
 	cDB.AppendPackage(pkg, allDocsPkgs.Contain)
 
 	site, path := utils.SplitPackage(pkg)
-	if err := store.UpdatePackage(site, path, func(*stpb.PackageInfo) error {
+	if err := store.UpdatePackage(site, path, func(*gpb.PackageInfo) error {
 		return nil
 	}); err != nil {
 		log.Printf("UpdatePackage %s %s failed: %v", site, path, err)
 	}
-	if err := store.AppendPackageEvent(site, path, foundWay, time.Now(), sppb.HistoryEvent_Action_None); err != nil {
+	if err := store.AppendPackageEvent(site, path, foundWay, time.Now(), gpb.HistoryEvent_Action_None); err != nil {
 		log.Printf("UpdatePackageHistory %s %s failed: %v", site, path, err)
 	}
 }
 
-func fillPackageInfo(p *gcse.Package, pi *stpb.PackageInfo) {
+func fillPackageInfo(p *gcse.Package, pi *gpb.PackageInfo) {
 	pi.Package = p.Package
 	pi.Name = p.Name
 	pi.Synopsis = p.Synopsis
@@ -84,7 +83,7 @@ func fillPackageInfo(p *gcse.Package, pi *stpb.PackageInfo) {
 	}
 }
 
-func saveRelatedInfo(pi *stpb.PackageInfo) {
+func saveRelatedInfo(pi *gpb.PackageInfo) {
 	// append new authors
 	var site, id string
 	if strings.HasPrefix(pi.Package, "github.com/") {
@@ -94,7 +93,7 @@ func saveRelatedInfo(pi *stpb.PackageInfo) {
 	} else {
 		return
 	}
-	if err := store.UpdatePerson(site, id, func(*stpb.PersonInfo) error {
+	if err := store.UpdatePerson(site, id, func(*gpb.PersonInfo) error {
 		// TODO update history
 		return nil
 	}); err != nil {
@@ -192,7 +191,7 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter, c []sophie.Collector
 	if err != nil && errorsp.Cause(err) != gcse.ErrPackageNotModifed {
 		log.Printf("[Part %d] Crawling pkg %s failed: %v", pc.part, pkg, err)
 		if gcse.IsBadPackage(err) {
-			utils.LogError(store.AppendPackageEvent(site, path, "", time.Now(), sppb.HistoryEvent_Action_Invalid), "AppendPackageEvent %v %v failed", site, path)
+			utils.LogError(store.AppendPackageEvent(site, path, "", time.Now(), gpb.HistoryEvent_Action_Invalid), "AppendPackageEvent %v %v failed", site, path)
 			bi.AddValue(bi.Sum, "crawler.package.wrong-package", 1)
 			// a wrong path
 			nda := gcse.NewDocAction{
@@ -202,7 +201,7 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter, c []sophie.Collector
 			cDB.PackageDB.Delete(pkg)
 			log.Printf("[Part %d] Remove wrong package %s", pc.part, pkg)
 		} else {
-			utils.LogError(store.AppendPackageEvent(site, path, "", time.Now(), sppb.HistoryEvent_Action_Failed), "AppendPackageEvent %v %v failed", site, path)
+			utils.LogError(store.AppendPackageEvent(site, path, "", time.Now(), gpb.HistoryEvent_Action_Failed), "AppendPackageEvent %v %v failed", site, path)
 			bi.Inc("crawler.package.failed")
 			if strings.HasPrefix(pkg, "github.com/") {
 				bi.Inc("crawler.package.failed.github")
@@ -227,7 +226,7 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter, c []sophie.Collector
 		}
 		return nil
 	}
-	utils.LogError(store.AppendPackageEvent(site, path, "", time.Now(), sppb.HistoryEvent_Action_Success), "AppendPackageEvent %v %v failed", site, path)
+	utils.LogError(store.AppendPackageEvent(site, path, "", time.Now(), gpb.HistoryEvent_Action_Success), "AppendPackageEvent %v %v failed", site, path)
 	pc.failCount = 0
 	if errorsp.Cause(err) == gcse.ErrPackageNotModifed {
 		// TODO crawling stars for unchanged project
@@ -242,8 +241,8 @@ func (pc *PackageCrawler) Map(key, val sophie.SophieWriter, c []sophie.Collector
 	}
 	log.Printf("[Part %d] Crawled package %s success!", pc.part, pkg)
 
-	var pkgInfo *stpb.PackageInfo
-	if err := store.UpdatePackage(site, path, func(pi *stpb.PackageInfo) error {
+	var pkgInfo *gpb.PackageInfo
+	if err := store.UpdatePackage(site, path, func(pi *gpb.PackageInfo) error {
 		fillPackageInfo(p, pi)
 		pkgInfo = pi
 		return nil

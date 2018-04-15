@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package gcse.spider;
+package gcse;
 
-option go_package = "sppb";
+option go_package = "gcsepb";
 
 import "github.com/golang/protobuf/ptypes/timestamp/timestamp.proto";
 

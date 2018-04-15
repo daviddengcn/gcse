@@ -33,8 +33,7 @@ import (
 	"github.com/daviddengcn/sophie"
 	"github.com/golang/gddo/gosrc"
 
-	sppb "github.com/daviddengcn/gcse/proto/spider"
-	stpb "github.com/daviddengcn/gcse/proto/store"
+	gpb "github.com/daviddengcn/gcse/shared/proto"
 	glgddo "github.com/golang/gddo/doc"
 )
 
@@ -350,7 +349,7 @@ var GithubSpider *github.Spider
 
 const maxRepoInfoAge = 2 * timep.Day
 
-func CrawlRepoInfo(ctx context.Context, site, user, name string) *sppb.RepoInfo {
+func CrawlRepoInfo(ctx context.Context, site, user, name string) *gpb.RepoInfo {
 	// Check cache in store.
 	path := user + "/" + name
 	p, err := store.ReadPackage(site, path)
@@ -373,7 +372,7 @@ func CrawlRepoInfo(ctx context.Context, site, user, name string) *sppb.RepoInfo 
 		}
 		return nil
 	}
-	if err := store.UpdatePackage(site, path, func(info *stpb.PackageInfo) error {
+	if err := store.UpdatePackage(site, path, func(info *gpb.PackageInfo) error {
 		info.RepoInfo = ri
 		return nil
 	}); err != nil {
@@ -392,7 +391,7 @@ func getGithubStars(ctx context.Context, user, name string) int {
 	return -1
 }
 
-func getGithub(ctx context.Context, pkg string) (*doc.Package, []*sppb.FolderInfo, error) {
+func getGithub(ctx context.Context, pkg string) (*doc.Package, []*gpb.FolderInfo, error) {
 	parts := strings.SplitN(pkg, "/", 4)
 	for len(parts) < 4 {
 		parts = append(parts, "")
@@ -421,7 +420,7 @@ func getGithub(ctx context.Context, pkg string) (*doc.Package, []*sppb.FolderInf
 	}, folders, nil
 }
 
-func CrawlPackage(ctx context.Context, httpClient doc.HttpClient, pkg string, etag string) (p *Package, folders []*sppb.FolderInfo, err error) {
+func CrawlPackage(ctx context.Context, httpClient doc.HttpClient, pkg string, etag string) (p *Package, folders []*gpb.FolderInfo, err error) {
 	defer func() {
 		if perr := recover(); perr != nil {
 			p, folders, err = nil, nil, errorsp.NewWithStacks("Panic when crawling package %s: %v", pkg, perr)
@@ -537,7 +536,7 @@ func CrawlPerson(ctx context.Context, httpClient doc.HttpClient, id string) (*Pe
 		for name, ri := range u.Repos {
 			path := user + "/" + name
 			p.Packages = append(p.Packages, "github.com/"+path)
-			if err := store.UpdatePackage(site, path, func(info *stpb.PackageInfo) error {
+			if err := store.UpdatePackage(site, path, func(info *gpb.PackageInfo) error {
 				info.RepoInfo = ri
 				return nil
 			}); err != nil {

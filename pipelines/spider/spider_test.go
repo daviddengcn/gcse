@@ -11,10 +11,10 @@ import (
 	"github.com/golangplus/time"
 
 	"github.com/daviddengcn/gcse/configs"
-	"github.com/daviddengcn/gcse/proto/spider"
-	"github.com/daviddengcn/gcse/proto/store"
 	"github.com/daviddengcn/gcse/spider/github"
 	"github.com/daviddengcn/gcse/store"
+
+	gpb "github.com/daviddengcn/gcse/shared/proto"
 )
 
 func init() {
@@ -23,17 +23,17 @@ func init() {
 
 func TestShouldCrawlLater(t *testing.T) {
 	assert.True(t, "res", shouldCrawlLater(&RepositoryInfo{
-		Repository: &stpb.Repository{
-			CrawlingInfo: &sppb.CrawlingInfo{},
+		Repository: &gpb.Repository{
+			CrawlingInfo: &gpb.CrawlingInfo{},
 		},
 	}, &RepositoryInfo{
-		Repository: &stpb.Repository{},
+		Repository: &gpb.Repository{},
 	}))
 	assert.False(t, "res", shouldCrawlLater(&RepositoryInfo{
-		Repository: &stpb.Repository{},
+		Repository: &gpb.Repository{},
 	}, &RepositoryInfo{
-		Repository: &stpb.Repository{
-			CrawlingInfo: &sppb.CrawlingInfo{},
+		Repository: &gpb.Repository{
+			CrawlingInfo: &gpb.CrawlingInfo{},
 		},
 	}))
 }
@@ -48,21 +48,21 @@ func TestSelectRepos(t *testing.T) {
 		user3 = "daviddeng"
 		name3 = "go"
 	)
-	assert.NoError(t, store.UpdateRepository(site, user1, name1, func(r *stpb.Repository) error {
+	assert.NoError(t, store.UpdateRepository(site, user1, name1, func(r *gpb.Repository) error {
 		r.Stars = 1
 		return nil
 	}))
 	now := time.Now()
-	assert.NoError(t, store.UpdateRepository(site, user2, name2, func(r *stpb.Repository) error {
+	assert.NoError(t, store.UpdateRepository(site, user2, name2, func(r *gpb.Repository) error {
 		r.Stars = 2
-		r.CrawlingInfo = &sppb.CrawlingInfo{}
+		r.CrawlingInfo = &gpb.CrawlingInfo{}
 		r.CrawlingInfo.SetCrawlingTime(now.Add(-10 * timep.Day))
 		return nil
 	}))
 	ts3, _ := ptypes.TimestampProto(now.Add(-15 * timep.Day))
-	assert.NoError(t, store.UpdateRepository(site, user3, name3, func(r *stpb.Repository) error {
+	assert.NoError(t, store.UpdateRepository(site, user3, name3, func(r *gpb.Repository) error {
 		r.Stars = 3
-		r.CrawlingInfo = &sppb.CrawlingInfo{
+		r.CrawlingInfo = &gpb.CrawlingInfo{
 			CrawlingTime: ts3,
 		}
 		return nil
@@ -71,15 +71,15 @@ func TestSelectRepos(t *testing.T) {
 	repos, err := selectRepos(site, 2)
 	assert.NoError(t, err)
 	assert.Equal(t, "repos", repos, []*RepositoryInfo{{
-		Repository: &stpb.Repository{
+		Repository: &gpb.Repository{
 			Stars: 1,
 		},
 		Name: name1,
 		User: user1,
 	}, {
-		Repository: &stpb.Repository{
+		Repository: &gpb.Repository{
 			Stars: 3,
-			CrawlingInfo: &sppb.CrawlingInfo{
+			CrawlingInfo: &gpb.CrawlingInfo{
 				CrawlingTime: ts3,
 			},
 		},
@@ -132,25 +132,25 @@ func TestCrawlRepo(t *testing.T) {
 	)
 	initSpider()
 	r := &RepositoryInfo{
-		Repository: &stpb.Repository{
+		Repository: &gpb.Repository{
 			Branch:       "master",
-			CrawlingInfo: (&sppb.CrawlingInfo{}).SetCrawlingTime(tm.Add(-timep.Day)),
+			CrawlingInfo: (&gpb.CrawlingInfo{}).SetCrawlingTime(tm.Add(-timep.Day)),
 		},
 		User: user,
 		Name: repo,
 	}
 	assert.NoError(t, crawlRepo(ctx, "github.com", r))
-	assert.Equal(t, "r.Repository", *r.Repository, stpb.Repository{
+	assert.Equal(t, "r.Repository", *r.Repository, gpb.Repository{
 		Branch:    "master",
 		Signature: "sha-1",
-		Packages: map[string]*sppb.Package{
+		Packages: map[string]*gpb.Package{
 			"": {
 				Name:        "gcse",
 				Path:        "",
 				Imports:     []string{"github.com/daviddengcn/go-easybi"},
 				TestImports: nil,
 			}},
-		CrawlingInfo: (&sppb.CrawlingInfo{}).SetCrawlingTime(tm),
+		CrawlingInfo: (&gpb.CrawlingInfo{}).SetCrawlingTime(tm),
 	})
 }
 
@@ -160,10 +160,10 @@ func TestCrawlRepo_Unchanged(t *testing.T) {
 	now = timep.PresetNow(tm)
 	initSpider()
 	r := &RepositoryInfo{
-		Repository: &stpb.Repository{
+		Repository: &gpb.Repository{
 			Branch:    "master",
 			Signature: "sha-unchanged",
-			Packages: map[string]*sppb.Package{
+			Packages: map[string]*gpb.Package{
 				"": {
 					Name:        "gcse",
 					Path:        "",
@@ -175,17 +175,17 @@ func TestCrawlRepo_Unchanged(t *testing.T) {
 		Name: "unchanged",
 	}
 	assert.NoError(t, crawlRepo(ctx, "github.com", r))
-	assert.Equal(t, "r.Repository", *r.Repository, stpb.Repository{
+	assert.Equal(t, "r.Repository", *r.Repository, gpb.Repository{
 		Branch:    "master",
 		Signature: "sha-unchanged",
-		Packages: map[string]*sppb.Package{
+		Packages: map[string]*gpb.Package{
 			"": {
 				Name:        "gcse",
 				Path:        "",
 				Imports:     []string{"github.com/daviddengcn/go-easybi"},
 				TestImports: nil,
 			}},
-		CrawlingInfo: (&sppb.CrawlingInfo{}).SetCrawlingTime(tm),
+		CrawlingInfo: (&gpb.CrawlingInfo{}).SetCrawlingTime(tm),
 	})
 }
 
@@ -200,14 +200,14 @@ func TestCrawlAndSaveRepo_RepositoryDeleted(t *testing.T) {
 	)
 	initSpider()
 	r := &RepositoryInfo{
-		Repository: &stpb.Repository{
+		Repository: &gpb.Repository{
 			Branch:       "master",
-			CrawlingInfo: (&sppb.CrawlingInfo{}).SetCrawlingTime(tm.Add(-timep.Day)),
+			CrawlingInfo: (&gpb.CrawlingInfo{}).SetCrawlingTime(tm.Add(-timep.Day)),
 		},
 		User: user,
 		Name: repo,
 	}
-	assert.NoError(t, store.UpdateRepository(site, user, repo, func(doc *stpb.Repository) error {
+	assert.NoError(t, store.UpdateRepository(site, user, repo, func(doc *gpb.Repository) error {
 		*doc = *r.Repository
 		return nil
 	}))
@@ -215,7 +215,7 @@ func TestCrawlAndSaveRepo_RepositoryDeleted(t *testing.T) {
 
 	rp, err := store.ReadRepository(site, user, repo)
 	assert.NoError(t, err)
-	assert.Equal(t, "rp", rp, &stpb.Repository{})
+	assert.Equal(t, "rp", rp, &gpb.Repository{})
 }
 
 func cleanDatabase(t *testing.T) {
@@ -231,7 +231,7 @@ func TestExec(t *testing.T) {
 		repo = "gcse"
 	)
 	cleanDatabase(t)
-	assert.NoError(t, store.UpdateRepository(site, user, repo, func(r *stpb.Repository) error {
+	assert.NoError(t, store.UpdateRepository(site, user, repo, func(r *gpb.Repository) error {
 		r.Branch = "master"
 		return nil
 	}))
@@ -239,16 +239,16 @@ func TestExec(t *testing.T) {
 	assert.NoError(t, exec(1, time.Hour))
 	r, err := store.ReadRepository(site, user, repo)
 	assert.NoError(t, err)
-	assert.Equal(t, "r", *r, stpb.Repository{
+	assert.Equal(t, "r", *r, gpb.Repository{
 		Branch:    "master",
 		Signature: "sha-1",
-		Packages: map[string]*sppb.Package{
+		Packages: map[string]*gpb.Package{
 			"": {
 				Name:        "gcse",
 				Path:        "",
 				Imports:     []string{"github.com/daviddengcn/go-easybi"},
 				TestImports: nil,
 			}},
-		CrawlingInfo: (&sppb.CrawlingInfo{}).SetCrawlingTime(tm),
+		CrawlingInfo: (&gpb.CrawlingInfo{}).SetCrawlingTime(tm),
 	})
 }

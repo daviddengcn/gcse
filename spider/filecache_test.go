@@ -9,7 +9,7 @@ import (
 
 	"github.com/daviddengcn/bolthelper"
 
-	sppb "github.com/daviddengcn/gcse/proto/spider"
+	gpb "github.com/daviddengcn/gcse/shared/proto"
 )
 
 func TestNullFileCache(t *testing.T) {
@@ -41,7 +41,7 @@ func TestBoltFileCache(t *testing.T) {
 		sub        = "sub"
 		subfolder  = "root/sub"
 	)
-	fi := &sppb.GoFileInfo{}
+	fi := &gpb.GoFileInfo{}
 
 	//////////////////////////////////////////////////////////////
 	// New file found.
@@ -52,14 +52,14 @@ func TestBoltFileCache(t *testing.T) {
 		"crawler.filecache.missed": 1,
 	})
 	// Set the info.
-	c.Set(sign1, &sppb.GoFileInfo{Status: sppb.GoFileInfo_ShouldIgnore})
+	c.Set(sign1, &gpb.GoFileInfo{Status: gpb.GoFileInfo_ShouldIgnore})
 	assert.Equal(t, "counter", counter, map[string]int{
 		"crawler.filecache.missed":     1,
 		"crawler.filecache.sign_saved": 1,
 	})
 	// Now, should fetch the cache
 	assert.True(t, "c.Get", c.Get(sign1, fi))
-	assert.Equal(t, "fi", fi, &sppb.GoFileInfo{Status: sppb.GoFileInfo_ShouldIgnore})
+	assert.Equal(t, "fi", fi, &gpb.GoFileInfo{Status: gpb.GoFileInfo_ShouldIgnore})
 	assert.Equal(t, "counter", counter, map[string]int{
 		"crawler.filecache.missed":     1,
 		"crawler.filecache.sign_saved": 1,

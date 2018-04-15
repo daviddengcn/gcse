@@ -1,4 +1,4 @@
-package sppb
+package gcsepb
 
 import (
 	"time"
