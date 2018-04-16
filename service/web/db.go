@@ -13,12 +13,9 @@ import (
 	"github.com/daviddengcn/bolthelper"
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/gcse/configs"
-	"github.com/daviddengcn/gcse/store"
 	"github.com/daviddengcn/gcse/utils"
 	"github.com/daviddengcn/go-easybi"
 	"github.com/daviddengcn/go-index"
-
-	gpb "github.com/daviddengcn/gcse/shared/proto"
 )
 
 var (
@@ -36,7 +33,6 @@ type database interface {
 	ForEachFullPackage(func(gcse.HitInfo) error) error
 	PackageCountOfToken(field, token string) int
 	Search(q map[string]stringsp.Set, out func(docID int32, data interface{}) error) error
-	PackageCrawlHistory(pkg string) *gpb.HistoryInfo
 }
 
 type searcherDB struct {
@@ -124,16 +120,6 @@ func (db *searcherDB) Search(q map[string]stringsp.Set, out func(docID int32, da
 		return nil
 	}
 	return db.ts.Search(q, out)
-}
-
-func (db *searcherDB) PackageCrawlHistory(pkg string) *gpb.HistoryInfo {
-	site, path := utils.SplitPackage(pkg)
-	info, err := store.ReadPackageHistoryOf(db.storeDB, site, path)
-	if err != nil {
-		log.Printf("ReadPackageHistoryOf %s %s failed: %v", site, path, err)
-		return nil
-	}
-	return info
 }
 
 func getDatabase() database {

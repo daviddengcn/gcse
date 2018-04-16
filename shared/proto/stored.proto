@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package gcse;
 
+import "github.com/daviddengcn/gcse/shared/proto/spider.proto";
+
 option go_package = "gcsepb";
 
 message PackageCrawlHistoryReq {
@@ -9,7 +11,7 @@ message PackageCrawlHistoryReq {
 }
 
 message PackageCrawlHistoryResp {
-	// HistoryInfo info = 1;
+	HistoryInfo info = 1;
 }
 
 service StoreService {

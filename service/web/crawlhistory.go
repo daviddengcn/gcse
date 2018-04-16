@@ -5,19 +5,27 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang/glog"
 	"github.com/golang/protobuf/ptypes"
+
+	gpb "github.com/daviddengcn/gcse/shared/proto"
 )
 
-func pageCrawlHistory(w http.ResponseWriter, r *http.Request) {
+func (s *server) pageCrawlHistory(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	w.Header().Set("Content-Type", "text/html")
 
 	pkg := strings.ToLower(r.FormValue("id"))
-	db := getDatabase()
-	hi := db.PackageCrawlHistory(pkg)
-	if hi == nil {
+	resp, err := s.storeClient.PackageCrawlHistory(ctx, &gpb.PackageCrawlHistoryReq{
+		Package: pkg,
+	})
+	if err != nil {
+		glog.Errorf("PackageCrawlHistory %q failed: %v", pkg, err)
 		pageNotFound(w, r)
 		return
 	}
+	hi := resp.Info
 	type Event struct {
 		Time   time.Time
 		Action string

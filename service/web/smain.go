@@ -5,6 +5,7 @@ package main
 
 import (
 	"compress/gzip"
+	"flag"
 	"fmt"
 	"html/template"
 	"log"
@@ -18,7 +19,11 @@ import (
 
 	"github.com/daviddengcn/gcse/configs"
 	"github.com/daviddengcn/go-easybi"
+	"github.com/golang/glog"
 	"github.com/russross/blackfriday"
+	"google.golang.org/grpc"
+
+	gpb "github.com/daviddengcn/gcse/shared/proto"
 )
 
 type UIUtils struct{}
@@ -70,7 +75,6 @@ func init() {
 	http.HandleFunc("/loadtemplates", pageLoadTemplate)
 	http.HandleFunc("/badge", pageBadge)
 	http.HandleFunc("/badgepage", pageBadgePage)
-	http.HandleFunc("/crawlhistory", pageCrawlHistory)
 	bi.HandleRequest(configs.BiWebPath)
 
 	http.HandleFunc("/", pageRoot)
@@ -115,24 +119,6 @@ func (hdl globalHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.DefaultServeMux.ServeHTTP(w, r)
 	}
 	log.Printf("[E] %s %v %s %v %v %v", r.Method, r.RequestURI, r.RemoteAddr, r.Header.Get("X-Forwarded-For"), r.Header.Get("Referer"), r.Header.Get("User-Agent"))
-}
-
-func main() {
-	runtime.GOMAXPROCS(2)
-	if err := configs.ImportSegments().ClearUndones(); err != nil {
-		log.Printf("CleanImportSegments failed: %v", err)
-	}
-	if err := loadIndex(); err != nil {
-		log.Fatal(err)
-	}
-	go loadIndexLoop()
-	go processBi()
-
-	loadTemplates()
-
-	log.Printf("ListenAndServe at %s ...", configs.ServerAddr)
-
-	log.Fatal(http.ListenAndServe(configs.ServerAddr, globalHandler{}))
 }
 
 type SimpleDuration time.Duration
@@ -207,4 +193,42 @@ func staticPage(tempName string) func(http.ResponseWriter, *http.Request) {
 			return
 		}
 	}
+}
+
+type server struct {
+	storeClient gpb.StoreServiceClient
+}
+
+func newServer() *server {
+	conn, err := grpc.Dial(configs.StoreDAddr, grpc.WithInsecure())
+	if err != nil {
+		glog.Exitf("Dialing stored server %q failed: %v", configs.StoreDAddr, err)
+	}
+	glog.Infof("Connected with stored service %q", configs.StoreDAddr)
+	return &server{
+		storeClient: gpb.NewStoreServiceClient(conn),
+	}
+}
+
+func main() {
+	flag.Parse()
+
+	runtime.GOMAXPROCS(2)
+	if err := configs.ImportSegments().ClearUndones(); err != nil {
+		log.Printf("CleanImportSegments failed: %v", err)
+	}
+	if err := loadIndex(); err != nil {
+		log.Fatal(err)
+	}
+	go loadIndexLoop()
+	go processBi()
+
+	server := newServer()
+	http.HandleFunc("/crawlhistory", server.pageCrawlHistory)
+
+	loadTemplates()
+
+	log.Printf("ListenAndServe at %s ...", configs.ServerAddr)
+
+	log.Fatal(http.ListenAndServe(configs.ServerAddr, globalHandler{}))
 }

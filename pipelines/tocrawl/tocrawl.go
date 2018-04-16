@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"io"
 	"log"
 	"math/rand"
@@ -201,6 +202,10 @@ func syncDatabases() {
 }
 
 func main() {
+	flag.Set("log_dir", "./logs")
+
+	flag.Parse()
+
 	ctx := context.Background()
 
 	log.Println("Running tocrawl tool, to generate crawling list")

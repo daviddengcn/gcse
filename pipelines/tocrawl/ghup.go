@@ -10,7 +10,7 @@ import (
 	"github.com/daviddengcn/gcse"
 	"github.com/daviddengcn/gcse/store"
 	"github.com/daviddengcn/gddo/doc"
-	"github.com/golangplus/strings"
+	"github.com/golang/glog"
 
 	gpb "github.com/daviddengcn/gcse/shared/proto"
 )
@@ -43,13 +43,19 @@ func touchByGithubUpdates(ctx context.Context, pkgUTs map[string]time.Time) {
 	}
 	count := 0
 	now := time.Now()
+	emptyOwnerOrUpdatedAt, emptyUserOrPath := 0, 0
 	for _, r := range rs {
 		if r.Owner == nil || r.UpdatedAt == nil {
+			emptyOwnerOrUpdatedAt++
 			continue
 		}
-		user := stringsp.Get(r.Owner.Name)
-		path := stringsp.Get(r.Name)
+		user := r.Owner.GetName()
+		if user == "" {
+			user = r.Owner.GetLogin()
+		}
+		path := r.GetName()
 		if user == "" || path == "" {
+			emptyUserOrPath++
 			continue
 		}
 		touchPackage(fmt.Sprintf("github.com/%s/%s", user, path), r.UpdatedAt.Time, pkgUTs)
@@ -58,5 +64,6 @@ func touchByGithubUpdates(ctx context.Context, pkgUTs map[string]time.Time) {
 		}
 		count++
 	}
-	log.Printf("%d updates found!", count)
+	glog.Infof("%d updates found!", count)
+	glog.Infof("Total: %d, emptyOwnerOrUpdatedAt: %d, emptyUserOrPath: %d", len(rs), emptyOwnerOrUpdatedAt, emptyUserOrPath)
 }

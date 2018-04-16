@@ -30,7 +30,7 @@ const (
 
 var (
 	ServerAddr = ":8080"
-	ServerRoot = villa.Path("./server/")
+	ServerRoot = villa.Path("./service/web")
 
 	LoadTemplatePass = ""
 	AutoLoadTemplate = false
@@ -55,6 +55,10 @@ var (
 
 	NonCrawlHosts          = stringsp.Set{}
 	NonStorePackageRegexps = []string{}
+
+	StoreDAddr = ":8081"
+
+	LogDir = "/tmp"
 )
 
 func init() {
@@ -93,6 +97,10 @@ func init() {
 
 	bi.DataPath = conf.String("bi.data_path", "/tmp/gcse.bolt")
 	BiWebPath = conf.String("bi.web_path", BiWebPath)
+
+	StoreDAddr = conf.String("stored.addr", StoreDAddr)
+
+	LogDir = conf.String("log.dir", LogDir)
 }
 
 func DataRootFsPath() sophie.FsPath {

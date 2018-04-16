@@ -4,12 +4,13 @@ import "flag"
 
 goGet := flag.Bool("go_get", true, `Whether do "go get" before installing`)
 doTest := flag.Bool("do_test", false, `Whether do "go test" on essential packages`)
+compileAll := flag.Bool("a", true, `Whether use -a in go install command`)
 
 flag.Parse()
 
 const GCSE = "github.com/daviddengcn/gcse"
 APPS := []string {
-  "server", "pipelines/tocrawl", "pipelines/crawler", "pipelines/mergedocs", "pipelines/indexer",
+  "pipelines/tocrawl", "pipelines/crawler", "pipelines/mergedocs", "pipelines/indexer", "service/stored", "service/web",
 }
 
 if *goGet {
@@ -30,8 +31,13 @@ if *doTest {
 	MustSucc(Bash("go test spider/*.go"))
 }
 
+buildFlags := ""
+if *compileAll {
+	buildFlags += " -a"
+}
+
 for _, a := range APPS {
-  Printfln("go install -a %s/%s", GCSE, a)
-  MustSucc(Bash("go install -a %s/%s", GCSE, a))
+  Printfln("go install %s %s/%s", buildFlags, GCSE, a)
+  MustSucc(Bash("go install %s %s/%s", buildFlags, GCSE, a))
 }
 
