@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"log"
 
 	"github.com/golangplus/fmt"
@@ -31,7 +32,7 @@ func main() {
 		var val gcse.DocInfo
 		for {
 			if err := it.Next(&key, &val); err != nil {
-				if err == sophie.EOF {
+				if err == io.EOF {
 					break
 				}
 				log.Fatalf("it.Next failed %v", err)

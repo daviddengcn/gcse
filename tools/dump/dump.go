@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
 
@@ -53,7 +54,7 @@ func dumpDocs(keys []string) {
 
 			for {
 				if err := it.Next(&key, &val); err != nil {
-					if err == sophie.EOF {
+					if err == io.EOF {
 						break
 					}
 					log.Fatalf("it.Next failed %v", err)
@@ -71,13 +72,13 @@ func dumpDocs(keys []string) {
 }
 
 func dumpIndex(keys []string) {
-	segm, err := gcse.IndexSegments.FindMaxDone()
-	if segm == nil || err != nil {
-		log.Fatalf("gcse.IndexSegments.FindMaxDone() failed: %v", err)
+	segm, err := configs.IndexSegments().FindMaxDone()
+	if err != nil || segm == "" {
+		log.Fatalf("configs.IndexSegments().FindMaxDone() failed: %v", err)
 	}
 
 	db := &index.TokenSetSearcher{}
-	f, err := segm.Join(gcse.IndexFn).Open()
+	f, err := os.Open(segm.Join(gcse.IndexFn))
 	if err != nil {
 		log.Fatalf("%v.Join(%s).Open() failed: %v", segm, gcse.IndexFn, err)
 	}
