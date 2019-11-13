@@ -32,3 +32,4 @@ _testmain.go
 /pipelines/indexer/indexer
 /pipelines/mergedocs/mergedocs
 /pipelines/tocrawl/tocrawl
+.idea
